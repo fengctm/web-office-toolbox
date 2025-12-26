@@ -1,0 +1,6 @@
+{
+  "name": "PDF工具",
+  "description": "PDF相关处理工具",
+  "icon": "mdi-file-pdf-box",
+  "enabled": false
+}

@@ -1,0 +1,7 @@
+{
+  "name": "图片转换 PDF",
+  "code": "image-to-pdf",
+  "description": "将多张图片按顺序合并为 PDF",
+  "icon": "mdi-image-multiple",
+  "enabled": true
+}
