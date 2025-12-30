@@ -1,0 +1,146 @@
+<template>
+  <div v-if="pdfLoaded && totalPages > 0" class="preview-section">
+    <!-- 预览标题和统计 -->
+    <div class="preview-header mb-4">
+      <v-alert type="info" variant="outlined" icon="mdi-image">
+        <strong>预览模式：</strong> 显示前 {{ Math.min(totalPages, 12) }} 页的缩略图（完整版可显示全部）
+      </v-alert>
+    </div>
+
+    <!-- 预览网格 -->
+    <v-row>
+      <v-col
+        v-for="page in Math.min(totalPages, 12)"
+        :key="page"
+        cols="12"
+        sm="6"
+        md="4"
+        lg="3"
+      >
+        <v-card
+          class="page-preview-card"
+          hover
+          @click="openPreview(page)"
+        >
+          <!-- 页码标签 -->
+          <v-toolbar density="compact" color="teal-darken-3" class="page-toolbar">
+            <v-toolbar-title class="text-subtitle-2">
+              第 {{ page }} 页
+            </v-toolbar-title>
+            <v-btn
+              icon="mdi-magnify-plus"
+              size="small"
+              variant="text"
+              @click.stop="openPreview(page)"
+            ></v-btn>
+          </v-toolbar>
+
+          <!-- 预览内容 -->
+          <v-card-text class="preview-content text-center">
+            <!-- 模拟预览缩略图 -->
+            <div class="preview-placeholder">
+              <v-icon size="48" color="grey-darken-2">mdi-file-pdf-box</v-icon>
+              <div class="page-number mt-2 text-grey">Page {{ page }}</div>
+            </div>
+          </v-card-text>
+
+          <!-- 悬停操作 -->
+          <v-card-actions class="justify-center">
+            <v-btn
+              size="small"
+              color="teal"
+              variant="text"
+              prepend-icon="mdi-eye"
+              @click.stop="openPreview(page)"
+            >
+              查看
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- 更多页面提示 -->
+    <div v-if="totalPages > 12" class="mt-4 text-center">
+      <v-chip color="info" variant="outlined" size="small">
+        <v-icon start icon="mdi-dots-horizontal"></v-icon>
+        还有 {{ totalPages - 12 }} 页未显示（导出时可全部处理）
+      </v-chip>
+    </div>
+  </div>
+</template>
+
+<script setup>
+const props = defineProps({
+  pdfLoaded: {
+    type: Boolean,
+    default: false
+  },
+  totalPages: {
+    type: Number,
+    default: 0
+  }
+})
+
+const emit = defineEmits(['open-preview'])
+
+// 打开预览
+const openPreview = (page) => {
+  emit('open-preview', page)
+}
+</script>
+
+<style scoped>
+.preview-section {
+  animation: slideUp 0.4s ease-out;
+}
+
+.page-preview-card {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.page-preview-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 150, 136, 0.2);
+}
+
+.page-toolbar {
+  min-height: 36px;
+}
+
+.preview-content {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-placeholder {
+  text-align: center;
+  opacity: 0.6;
+}
+
+.page-number {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 动画定义 */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 深色模式适配 */
+.v-theme--dark .page-preview-card:hover {
+  box-shadow: 0 8px 16px rgba(38, 166, 154, 0.3);
+}
+</style>

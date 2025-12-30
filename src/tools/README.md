@@ -451,6 +451,7 @@ try {
 - [ ] 性能优化
 - [ ] 添加工具配置
 - [ ] 更新文档
+- [ ] 组件模块化（复杂工具）
 
 ### 工具配置示例
 ```javascript
@@ -463,6 +464,398 @@ try {
   component: () => import('../tools/your-tool/index.vue')
 }
 ```
+
+## 🏗️ 组件模块化开发
+
+### 为什么需要组件模块化？
+
+当工具的Vue组件代码过多（通常超过200行）时，应该采用组件模块化的方式：
+
+**优势：**
+- ✅ **代码清晰**：每个组件职责单一，易于理解和维护
+- ✅ **易于测试**：独立组件便于单元测试
+- ✅ **可复用性**：子组件可以在不同工具间共享
+- ✅ **团队协作**：多人开发时减少代码冲突
+- ✅ **性能优化**：可以按需加载子组件
+
+### 标准组件目录结构
+
+```
+src/tools/
+└── your-tool/
+    ├── index.vue              # 主组件（入口）
+    ├── components/            # 组件目录
+    │   ├── FileUpload.vue     # 文件上传组件
+    │   ├── PreviewGrid.vue    # 预览网格组件
+    │   ├── PreviewModal.vue   # 预览模态框
+    │   ├── ExportPanel.vue    # 导出控制面板
+    │   ├── TipsSection.vue    # 操作提示区域
+    │   ├── ProgressModal.vue  # 进度模态框
+    │   ├── Notification.vue   # 通知提示
+    │   └── MainContainer.vue  # 主容器（组合所有组件）
+    ├── utils.js               # 工具函数（可选）
+    ├── processor.js           # 核心处理逻辑（可选）
+    └── README.md              # 工具说明文档
+```
+
+### 组件拆分原则
+
+#### 1. 按功能区域拆分
+- **文件上传**：FileUpload.vue
+- **数据展示**：PreviewGrid.vue, DataList.vue
+- **交互模态框**：PreviewModal.vue, EditModal.vue
+- **控制面板**：ExportPanel.vue, SettingsPanel.vue
+- **提示信息**：TipsSection.vue, NotificationSnackbar.vue
+
+#### 2. 按交互复杂度拆分
+- **简单组件**：按钮、标签、简单表单
+- **复杂组件**：数据表格、图表、文件上传器
+- **容器组件**：负责状态管理和组件组合
+
+#### 3. 按数据流向拆分
+- **展示组件**：只接收props，不管理状态
+- **交互组件**：通过事件与父组件通信
+- **容器组件**：管理全局状态，协调子组件
+
+### 组件通信模式
+
+#### 父组件 → 子组件（Props）
+```vue
+<!-- MainContainer.vue -->
+<template>
+  <FileUpload
+    @file-uploaded="handleFileUploaded"
+    @error="handleError"
+  />
+</template>
+```
+
+#### 子组件 → 父组件（Emits）
+```vue
+<!-- FileUpload.vue -->
+<script setup>
+const emit = defineEmits(['file-uploaded', 'error'])
+
+const handleUpload = (file) => {
+  emit('file-uploaded', file)
+}
+</script>
+```
+
+#### 兄弟组件通信（通过父组件）
+```vue
+<!-- MainContainer.vue -->
+<template>
+  <FileUpload @file-uploaded="handleFileUploaded" />
+  <PreviewGrid :file="currentFile" />
+</template>
+
+<script setup>
+const currentFile = ref(null)
+
+const handleFileUploaded = (file) => {
+  currentFile.value = file
+}
+</script>
+```
+
+### 状态管理最佳实践
+
+#### 1. 集中式状态管理
+```vue
+<!-- MainContainer.vue -->
+<script setup>
+// 所有状态集中在父组件
+const pdfFile = ref(null)
+const totalPages = ref(0)
+const pdfLoaded = ref(false)
+const exporting = ref(false)
+// ...
+</script>
+```
+
+#### 2. 状态传递
+```vue
+<!-- 传递给子组件 -->
+<PreviewGrid
+  :pdf-loaded="pdfLoaded"
+  :total-pages="totalPages"
+  @open-preview="handleOpenPreview"
+/>
+```
+
+#### 3. 事件更新状态
+```vue
+<!-- 子组件触发事件 -->
+<script setup>
+const emit = defineEmits(['pdf-processed'])
+
+const processPDF = async () => {
+  // 处理逻辑
+  emit('pdf-processed', totalPages)
+}
+</script>
+```
+
+### 组件拆分示例
+
+#### 原始大型组件
+```vue
+<!-- 不推荐：一个文件包含所有逻辑 -->
+<template>
+  <div>
+    <!-- 文件上传 -->
+    <v-file-input />
+    
+    <!-- 预览网格 -->
+    <v-row>
+      <v-col v-for="page in pages" />
+    </v-row>
+    
+    <!-- 导出面板 -->
+    <v-expansion-panels>
+      <!-- ... -->
+    </v-expansion-panels>
+    
+    <!-- 模态框 -->
+    <v-dialog>
+      <!-- ... -->
+    </v-dialog>
+  </div>
+</template>
+
+<script setup>
+// 所有状态和逻辑都在这里
+const file = ref(null)
+const pages = ref([])
+const dialog = ref(false)
+// 200+ 行代码...
+</script>
+```
+
+#### 模块化拆分后
+```vue
+<!-- 推荐：主组件组合子组件 -->
+<template>
+  <v-card>
+    <FileUpload @file-uploaded="handleFileUploaded" />
+    <PreviewGrid :pages="pages" @open-preview="openPreview" />
+    <ExportPanel @export="handleExport" />
+    <PreviewModal v-model="dialog" :page="currentPage" />
+  </v-card>
+</template>
+
+<script setup>
+import FileUpload from './components/FileUpload.vue'
+import PreviewGrid from './components/PreviewGrid.vue'
+import ExportPanel from './components/ExportPanel.vue'
+import PreviewModal from './components/PreviewModal.vue'
+
+// 简洁的状态管理
+const file = ref(null)
+const pages = ref([])
+const dialog = ref(false)
+const currentPage = ref(1)
+
+// 事件处理
+const handleFileUploaded = (f) => { file.value = f }
+const openPreview = (page) => { currentPage.value = page; dialog.value = true }
+const handleExport = (config) => { /* 导出逻辑 */ }
+</script>
+```
+
+### 组件设计规范
+
+#### 1. 单一职责原则
+```javascript
+// ✅ 好：每个组件只做一件事
+FileUpload.vue        // 只负责文件上传
+PreviewGrid.vue       // 只负责预览展示
+ExportPanel.vue       // 只负责导出设置
+
+// ❌ 坏：一个组件做太多事
+CombinedTool.vue      // 包含上传、预览、导出、设置...
+```
+
+#### 2. 明确的接口定义
+```vue
+<script setup>
+// Props 定义
+const props = defineProps({
+  pdfLoaded: {
+    type: Boolean,
+    default: false
+  },
+  totalPages: {
+    type: Number,
+    default: 0
+  }
+})
+
+// Emits 定义
+const emit = defineEmits(['open-preview', 'export-images'])
+</script>
+```
+
+#### 3. 样式隔离
+```vue
+<style scoped>
+/* 组件私有样式 */
+.upload-section {
+  background: rgba(0, 150, 136, 0.03);
+}
+
+/* 避免全局样式污染 */
+</style>
+```
+
+### 实际案例：PDF转图片工具
+
+#### 组件拆分结构
+```
+pdf-to-image/
+├── index.vue                    # 入口（仅导入MainContainer）
+├── components/
+│   ├── FileUpload.vue          # 文件上传和解析
+│   ├── PreviewGrid.vue         # 页面预览网格
+│   ├── PreviewModal.vue        # 大图预览模态框
+│   ├── ExportPanel.vue         # 导出设置面板
+│   ├── TipsSection.vue         # 操作提示
+│   ├── ExportProgressModal.vue # 导出进度
+│   ├── NotificationSnackbar.vue # 通知提示
+│   └── MainContainer.vue       # 主容器（组合所有）
+```
+
+#### 组件职责划分
+- **FileUpload**: 处理文件选择、验证、解析
+- **PreviewGrid**: 显示页面缩略图、触发预览
+- **PreviewModal**: 大图查看、页面导航
+- **ExportPanel**: 导出格式、质量、范围设置
+- **TipsSection**: 操作指引、状态提示
+- **ExportProgressModal**: 导出进度显示
+- **NotificationSnackbar**: 全局通知
+- **MainContainer**: 状态管理、事件协调
+
+### 性能优化建议
+
+#### 1. 按需加载
+```javascript
+// 动态导入大组件
+const PreviewModal = defineAsyncComponent(() => 
+  import('./components/PreviewModal.vue')
+)
+```
+
+#### 2. 虚拟滚动
+```vue
+<!-- 大量数据时使用虚拟滚动 -->
+<v-virtual-scroll
+  :items="pages"
+  height="400"
+  item-height="80"
+>
+  <template #default="{ item }">
+    <!-- 预览项 -->
+  </template>
+</v-virtual-scroll>
+```
+
+#### 3. 防抖节流
+```javascript
+// 文件上传防抖
+const debouncedUpload = debounce(handleFileUpload, 300)
+
+// 搜索节流
+const throttledSearch = throttle(searchPages, 500)
+```
+
+### 测试策略
+
+#### 1. 组件单元测试
+```javascript
+// FileUpload.test.js
+import { mount } from '@vue/test-utils'
+import FileUpload from './FileUpload.vue'
+
+test('文件验证', async () => {
+  const wrapper = mount(FileUpload)
+  await wrapper.find('input[type="file"]').trigger('change')
+  expect(wrapper.emitted('error')).toBeTruthy()
+})
+```
+
+#### 2. 集成测试
+```javascript
+// MainContainer.test.js
+import { mount } from '@vue/test-utils'
+import MainContainer from './MainContainer.vue'
+
+test('完整工作流程', async () => {
+  const wrapper = mount(MainContainer)
+  // 模拟：上传 → 解析 → 预览 → 导出
+  // 验证：状态变化、事件触发
+})
+```
+
+### 开发工作流
+
+#### 1. 设计阶段
+- 确定组件边界
+- 定义Props和Emits接口
+- 规划状态管理方案
+
+#### 2. 实现阶段
+- 从简单组件开始
+- 逐步构建复杂组件
+- 最后组合成主容器
+
+#### 3. 优化阶段
+- 检查性能瓶颈
+- 优化组件通信
+- 添加错误处理
+
+### 常见反模式
+
+#### ❌ 反模式1：过度嵌套
+```vue
+<!-- 嵌套太深，难以维护 -->
+<Parent>
+  <Child>
+    <GrandChild>
+      <GreatGrandChild>...</GreatGrandChild>
+    </GrandChild>
+  </Child>
+</Parent>
+```
+
+#### ❌ 反模式2：Props钻取
+```vue
+<!-- Props层层传递 -->
+<A :data="data">
+  <B :data="data">
+    <C :data="data">
+      <!-- 实际只有C需要data -->
+    </C>
+  </B>
+</A>
+```
+
+#### ✅ 解决方案：Provide/Inject
+```vue
+<!-- 父组件提供 -->
+<script setup>
+provide('pdfData', data)
+</script>
+
+<!-- 深层子组件注入 -->
+<script setup>
+const data = inject('pdfData')
+</script>
+```
+
+---
+
+**记住：组件模块化不是目标，而是手段。目的是让代码更易维护、测试和扩展。**
 
 ## 💡 灵感来源
 
