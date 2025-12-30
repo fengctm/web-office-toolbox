@@ -10,57 +10,67 @@
 // }
 
 export const toolsConfig = [
-  {
-    code: 'example-counter',
-    name: '示例计数器',
-    icon: 'mdi-counter',
-    description: '这是一个示例计数器工具，用于演示工具箱的基本功能',
-    enabled: true,
-    component: () => import('../tools/example-counter/index.vue')
-  }
+    {
+        code: 'example-counter',
+        name: '示例计数器',
+        icon: 'mdi-counter',
+        description: '这是一个示例计数器工具，用于演示工具箱的基本功能',
+        enabled: true,
+        component: () => import('../tools/example-counter/index.vue')
+    },
+    {
+        code: 'pdf-to-image',
+        name: 'PDF转图片',
+        icon: 'mdi-file-pdf-box',
+        description: '将PDF文件转换为高质量图片，支持JPG/PNG/WEBP格式，本地处理保护隐私',
+        enabled: true,
+        category: '文档处理',
+        tags: ['PDF', '图片', '转换', '本地处理'],
+        component: () => import('../tools/pdf-to-image/index.vue')
+    }
 ]
 
 // 工具注册器
 export const toolRegistry = {
-  // 获取所有启用的工具
-  getEnabledTools() {
-    return toolsConfig.filter(tool => tool.enabled)
-  },
-  
-  // 根据代码获取工具
-  getToolByCode(code) {
-    return toolsConfig.find(tool => tool.code === code && tool.enabled)
-  },
-  
-  // 添加新工具（动态注册）
-  registerTool(toolConfig) {
-    if (!toolConfig.code || !toolConfig.name || !toolConfig.component) {
-      console.error('工具配置缺少必要字段', toolConfig)
-      return false
+    // 获取所有启用的工具
+    getEnabledTools() {
+        return toolsConfig.filter(tool => tool.enabled)
+    },
+
+    // 根据代码获取工具
+    getToolByCode(code) {
+        return toolsConfig.find(tool => tool.code === code && tool.enabled)
+    },
+
+    // 添加新工具（动态注册）
+    registerTool(toolConfig) {
+        if (!toolConfig.code || !toolConfig.name || !toolConfig.component) {
+            console.error('工具配置缺少必要字段', toolConfig)
+            return false
+        }
+
+        // 检查是否已存在
+        const exists = toolsConfig.find(t => t.code === toolConfig.code)
+        if (exists) {
+            console.warn(`工具 ${toolConfig.code} 已存在，将被覆盖`)
+            const index = toolsConfig.findIndex(t => t.code === toolConfig.code)
+            toolsConfig[index] = {...toolConfig, enabled: toolConfig.enabled !== false}
+        } else {
+            toolsConfig.push({...toolConfig, enabled: toolConfig.enabled !== false})
+        }
+
+        return true
+    },
+
+    // 启用/禁用工具
+    toggleTool(code, enabled) {
+        const tool = toolsConfig.find(t => t.code === code)
+        if (tool) {
+            tool.enabled = enabled
+            return true
+        }
+        return false
     }
-    
-    // 检查是否已存在
-    const exists = toolsConfig.find(t => t.code === toolConfig.code)
-    if (exists) {
-      console.warn(`工具 ${toolConfig.code} 已存在，将被覆盖`)
-      const index = toolsConfig.findIndex(t => t.code === toolConfig.code)
-      toolsConfig[index] = { ...toolConfig, enabled: toolConfig.enabled !== false }
-    } else {
-      toolsConfig.push({ ...toolConfig, enabled: toolConfig.enabled !== false })
-    }
-    
-    return true
-  },
-  
-  // 启用/禁用工具
-  toggleTool(code, enabled) {
-    const tool = toolsConfig.find(t => t.code === code)
-    if (tool) {
-      tool.enabled = enabled
-      return true
-    }
-    return false
-  }
 }
 
 export default toolsConfig

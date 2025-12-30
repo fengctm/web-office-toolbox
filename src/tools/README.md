@@ -20,6 +20,53 @@ src/tools/
 ### 最小化要求
 只需要一个 `index.vue` 文件即可创建一个工具。
 
+### 📁 复杂代码分离（推荐）
+当工具的JavaScript代码过多时，建议将复杂逻辑分离到独立的JS文件中：
+
+**目录结构：**
+```
+src/tools/
+├── your-tool/
+│   ├── index.vue          # 工具主组件
+│   ├── utils.js           # 工具函数（可选）
+│   ├── processor.js       # 核心处理逻辑（可选）
+│   └── README.md          # 工具说明文档（可选）
+```
+
+**示例：**
+```javascript
+// src/tools/your-tool/utils.js
+export const validateInput = (input) => {
+  return input && input.length > 0
+}
+
+export const processData = async (data) => {
+  // 复杂的处理逻辑
+  return result
+}
+
+// src/tools/your-tool/index.vue
+<script setup>
+import { ref } from 'vue'
+import { validateInput, processData } from './utils.js'
+
+const input = ref('')
+const result = ref(null)
+
+const handleProcess = async () => {
+  if (validateInput(input.value)) {
+    result.value = await processData(input.value)
+  }
+}
+</script>
+```
+
+**优势：**
+- ✅ 代码更清晰，易于维护
+- ✅ 便于单元测试
+- ✅ 组件文件更简洁
+- ✅ 逻辑可复用
+
 ## 🚀 快速开始（3步）
 
 ### 步骤 1：创建工具目录
