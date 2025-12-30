@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Web Office Toolbox - 纯前端工具箱，提供多种本地运行的实用工具">
+  <meta name="keywords" content="工具箱,前端工具,本地工具,隐私保护,Web工具">
+  <meta name="author" content="Web Office Toolbox">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Web Office Toolbox">
+  <meta property="og:description" content="纯前端工具箱 - 所有功能本地运行，保护您的隐私">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="/">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+  <title>Web Office Toolbox</title>
+
+  <style>
+    /* 基础重置和加载动画 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      overflow: hidden;
+      background: #f5f7fa;
+    }
+
+    #app {
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* 加载动画 */
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #009688 0%, #00796b 100%);
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+    }
+
+    .loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    .loading-text {
+      color: white;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    .loading-subtext {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 骨架屏 */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* 错误提示 */
+    .error-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #f5f7fa;
+      color: #333;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .error-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #d32f2f;
+    }
+
+    .error-message {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 20px;
+      max-width: 500px;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* 深色模式适配 */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #121212;
+      }
+
+      .error-screen {
+        background: #121212;
+        color: #e0e0e0;
+      }
+
+      .error-message {
+        color: #aaa;
+      }
+    }
+
+    /* 移动端优化 */
+    @media (max-width: 600px) {
+      .loading-text {
+        font-size: 16px;
+      }
+
+      .loader {
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+    /* 无障碍支持 */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* 高对比度模式支持 */
+    @media (prefers-contrast: high) {
+      .loading-screen {
+        background: #000;
+      }
+
+      .loader {
+        border-color: #fff;
+        border-top-color: #fff;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 加载屏幕 -->
+  <div id="loading" class="loading-screen">
+    <div class="loader"></div>
+    <div class="loading-text">Web Office Toolbox</div>
+    <div class="loading-subtext">正在初始化...</div>
+  </div>
+
+  <!-- 应用根容器 -->
+  <div id="app"></div>
+
+  <!-- 脚本 -->
+  <script type="module" src="/src/main.js"></script>
+
+  <!-- 性能监控和错误处理 -->
+  <script>
+    // 性能监控
+    if ('performance' in window) {
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const perfData = performance.getEntriesByType('navigation')[0];
+          console.log('页面加载时间:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
+        }, 0);
+      });
+    }
+
+    // 错误处理
+    window.addEventListener('error', (event) => {
+      console.error('全局错误:', event.error);
+      hideLoading();
+      showError('应用加载失败', '请刷新页面重试');
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('未处理的Promise拒绝:', event.reason);
+      hideLoading();
+      showError('应用加载失败', '请刷新页面重试');
+    });
+
+    // 隐藏加载动画
+    function hideLoading() {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.classList.add('hidden');
+        setTimeout(() => loading.remove(), 500);
+      }
+    }
+
+    // 显示错误信息
+    function showError(title, message) {
+      const app = document.getElementById('app');
+      if (app && !document.querySelector('.error-screen')) {
+        app.innerHTML = `
+          <div class="error-screen">
+            <div class="error-title">${title}</div>
+            <div class="error-message">${message}</div>
+            <div class="error-actions">
+              <button onclick="location.reload()" style="padding: 10px 20px; background: #009688; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                刷新页面
+              </button>
+              <button onclick="window.location.href='/'" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                返回首页
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // 检测浏览器支持
+    function checkBrowserSupport() {
+      const requiredFeatures = [
+        { name: 'ES6', test: () => typeof Promise !== 'undefined' && typeof fetch !== 'undefined' },
+        { name: 'CSS Variables', test: () => CSS.supports && CSS.supports('--color', 'red') },
+        { name: 'Local Storage', test: () => typeof localStorage !== 'undefined' }
+      ];
+
+      const unsupported = requiredFeatures.filter(f => !f.test());
+      if (unsupported.length > 0) {
+        console.warn('浏览器部分功能不支持:', unsupported.map(f => f.name));
+        showError('浏览器不兼容', '请使用现代浏览器访问，如 Chrome、Edge、Firefox、Safari');
+        return false;
+      }
+      return true;
+    }
+
+    // 页面可见性变化处理
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        console.log('页面恢复可见');
+      } else {
+        console.log('页面隐藏');
+      }
+    });
+
+    // 初始化
+    if (checkBrowserSupport()) {
+      // 监听Vue应用加载完成
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(hideLoading, 500);
+      });
+    } else {
+      hideLoading();
+    }
+  </script>
+</body>
+</html>
