@@ -1,6 +1,0 @@
-{
-  "name": "Excel工具",
-  "description": "Excel文件处理工具",
-  "icon": "mdi-microsoft-excel",
-  "enabled": false
-}
