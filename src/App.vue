@@ -2,24 +2,24 @@
   <v-app>
     <!-- 应用栏 -->
     <v-app-bar
-      flat
-      border
-      color="teal-darken-2"
-      class="app-bar"
+        flat
+        border
+        color="teal-darken-2"
+        class="app-bar"
     >
       <v-app-bar-title class="font-weight-bold">
         <v-icon icon="mdi-toolbox" class="mr-2"></v-icon>
-        Web Office工具箱
+        Web Office Toolbox
       </v-app-bar-title>
 
       <v-spacer></v-spacer>
 
       <!-- 主题切换 -->
       <v-btn
-        icon
-        variant="text"
-        @click="toggleTheme"
-        class="mr-2"
+          icon
+          variant="text"
+          @click="toggleTheme"
+          class="mr-2"
       >
         <v-icon>
           {{ isDark ? 'mdi-weather-night' : 'mdi-weather-sunny' }}
@@ -28,10 +28,10 @@
 
       <!-- GitHub 链接 -->
       <v-btn
-        icon
-        variant="text"
-        href="https://github.com"
-        target="_blank"
+          icon
+          variant="text"
+          href="https://github.com"
+          target="_blank"
       >
         <v-icon>mdi-github</v-icon>
       </v-btn>
@@ -42,7 +42,7 @@
       <v-container fluid class="main-container">
         <router-view v-slot="{ Component, route }">
           <transition name="page-fade" mode="out-in">
-            <component :is="Component" :key="route.path" />
+            <component :is="Component" :key="route.path"/>
           </transition>
         </router-view>
       </v-container>
@@ -65,11 +65,11 @@
 
     <!-- 全局通知 -->
     <v-snackbar
-      v-model="notification.show"
-      :color="notification.color"
-      :timeout="3000"
-      location="top right"
-      class="mt-12"
+        v-model="notification.show"
+        :color="notification.color"
+        :timeout="3000"
+        location="top right"
+        class="mt-12"
     >
       {{ notification.message }}
     </v-snackbar>
@@ -77,8 +77,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useTheme } from 'vuetify'
+import {onMounted, ref} from 'vue'
+import {useTheme} from 'vuetify'
 
 const theme = useTheme()
 const isDark = ref(false)
@@ -124,9 +124,9 @@ const initTheme = () => {
 // 检查浏览器兼容性
 const checkCompatibility = () => {
   const features = [
-    { name: 'localStorage', supported: typeof localStorage !== 'undefined' },
-    { name: 'CSS Grid', supported: CSS.supports('display', 'grid') },
-    { name: 'CSS Variables', supported: CSS.supports('--color: red') }
+    {name: 'localStorage', supported: typeof localStorage !== 'undefined'},
+    {name: 'CSS Grid', supported: CSS.supports('display', 'grid')},
+    {name: 'CSS Variables', supported: CSS.supports('--color: red')}
   ]
 
   const unsupported = features.filter(f => !f.supported)

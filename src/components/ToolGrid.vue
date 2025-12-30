@@ -4,7 +4,7 @@
     <v-row class="mb-6">
       <v-col cols="12" class="text-center">
         <h1 class="text-h3 font-weight-bold text-teal-darken-2 mb-2">
-          Web Office工具箱
+          Web Office Toolbox
         </h1>
         <p class="text-grey-darken-1 text-subtitle-1">
           纯前端工具箱 - 多数功能本地运行，保护您的隐私

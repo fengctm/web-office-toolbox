@@ -58,11 +58,33 @@ defineEmits(['click'])
   border-radius: 12px;
   overflow: hidden;
   position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px; /* 确保最小高度一致 */
 }
 
 .tool-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 150, 136, 0.25) !important;
+}
+
+/* 确保卡片内容区域也能撑满高度 */
+.tool-card .v-card-item {
+  flex-shrink: 0;
+}
+
+.tool-card .v-card-text {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px !important;
+}
+
+.tool-card .v-card-actions {
+  flex-shrink: 0;
+  padding: 16px !important;
 }
 
 .tool-card:hover .tool-icon {
