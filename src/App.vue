@@ -9,7 +9,7 @@
     >
       <v-app-bar-title class="font-weight-bold">
         <v-icon icon="mdi-toolbox" class="mr-2"></v-icon>
-        Web Office Toolbox
+        Web Office工具箱
       </v-app-bar-title>
 
       <v-spacer></v-spacer>

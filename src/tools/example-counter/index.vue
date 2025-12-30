@@ -230,6 +230,7 @@ loadState()
 .counter-tool {
   border-radius: 12px;
   overflow: hidden;
+  background: rgba(var(--v-theme-surface), 1);
 }
 
 .counter-display {
@@ -238,6 +239,7 @@ loadState()
   border-radius: 8px;
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .counter-display::before {
@@ -263,12 +265,15 @@ loadState()
   line-height: 1;
   margin-bottom: 8px;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
 }
 
 .counter-label {
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  color: #666;
+  transition: color 0.3s ease;
 }
 
 .controls {
@@ -280,14 +285,28 @@ loadState()
   overflow-y: auto;
 }
 
-/* 深色模式适配 */
-:deep(.v-theme--dark) .counter-display {
+/* 深色模式适配 - 使用 CSS 变量和更具体的选择器 */
+.v-theme--dark .counter-display {
   background: linear-gradient(135deg, #004d40 0%, #00695c 100%);
 }
 
-:deep(.v-theme--dark) .counter-value {
+.v-theme--dark .counter-value {
   color: #26a69a;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.v-theme--dark .counter-label {
+  color: #aaa;
+}
+
+.v-theme--dark .counter-tool {
+  background: rgba(var(--v-theme-surface), 0.95);
+}
+
+/* 确保所有文本在深色模式下都有正确的颜色 */
+.v-theme--dark .counter-tool .text-subtitle-2,
+.v-theme--dark .counter-tool .text-grey {
+  color: #aaa !important;
 }
 
 /* 响应式调整 */

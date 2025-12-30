@@ -211,6 +211,7 @@ onMounted(() => {
 .tool-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+  transition: background 0.3s ease;
 }
 
 .tool-content {
@@ -223,15 +224,28 @@ onMounted(() => {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
 }
 
-/* 深色模式适配 */
-:deep(.v-theme--dark) .tool-page {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+/* 深色模式适配 - 使用直接选择器 */
+.v-theme--dark .tool-page {
+  background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
 }
 
-:deep(.v-theme--dark) .description-card {
+.v-theme--dark .description-card {
   background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 确保工具详情页的所有文本在深色模式下都有正确的颜色 */
+.v-theme--dark .tool-page .text-body-1,
+.v-theme--dark .tool-page .text-h6,
+.v-theme--dark .tool-page .text-grey {
+  color: #e0e0e0;
+}
+
+.v-theme--dark .tool-page .text-grey {
+  color: #aaa !important;
 }
 
 /* 加载动画 */
