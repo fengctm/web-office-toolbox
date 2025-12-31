@@ -104,6 +104,10 @@ const props = defineProps({
   pdfFile: {
     type: Object,
     default: null
+  },
+  pdfPassword: {
+    type: String,
+    default: ''
   }
 })
 
@@ -129,7 +133,25 @@ const generatePreviews = async () => {
 
     // 读取文件
     const arrayBuffer = await props.pdfFile.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+    // 尝试加载PDF，支持加密文件
+    let pdf
+    try {
+      pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer,
+        password: props.pdfPassword || ''
+      }).promise
+    } catch (e) {
+      if (e.message.includes('password') || e.message.includes('encrypted')) {
+        console.warn('PDF已加密，尝试忽略加密访问...')
+        pdf = await pdfjsLib.getDocument({
+          data: arrayBuffer,
+          disableEncryption: true
+        }).promise
+      } else {
+        throw e
+      }
+    }
 
     // 生成前12页的预览
     const pagesToPreview = Math.min(props.totalPages, 12)

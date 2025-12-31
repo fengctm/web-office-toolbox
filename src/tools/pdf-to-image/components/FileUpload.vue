@@ -40,6 +40,10 @@
         <v-icon start icon="mdi-book-open-page-variant"></v-icon>
         共 {{ totalPages }} 页
       </v-chip>
+      <v-chip color="orange" size="small" v-if="isEncrypted">
+        <v-icon start icon="mdi-lock"></v-icon>
+        已加密
+      </v-chip>
     </div>
 
     <!-- 处理状态提示 -->
@@ -57,6 +61,13 @@
         </div>
       </v-alert>
     </div>
+
+    <!-- 密码输入对话框 -->
+    <PasswordDialog
+      v-model="showPasswordDialog"
+      @confirm="handlePasswordConfirm"
+      @cancel="handlePasswordCancel"
+    />
   </div>
 </template>
 
@@ -65,12 +76,14 @@ import { ref } from 'vue'
 import { PDFDocument } from 'pdf-lib'
 import * as pdfjsLib from 'pdfjs-dist'
 import { handlePDFError, validateFile } from '../utils/error-handler'
+import PasswordDialog from './PasswordDialog.vue'
 
 const emit = defineEmits([
   'file-uploaded',
   'pdf-processed',
   'error',
-  'update:processing'
+  'update:processing',
+  'password-required'
 ])
 
 // 响应式状态
@@ -78,6 +91,9 @@ const pdfFile = ref(null)
 const uploading = ref(false)
 const processing = ref(false)
 const totalPages = ref(0)
+const isEncrypted = ref(false)
+const showPasswordDialog = ref(false)
+const currentPassword = ref('')
 
 // 配置pdfjs worker（使用匹配的版本）
 if (typeof window !== 'undefined') {
@@ -98,6 +114,7 @@ const formatFileSize = (bytes) => {
 const handleFileUpload = (file) => {
   if (!file) {
     emit('file-uploaded', null)
+    isEncrypted.value = false
     return
   }
 
@@ -109,7 +126,129 @@ const handleFileUpload = (file) => {
     return
   }
 
+  // 重置加密状态
+  isEncrypted.value = false
+  currentPassword.value = ''
+
   emit('file-uploaded', file)
+}
+
+// 检查PDF是否加密
+const checkIfEncrypted = async (arrayBuffer) => {
+  try {
+    // 尝试用空密码加载
+    await pdfjsLib.getDocument({ data: arrayBuffer, password: '' }).promise
+    return false
+  } catch (e) {
+    if (e.message.includes('password') || e.message.includes('encrypted')) {
+      return true
+    }
+    throw e
+  }
+}
+
+// 处理密码确认
+const handlePasswordConfirm = (password) => {
+  currentPassword.value = password
+  processPDFWithPassword(password)
+}
+
+// 处理密码取消
+const handlePasswordCancel = () => {
+  uploading.value = false
+  processing.value = false
+  emit('update:processing', false)
+  emit('error', '需要密码才能访问此加密PDF文件')
+}
+
+// 使用密码解析PDF
+const processPDFWithPassword = async (password) => {
+  uploading.value = true
+  processing.value = true
+  emit('update:processing', true)
+
+  try {
+    const arrayBuffer = await pdfFile.value.arrayBuffer()
+
+    // 优先使用pdfjs加载（带密码），它对加密PDF支持更好
+    let pdf
+    try {
+      pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer,
+        password: password
+      }).promise
+    } catch (pdfjsError) {
+      // 如果pdfjs失败，尝试pdf-lib
+      console.warn('pdfjs加载失败，尝试pdf-lib:', pdfjsError.message)
+
+      try {
+        const pdfDoc = await PDFDocument.load(arrayBuffer, {
+          ignoreEncryption: true,
+          password: password
+        })
+        const pageCount = pdfDoc.getPageCount()
+
+        if (pageCount === 0) {
+          throw new Error('PDF文件不包含任何页面')
+        }
+
+        // 重新用pdfjs加载验证
+        pdf = await pdfjsLib.getDocument({
+          data: arrayBuffer,
+          password: password
+        }).promise
+
+      } catch (pdfLibError) {
+        // 如果都失败，检查是否是密码错误
+        if (pdfjsError.message.includes('password') ||
+            pdfLibError.message.includes('password') ||
+            pdfjsError.message.includes('encrypted') ||
+            pdfLibError.message.includes('encrypted')) {
+          throw new Error('密码错误，请重新输入')
+        }
+        throw pdfjsError // 抛出原始错误
+      }
+    }
+
+    // 获取总页数
+    const pageCount = pdf.numPages
+
+    // 验证可访问性 - 获取第一页
+    const page = await pdf.getPage(1)
+
+    // 额外的处理时间，让用户看到进度
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    totalPages.value = pageCount
+    uploading.value = false
+    processing.value = false
+    emit('update:processing', false)
+    emit('pdf-processed', pageCount)
+
+    // 如果是加密PDF，将密码传递给父组件
+    if (isEncrypted.value && password) {
+      // 通过专门的事件传递密码
+      emit('password-required', password)
+    }
+
+  } catch (error) {
+    uploading.value = false
+    processing.value = false
+    emit('update:processing', false)
+
+    // 如果密码错误，重新显示密码输入框
+    if (error.message.includes('密码错误') ||
+        error.message.includes('password') ||
+        error.message.includes('incorrect') ||
+        error.message.includes('encrypted')) {
+      emit('error', '密码错误，请重新输入')
+      showPasswordDialog.value = true
+    } else {
+      const handledError = handlePDFError(error)
+      emit('error', handledError.message)
+      console.error('PDF解析错误:', handledError)
+    }
+  }
 }
 
 // 解析PDF - 真实实现（集成错误处理）
@@ -127,20 +266,34 @@ const processPDF = async () => {
     // 读取文件
     const arrayBuffer = await pdfFile.value.arrayBuffer()
 
-    // 使用pdf-lib获取总页数
-    const pdfDoc = await PDFDocument.load(arrayBuffer)
+    // 首先检查是否加密
+    const encrypted = await checkIfEncrypted(arrayBuffer)
+
+    if (encrypted) {
+      isEncrypted.value = true
+      uploading.value = false
+      processing.value = false
+      emit('update:processing', false)
+      // 显示密码输入对话框
+      showPasswordDialog.value = true
+      return
+    }
+
+    // 如果未加密，正常处理
+    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true })
     const pageCount = pdfDoc.getPageCount()
 
-    // 验证PDF有效性
     if (pageCount === 0) {
       throw new Error('PDF文件不包含任何页面')
     }
 
-    // 使用pdfjs验证可渲染性（预加载第一页）
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer,
+      password: ''
+    }).promise
+
     const page = await pdf.getPage(1)
 
-    // 额外的处理时间，让用户看到进度
     await new Promise(resolve => setTimeout(resolve, 800))
 
     totalPages.value = pageCount
@@ -154,7 +307,6 @@ const processPDF = async () => {
     processing.value = false
     emit('update:processing', false)
 
-    // 使用错误处理模块
     const handledError = handlePDFError(error)
     emit('error', handledError.message)
     console.error('PDF解析错误:', handledError)
@@ -170,8 +322,14 @@ const reset = () => {
 }
 
 // 暴露给父组件的方法
+const setPasswordForParent = (password) => {
+  // 通过事件将密码传递给父组件
+  emit('password-required', password)
+}
+
 defineExpose({
-  reset
+  reset,
+  setPasswordForParent
 })
 </script>
 

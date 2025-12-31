@@ -10,12 +10,12 @@ export default defineConfig({
                 propsDestructure: true
             }
         }),
-        vuetify({ autoImport: true })
+        vuetify({autoImport: true})
     ],
     server: {
         port: 5173,
         open: false,
-        host: 'localhost'
+        host: '0.0.0.0'
     },
     build: {
         outDir: 'dist',

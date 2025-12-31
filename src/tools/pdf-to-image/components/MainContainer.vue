@@ -19,6 +19,7 @@
           @pdf-processed="handlePdfProcessed"
           @error="handleError"
           @update:processing="handleProcessingUpdate"
+          @password-required="handlePasswordRequired"
       />
 
       <!-- 预览网格区域 -->
@@ -26,6 +27,7 @@
           :pdf-loaded="pdfLoaded"
           :total-pages="totalPages"
           :pdf-file="pdfFile"
+          :pdf-password="pdfPassword"
           @open-preview="handleOpenPreview"
       />
 
@@ -52,6 +54,8 @@
         v-model="previewDialog"
         :current-page="currentPage"
         :total-pages="totalPages"
+        :pdf-file="pdfFile"
+        :pdf-password="pdfPassword"
         @prev-page="prevPage"
         @next-page="nextPage"
     />
@@ -77,7 +81,7 @@
 </template>
 
 <script setup>
-import {reactive, ref, onMounted} from 'vue'
+import {onMounted, reactive, ref} from 'vue'
 
 // 导入子组件
 import FileUpload from './FileUpload.vue'
@@ -91,13 +95,12 @@ import NotificationSnackbar from './NotificationSnackbar.vue'
 // 导入依赖
 import * as pdfjsLib from 'pdfjs-dist'
 import JSZip from 'jszip'
-import { saveAs } from 'file-saver'
+import {saveAs} from 'file-saver'
 import {
-  validateBrowserSupport,
-  handlePDFError,
-  handleExportError,
   formatUserFriendlyError,
-  PerformanceMonitor
+  handleExportError,
+  PerformanceMonitor,
+  validateBrowserSupport
 } from '../utils/error-handler'
 
 // 状态管理
@@ -109,6 +112,7 @@ const exporting = ref(false)
 const previewDialog = ref(false)
 const exportProgressDialog = ref(false)
 const currentPage = ref(1)
+const pdfPassword = ref('')
 
 // 导出相关状态
 const exportConfig = reactive({
@@ -134,7 +138,7 @@ const fileUploadRef = ref(null)
 // 配置pdfjs worker（使用匹配的版本）
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
 }
 
 // 性能监控器
@@ -220,6 +224,19 @@ const handleError = (message) => {
   pdfFile.value = null
   pdfLoaded.value = false
   totalPages.value = 0
+  pdfPassword.value = ''
+}
+
+// 处理密码需求（从FileUpload组件获取密码）
+const handlePasswordRequired = (password) => {
+  if (password) {
+    // 存储密码供后续使用
+    pdfPassword.value = password
+    showSnackbar('密码已设置，可以正常处理加密PDF', 'success')
+  } else {
+    // 需要密码但还没有
+    showSnackbar('此PDF文件需要密码，请输入密码', 'info')
+  }
 }
 
 // 处理打开预览
@@ -272,8 +289,8 @@ const handleExportImages = async (config) => {
 
     // 确定导出范围
     const pagesToExport = config.range === 'current'
-      ? [currentPage.value]
-      : Array.from({length: totalPages.value}, (_, i) => i + 1)
+        ? [currentPage.value]
+        : Array.from({length: totalPages.value}, (_, i) => i + 1)
 
     exportTotalPages.value = pagesToExport.length
     exportCurrentPage.value = 0
@@ -283,9 +300,28 @@ const handleExportImages = async (config) => {
     const format = config.format
     const quality = config.quality / 3 // 转换为0-1范围
 
-    // 对于小文件，使用主线程处理（兼容性更好）
-    // 对于大文件，可以考虑使用Web Worker（需要额外配置）
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    // 加载PDF，支持加密文件（使用存储的密码）
+    let pdf
+    try {
+      pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer,
+        password: pdfPassword.value || ''
+      }).promise
+    } catch (e) {
+      if (e.message.includes('password') || e.message.includes('encrypted')) {
+        // 如果有密码但失败，说明密码可能错误
+        if (pdfPassword.value) {
+          throw new Error('密码错误，无法导出')
+        }
+        console.warn('PDF已加密，尝试忽略加密访问...')
+        pdf = await pdfjsLib.getDocument({
+          data: arrayBuffer,
+          disableEncryption: true
+        }).promise
+      } else {
+        throw e
+      }
+    }
 
     for (let i = 0; i < pagesToExport.length; i++) {
       if (!exporting.value) {
@@ -308,7 +344,7 @@ const handleExportImages = async (config) => {
 
       // 渲染页面
       const page = await pdf.getPage(pageNum)
-      const viewport = page.getViewport({ scale: 2.0 })
+      const viewport = page.getViewport({scale: 2.0})
 
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
@@ -345,7 +381,7 @@ const handleExportImages = async (config) => {
     const pageCount = pagesToExport.length
     const zipName = `${pdfName}【转${formatName}${pageCount}张】.zip`
 
-    const content = await zip.generateAsync({type:"blob"})
+    const content = await zip.generateAsync({type: "blob"})
     saveAs(content, zipName)
 
     exportProgressDialog.value = false
