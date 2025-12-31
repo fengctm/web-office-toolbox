@@ -1,25 +1,25 @@
 <template>
   <div class="upload-section mb-6">
     <v-file-input
-      v-model="pdfFile"
-      label="选择PDF文件"
-      accept=".pdf,application/pdf"
-      prepend-icon="mdi-file-pdf-box"
-      :loading="uploading"
-      :disabled="uploading"
-      @update:modelValue="handleFileUpload"
-      variant="outlined"
-      density="comfortable"
-      hint="仅支持PDF格式文件，建议文件大小不超过50MB"
-      persistent-hint
+        v-model="pdfFile"
+        label="选择PDF文件"
+        accept=".pdf,application/pdf"
+        prepend-icon="mdi-file-pdf-box"
+        :loading="uploading"
+        :disabled="uploading"
+        @update:modelValue="handleFileUpload"
+        variant="outlined"
+        density="comfortable"
+        hint="仅支持PDF格式文件，建议文件大小不超过50MB"
+        persistent-hint
     >
       <template v-slot:append>
         <v-btn
-          color="teal"
-          variant="tonal"
-          :disabled="!pdfFile || uploading"
-          :loading="uploading"
-          @click="processPDF"
+            color="teal"
+            variant="tonal"
+            :disabled="!pdfFile || uploading"
+            :loading="uploading"
+            @click="processPDF"
         >
           {{ uploading ? '解析中...' : '解析PDF' }}
         </v-btn>
@@ -51,11 +51,11 @@
       <v-alert type="info" variant="tonal" icon="mdi-clock-outline">
         <div class="d-flex align-center">
           <v-progress-circular
-            indeterminate
-            size="20"
-            width="2"
-            color="teal"
-            class="mr-3"
+              indeterminate
+              size="20"
+              width="2"
+              color="teal"
+              class="mr-3"
           ></v-progress-circular>
           <span>正在解析PDF文件，准备预览...</span>
         </div>
@@ -64,18 +64,18 @@
 
     <!-- 密码输入对话框 -->
     <PasswordDialog
-      v-model="showPasswordDialog"
-      @confirm="handlePasswordConfirm"
-      @cancel="handlePasswordCancel"
+        v-model="showPasswordDialog"
+        @confirm="handlePasswordConfirm"
+        @cancel="handlePasswordCancel"
     />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { PDFDocument } from 'pdf-lib'
+import {ref} from 'vue'
+import {PDFDocument} from 'pdf-lib'
 import * as pdfjsLib from 'pdfjs-dist'
-import { handlePDFError, validateFile } from '../utils/error-handler'
+import {handlePDFError, validateFile} from '../utils/error-handler'
 import PasswordDialog from './PasswordDialog.vue'
 
 const emit = defineEmits([
@@ -98,7 +98,7 @@ const currentPassword = ref('')
 // 配置pdfjs worker（使用匹配的版本）
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
 }
 
 // 工具函数：格式化文件大小
@@ -134,10 +134,12 @@ const handleFileUpload = (file) => {
 }
 
 // 检查PDF是否加密
-const checkIfEncrypted = async (arrayBuffer) => {
+const checkIfEncrypted = async (file) => {
   try {
+    // 重新读取文件，避免ArrayBuffer被分离
+    const arrayBuffer = await file.arrayBuffer()
     // 尝试用空密码加载
-    await pdfjsLib.getDocument({ data: arrayBuffer, password: '' }).promise
+    await pdfjsLib.getDocument({data: arrayBuffer, password: ''}).promise
     return false
   } catch (e) {
     if (e.message.includes('password') || e.message.includes('encrypted')) {
@@ -267,7 +269,7 @@ const processPDF = async () => {
     const arrayBuffer = await pdfFile.value.arrayBuffer()
 
     // 首先检查是否加密
-    const encrypted = await checkIfEncrypted(arrayBuffer)
+    const encrypted = await checkIfEncrypted(pdfFile.value)
 
     if (encrypted) {
       isEncrypted.value = true
@@ -279,19 +281,19 @@ const processPDF = async () => {
       return
     }
 
-    // 如果未加密，正常处理
-    const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true })
-    const pageCount = pdfDoc.getPageCount()
-
-    if (pageCount === 0) {
-      throw new Error('PDF文件不包含任何页面')
-    }
-
+    // 如果未加密，使用简单方式处理
     const pdf = await pdfjsLib.getDocument({
       data: arrayBuffer,
       password: ''
     }).promise
 
+    const pageCount = pdf.numPages
+
+    if (pageCount === 0) {
+      throw new Error('PDF文件不包含任何页面')
+    }
+
+    // 验证可访问性
     const page = await pdf.getPage(1)
 
     await new Promise(resolve => setTimeout(resolve, 800))
@@ -368,6 +370,7 @@ defineExpose({
     transform: translateY(0);
   }
 }
+
 
 /* 响应式调整 */
 @media (max-width: 600px) {

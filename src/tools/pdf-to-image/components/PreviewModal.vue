@@ -16,9 +16,9 @@
         </v-btn>
       </v-toolbar>
 
-      <v-card-text class="text-center pa-6">
-        <!-- 大图预览区域 -->
-        <div class="preview-large">
+      <v-card-text class="pa-0">
+        <!-- 大图预览区域 - 支持滚动 -->
+        <div class="preview-container">
           <!-- 加载中状态 -->
           <div v-if="loading" class="loading-state">
             <v-progress-circular
@@ -31,11 +31,11 @@
           </div>
 
           <!-- 显示预览图片 -->
-          <div v-else-if="previewImage" class="image-container">
+          <div v-else-if="previewImage" class="image-scroll-container">
             <img
               :src="previewImage"
               :alt="`第${currentPage}页预览`"
-              class="preview-image"
+              class="preview-image-full"
             />
           </div>
 
@@ -47,8 +47,8 @@
           </div>
         </div>
 
-        <!-- 导航控制 -->
-        <div class="navigation-controls mt-6">
+        <!-- 导航控制 - 固定在底部 -->
+        <div class="navigation-controls">
           <v-btn
             color="teal"
             variant="outlined"
@@ -237,33 +237,121 @@ const nextPage = () => {
 </script>
 
 <style scoped>
-.preview-large {
-  text-align: center;
-  padding: 40px 20px;
+/* 预览容器 - 固定高度，支持滚动 */
+.preview-container {
+  height: 60vh; /* 占视口高度的60% */
+  min-height: 400px;
+  max-height: 600px;
+  overflow: hidden;
   background: rgba(0, 150, 136, 0.03);
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
   border: 2px dashed rgba(0, 150, 136, 0.2);
+  border-bottom: none;
+}
+
+/* 图片滚动容器 */
+.image-scroll-container {
+  height: 100%;
+  overflow: auto; /* 支持滚动 */
+  display: flex;
+  align-items: flex-start; /* 顶部对齐 */
+  justify-content: center;
+  padding: 20px;
+}
+
+/* 完整显示的图片 */
+.preview-image-full {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 加载中状态 */
+.loading-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* 占位符状态 */
+.placeholder-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  opacity: 0.6;
 }
 
 .preview-icon {
   opacity: 0.4;
 }
 
+/* 导航控制 - 固定在底部 */
 .navigation-controls {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 0 0 8px 8px;
+  border: 2px dashed rgba(0, 150, 136, 0.2);
+  border-top: none;
 }
 
 /* 深色模式适配 */
-.v-theme--dark .preview-large {
+.v-theme--dark .preview-container {
   background: rgba(38, 166, 154, 0.05);
   border-color: rgba(38, 166, 154, 0.3);
 }
 
+.v-theme--dark .navigation-controls {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.v-theme--dark .preview-image-full {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* 滚动条样式 */
+.image-scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.image-scroll-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.image-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 150, 136, 0.5);
+  border-radius: 4px;
+}
+
+.image-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 150, 136, 0.7);
+}
+
 /* 响应式调整 */
-@media (max-width: 600px) {
+@media (max-width: 900px) {
+  .preview-container {
+    height: 50vh;
+    min-height: 300px;
+    max-height: 500px;
+  }
+
+  .image-scroll-container {
+    padding: 10px;
+  }
+
   .navigation-controls {
     flex-direction: column;
     gap: 8px;
@@ -271,6 +359,18 @@ const nextPage = () => {
 
   .navigation-controls .v-btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .preview-container {
+    height: 40vh;
+    min-height: 250px;
+    max-height: 400px;
+  }
+
+  .navigation-controls {
+    padding: 12px;
   }
 }
 </style>
