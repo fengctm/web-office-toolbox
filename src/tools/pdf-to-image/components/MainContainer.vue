@@ -175,7 +175,12 @@ onMounted(() => {
 
 // 处理文件上传
 const handleFileUploaded = (file) => {
+  // 重置所有相关状态，避免旧状态影响新文件
   pdfFile.value = file
+  pdfLoaded.value = false
+  totalPages.value = 0
+  pdfPassword.value = ''
+
   if (file) {
     showSnackbar('文件选择成功，请点击"解析PDF"按钮', 'success')
   }

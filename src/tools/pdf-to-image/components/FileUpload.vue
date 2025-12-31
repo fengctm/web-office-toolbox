@@ -114,7 +114,10 @@ const formatFileSize = (bytes) => {
 const handleFileUpload = (file) => {
   if (!file) {
     emit('file-uploaded', null)
+    // 重置所有状态
     isEncrypted.value = false
+    currentPassword.value = ''
+    totalPages.value = 0
     return
   }
 
@@ -126,9 +129,12 @@ const handleFileUpload = (file) => {
     return
   }
 
-  // 重置加密状态
+  // 重置所有状态，避免旧状态影响新文件
   isEncrypted.value = false
   currentPassword.value = ''
+  totalPages.value = 0
+  uploading.value = false
+  processing.value = false
 
   emit('file-uploaded', file)
 }

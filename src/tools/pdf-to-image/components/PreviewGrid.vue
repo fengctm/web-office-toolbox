@@ -116,10 +116,20 @@ const emit = defineEmits(['open-preview'])
 // 响应式状态
 const previewImages = ref({})
 const loading = ref(false)
+const abortController = ref(null) // 用于取消之前的预览生成任务
 
 // 生成预览图片
 const generatePreviews = async () => {
   if (!props.pdfFile || !props.pdfLoaded) return
+
+  // 取消之前的任务
+  if (abortController.value) {
+    abortController.value.abort()
+  }
+
+  // 创建新的AbortController用于取消
+  const controller = new AbortController()
+  abortController.value = controller
 
   loading.value = true
   previewImages.value = {}
@@ -134,6 +144,11 @@ const generatePreviews = async () => {
     // 读取文件
     const arrayBuffer = await props.pdfFile.arrayBuffer()
 
+    // 检查是否已取消
+    if (controller.signal.aborted) {
+      throw new Error('任务已取消')
+    }
+
     // 尝试加载PDF，支持加密文件
     let pdf
     try {
@@ -142,6 +157,9 @@ const generatePreviews = async () => {
         password: props.pdfPassword || ''
       }).promise
     } catch (e) {
+      if (controller.signal.aborted) {
+        throw new Error('任务已取消')
+      }
       if (e.message.includes('password') || e.message.includes('encrypted')) {
         console.warn('PDF已加密，尝试忽略加密访问...')
         pdf = await pdfjsLib.getDocument({
@@ -153,10 +171,20 @@ const generatePreviews = async () => {
       }
     }
 
+    // 检查是否已取消
+    if (controller.signal.aborted) {
+      throw new Error('任务已取消')
+    }
+
     // 生成前12页的预览
     const pagesToPreview = Math.min(props.totalPages, 12)
 
     for (let i = 1; i <= pagesToPreview; i++) {
+      // 检查是否已取消
+      if (controller.signal.aborted) {
+        throw new Error('任务已取消')
+      }
+
       try {
         const page = await pdf.getPage(i)
         const viewport = page.getViewport({ scale: 0.3 }) // 小缩略图
@@ -171,6 +199,12 @@ const generatePreviews = async () => {
           viewport: viewport
         }).promise
 
+        // 检查是否已取消
+        if (controller.signal.aborted) {
+          canvas.remove()
+          throw new Error('任务已取消')
+        }
+
         // 转换为图片数据URL
         const imageData = canvas.toDataURL('image/png')
         previewImages.value[i] = imageData
@@ -178,26 +212,37 @@ const generatePreviews = async () => {
         // 清理canvas
         canvas.remove()
       } catch (error) {
+        // 如果是取消错误，直接抛出
+        if (error.message === '任务已取消') {
+          throw error
+        }
         console.error(`生成第${i}页预览失败:`, error)
         // 继续处理其他页面
       }
     }
   } catch (error) {
-    console.error('预览生成失败:', error)
+    // 如果是取消错误，不显示错误提示
+    if (error.message !== '任务已取消') {
+      console.error('预览生成失败:', error)
+    }
   } finally {
-    loading.value = false
+    // 只有当这是当前任务时才清除loading状态
+    if (abortController.value === controller) {
+      loading.value = false
+      abortController.value = null
+    }
   }
 }
 
 // 监听props变化，自动生成预览
-watch(() => [props.pdfLoaded, props.pdfFile], ([loaded, file]) => {
-  if (loaded && file) {
+watch(() => [props.pdfLoaded, props.pdfFile, props.totalPages], ([loaded, file, pages]) => {
+  if (loaded && file && pages > 0) {
     // 延迟执行，避免阻塞UI
     setTimeout(() => {
       generatePreviews()
     }, 100)
   }
-})
+}, { immediate: false })
 
 // 组件挂载时检查
 onMounted(() => {
