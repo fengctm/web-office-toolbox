@@ -1,10 +1,16 @@
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vuetify from 'vite-plugin-vuetify' // 1. 引入插件
+import vuetify from 'vite-plugin-vuetify'
 
 export default defineConfig({
     plugins: [
-        vue(),
+        vue({
+            script: {
+                defineModel: true,
+                propsDestructure: true
+            }
+        }),
+        vuetify({ autoImport: true })
     ],
     server: {
         port: 5173,
@@ -27,5 +33,8 @@ export default defineConfig({
         alias: {
             '@': '/src'
         }
+    },
+    define: {
+        'process.env': {}
     }
 })

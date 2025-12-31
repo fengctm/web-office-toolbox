@@ -14,66 +14,66 @@
     <v-card-text>
       <!-- 文件上传区域 -->
       <FileUpload
-        ref="fileUploadRef"
-        @file-uploaded="handleFileUploaded"
-        @pdf-processed="handlePdfProcessed"
-        @error="handleError"
-        @update:processing="handleProcessingUpdate"
+          ref="fileUploadRef"
+          @file-uploaded="handleFileUploaded"
+          @pdf-processed="handlePdfProcessed"
+          @error="handleError"
+          @update:processing="handleProcessingUpdate"
       />
 
       <!-- 预览网格区域 -->
       <PreviewGrid
-        :pdf-loaded="pdfLoaded"
-        :total-pages="totalPages"
-        @open-preview="handleOpenPreview"
+          :pdf-loaded="pdfLoaded"
+          :total-pages="totalPages"
+          @open-preview="handleOpenPreview"
       />
 
       <!-- 导出控制面板 -->
       <ExportPanel
-        :pdf-loaded="pdfLoaded"
-        :total-pages="totalPages"
-        :exporting="exporting"
-        @export-images="handleExportImages"
+          :pdf-loaded="pdfLoaded"
+          :total-pages="totalPages"
+          :exporting="exporting"
+          @export-images="handleExportImages"
       />
 
       <!-- 操作提示区域 -->
       <TipsSection
-        :pdf-file="pdfFile"
-        :pdf-loaded="pdfLoaded"
-        :total-pages="totalPages"
-        :exporting="exporting"
-        :processing="processing"
+          :pdf-file="pdfFile"
+          :pdf-loaded="pdfLoaded"
+          :total-pages="totalPages"
+          :exporting="exporting"
+          :processing="processing"
       />
     </v-card-text>
 
     <!-- 放大查看模态框 -->
     <PreviewModal
-      v-model="previewDialog"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      @prev-page="prevPage"
-      @next-page="nextPage"
+        v-model="previewDialog"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        @prev-page="prevPage"
+        @next-page="nextPage"
     />
 
     <!-- 导出进度模态框 -->
     <ExportProgressModal
-      v-model="exportProgressDialog"
-      :format="exportConfig.format"
-      :quality="exportConfig.quality"
-      @cancel="cancelExport"
+        v-model="exportProgressDialog"
+        :format="exportConfig.format"
+        :quality="exportConfig.quality"
+        @cancel="cancelExport"
     />
 
     <!-- 结果提示 -->
     <NotificationSnackbar
-      v-model="snackbar.show"
-      :message="snackbar.message"
-      :color="snackbar.color"
+        v-model="snackbar.show"
+        :message="snackbar.message"
+        :color="snackbar.color"
     />
   </v-card>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import {reactive, ref} from 'vue'
 
 // 导入子组件
 import FileUpload from './FileUpload.vue'
@@ -192,8 +192,8 @@ const handleExportImages = async (config) => {
     exporting.value = false
 
     showSnackbar(
-      `导出成功！${exportPages} 页已转换为 ${config.format.toUpperCase()} 格式`,
-      'success'
+        `导出成功！${exportPages} 页已转换为 ${config.format.toUpperCase()} 格式`,
+        'success'
     )
   } catch (error) {
     showSnackbar('导出失败，请重试', 'error')
@@ -208,7 +208,7 @@ const simulateDownload = async () => {
     setTimeout(() => {
       // 创建模拟文件
       const content = `PDF to Image Export\nFormat: ${exportConfig.format}\nQuality: ${['低', '中', '高'][exportConfig.quality - 1]}\nPages: ${exportConfig.range === 'current' ? '1' : totalPages.value}\n\nThis is a simulated export.`
-      const blob = new Blob([content], { type: 'text/plain' })
+      const blob = new Blob([content], {type: 'text/plain'})
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
