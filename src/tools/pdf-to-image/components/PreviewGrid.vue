@@ -3,7 +3,7 @@
     <!-- 预览标题和统计 -->
     <div class="preview-header mb-4">
       <v-alert type="info" variant="outlined" icon="mdi-image">
-        <strong>预览模式：</strong> 显示前 {{ Math.min(totalPages, 12) }} 页的缩略图（完整版可显示全部）
+        <strong>预览模式：</strong> 显示前 {{ Math.min(totalPages, 12) }} 页的缩略图
       </v-alert>
     </div>
 
@@ -37,8 +37,26 @@
 
           <!-- 预览内容 -->
           <v-card-text class="preview-content text-center">
-            <!-- 模拟预览缩略图 -->
-            <div class="preview-placeholder">
+            <!-- 显示真实预览图片 -->
+            <div v-if="previewImages[page]" class="preview-image-container">
+              <img
+                :src="previewImages[page]"
+                :alt="`第${page}页预览`"
+                class="preview-image"
+                @click.stop="openPreview(page)"
+              />
+            </div>
+            <!-- 加载中状态 -->
+            <div v-else-if="loading" class="loading-placeholder">
+              <v-progress-circular
+                indeterminate
+                size="30"
+                color="teal"
+              ></v-progress-circular>
+              <div class="text-caption mt-2 text-grey">正在生成预览...</div>
+            </div>
+            <!-- 占位符 -->
+            <div v-else class="preview-placeholder">
               <v-icon size="48" color="grey-darken-2">mdi-file-pdf-box</v-icon>
               <div class="page-number mt-2 text-grey">Page {{ page }}</div>
             </div>
@@ -71,6 +89,9 @@
 </template>
 
 <script setup>
+import { ref, watch, onMounted } from 'vue'
+import * as pdfjsLib from 'pdfjs-dist'
+
 const props = defineProps({
   pdfLoaded: {
     type: Boolean,
@@ -79,10 +100,89 @@ const props = defineProps({
   totalPages: {
     type: Number,
     default: 0
+  },
+  pdfFile: {
+    type: Object,
+    default: null
   }
 })
 
 const emit = defineEmits(['open-preview'])
+
+// 响应式状态
+const previewImages = ref({})
+const loading = ref(false)
+
+// 生成预览图片
+const generatePreviews = async () => {
+  if (!props.pdfFile || !props.pdfLoaded) return
+
+  loading.value = true
+  previewImages.value = {}
+
+  try {
+    // 配置pdfjs worker
+    if (typeof window !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+    }
+
+    // 读取文件
+    const arrayBuffer = await props.pdfFile.arrayBuffer()
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+    // 生成前12页的预览
+    const pagesToPreview = Math.min(props.totalPages, 12)
+
+    for (let i = 1; i <= pagesToPreview; i++) {
+      try {
+        const page = await pdf.getPage(i)
+        const viewport = page.getViewport({ scale: 0.3 }) // 小缩略图
+
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        canvas.width = viewport.width
+        canvas.height = viewport.height
+
+        await page.render({
+          canvasContext: ctx,
+          viewport: viewport
+        }).promise
+
+        // 转换为图片数据URL
+        const imageData = canvas.toDataURL('image/png')
+        previewImages.value[i] = imageData
+
+        // 清理canvas
+        canvas.remove()
+      } catch (error) {
+        console.error(`生成第${i}页预览失败:`, error)
+        // 继续处理其他页面
+      }
+    }
+  } catch (error) {
+    console.error('预览生成失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 监听props变化，自动生成预览
+watch(() => [props.pdfLoaded, props.pdfFile], ([loaded, file]) => {
+  if (loaded && file) {
+    // 延迟执行，避免阻塞UI
+    setTimeout(() => {
+      generatePreviews()
+    }, 100)
+  }
+})
+
+// 组件挂载时检查
+onMounted(() => {
+  if (props.pdfLoaded && props.pdfFile) {
+    generatePreviews()
+  }
+})
 
 // 打开预览
 const openPreview = (page) => {
@@ -115,8 +215,41 @@ const openPreview = (page) => {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 8px;
 }
 
+/* 预览图片容器 */
+.preview-image-container {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f5f5f5;
+}
+
+/* 预览图片 */
+.preview-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.preview-image:hover {
+  transform: scale(1.05);
+}
+
+/* 加载中状态 */
+.loading-placeholder {
+  text-align: center;
+  padding: 10px;
+}
+
+/* 占位符 */
 .preview-placeholder {
   text-align: center;
   opacity: 0.6;
@@ -142,5 +275,9 @@ const openPreview = (page) => {
 /* 深色模式适配 */
 .v-theme--dark .page-preview-card:hover {
   box-shadow: 0 8px 16px rgba(38, 166, 154, 0.3);
+}
+
+.v-theme--dark .preview-image-container {
+  background: #1e1e1e;
 }
 </style>

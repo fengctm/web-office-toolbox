@@ -38,8 +38,9 @@
               show-ticks="always"
               tick-size="4"
               color="teal"
-              model-value="2"
               density="comfortable"
+              thumb-label
+              @update:model-value="(val) => exportConfig.quality = val"
             >
               <template v-slot:append>
                 <v-chip size="small" color="teal" variant="outlined">

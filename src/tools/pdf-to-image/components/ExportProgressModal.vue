@@ -12,28 +12,69 @@
         </v-toolbar-title>
       </v-toolbar>
 
-      <v-card-text class="text-center pa-6">
-        <v-progress-circular
-          indeterminate
-          size="64"
-          width="4"
-          color="teal"
-          class="mb-4"
-        ></v-progress-circular>
-
-        <div class="text-h6 mb-2">正在处理...</div>
-        <div class="text-body-2 text-grey mb-4">
-          格式: {{ format.toUpperCase() }} |
-          质量: {{ qualityLabels[quality] }}
+      <v-card-text class="pa-4">
+        <!-- 真实进度条 -->
+        <div class="mb-4">
+          <v-progress-linear
+            :model-value="progress"
+            color="teal"
+            height="25"
+            striped
+            rounded
+          >
+            <template v-slot:default="{ value }">
+              <strong>{{ Math.ceil(value) }}%</strong>
+            </template>
+          </v-progress-linear>
         </div>
 
-        <v-alert type="info" variant="tonal" icon="mdi-clock-outline" class="mt-3">
-          大文件可能需要较长时间，请耐心等待...
+        <!-- 详细信息 -->
+        <div class="text-body-2 mb-2">
+          <div class="d-flex justify-space-between">
+            <span>当前页码:</span>
+            <span class="font-weight-medium">{{ currentPage }} / {{ totalPages }}</span>
+          </div>
+          <div class="d-flex justify-space-between">
+            <span>图片格式:</span>
+            <span class="font-weight-medium">{{ format.toUpperCase() }}</span>
+          </div>
+          <div class="d-flex justify-space-between">
+            <span>图片质量:</span>
+            <span class="font-weight-medium">{{ qualityLabels[quality] }}</span>
+          </div>
+        </div>
+
+        <!-- 状态提示 -->
+        <v-alert
+          v-if="progress < 100"
+          type="info"
+          variant="tonal"
+          icon="mdi-clock-outline"
+          class="mt-3 text-caption"
+        >
+          正在处理第 {{ currentPage }} 页，请勿关闭窗口...
+        </v-alert>
+
+        <v-alert
+          v-else
+          type="success"
+          variant="tonal"
+          icon="mdi-check-circle-outline"
+          class="mt-3 text-caption"
+        >
+          处理完成！正在打包下载...
         </v-alert>
       </v-card-text>
 
       <v-card-actions class="justify-center">
-        <v-btn color="grey" variant="text" @click="cancel">取消</v-btn>
+        <v-btn
+          color="error"
+          variant="tonal"
+          @click="cancel"
+          :disabled="progress >= 100"
+        >
+          取消导出
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -54,6 +95,18 @@ const props = defineProps({
   quality: {
     type: Number,
     default: 2
+  },
+  progress: {
+    type: Number,
+    default: 0
+  },
+  currentPage: {
+    type: Number,
+    default: 0
+  },
+  totalPages: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -82,5 +135,16 @@ const cancel = () => {
 </script>
 
 <style scoped>
-/* 组件样式 */
+.v-card {
+  border-radius: 12px;
+}
+
+.v-progress-linear {
+  font-weight: bold;
+}
+
+/* 深色模式适配 */
+.v-theme--dark .text-body-2 {
+  color: rgba(255, 255, 255, 0.87);
+}
 </style>

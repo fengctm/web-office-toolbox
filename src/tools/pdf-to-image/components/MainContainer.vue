@@ -25,6 +25,7 @@
       <PreviewGrid
           :pdf-loaded="pdfLoaded"
           :total-pages="totalPages"
+          :pdf-file="pdfFile"
           @open-preview="handleOpenPreview"
       />
 
@@ -60,6 +61,9 @@
         v-model="exportProgressDialog"
         :format="exportConfig.format"
         :quality="exportConfig.quality"
+        :progress="exportProgress"
+        :current-page="exportCurrentPage"
+        :total-pages="exportTotalPages"
         @cancel="cancelExport"
     />
 
@@ -73,7 +77,7 @@
 </template>
 
 <script setup>
-import {reactive, ref} from 'vue'
+import {reactive, ref, onMounted} from 'vue'
 
 // 导入子组件
 import FileUpload from './FileUpload.vue'
@@ -83,6 +87,18 @@ import ExportPanel from './ExportPanel.vue'
 import TipsSection from './TipsSection.vue'
 import ExportProgressModal from './ExportProgressModal.vue'
 import NotificationSnackbar from './NotificationSnackbar.vue'
+
+// 导入依赖
+import * as pdfjsLib from 'pdfjs-dist'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
+import {
+  validateBrowserSupport,
+  handlePDFError,
+  handleExportError,
+  formatUserFriendlyError,
+  PerformanceMonitor
+} from '../utils/error-handler'
 
 // 状态管理
 const pdfFile = ref(null)
@@ -94,12 +110,16 @@ const previewDialog = ref(false)
 const exportProgressDialog = ref(false)
 const currentPage = ref(1)
 
-// 导出配置
+// 导出相关状态
 const exportConfig = reactive({
   format: 'png',
   quality: 2,
   range: 'all'
 })
+
+const exportProgress = ref(0)
+const exportCurrentPage = ref(0)
+const exportTotalPages = ref(0)
 
 // 提示信息
 const snackbar = ref({
@@ -110,6 +130,44 @@ const snackbar = ref({
 
 // 子组件引用
 const fileUploadRef = ref(null)
+
+// 配置pdfjs worker（使用匹配的版本）
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+}
+
+// 性能监控器
+const perfMonitor = PerformanceMonitor
+
+// 延迟的浏览器兼容性检查（用于导出时）
+const checkBrowserSupportForExport = () => {
+  const result = validateBrowserSupport()
+  if (!result.isValid) {
+    const firstError = result.errors[0]
+    showSnackbar(`${firstError.message} - ${firstError.solution}`, 'error')
+    return false
+  }
+
+  // 显示警告信息
+  if (result.warnings.length > 0) {
+    result.warnings.forEach(warning => {
+      console.warn(`PDF工具警告: ${warning.message} - ${warning.solution}`)
+    })
+  }
+
+  return true
+}
+
+// 组件挂载时只做基本检查，不显示错误
+onMounted(() => {
+  // 延迟检查，给库加载时间
+  setTimeout(() => {
+    if (typeof pdfjsLib === 'undefined' || typeof JSZip === 'undefined') {
+      console.warn('PDF工具: 部分库正在加载中...')
+    }
+  }, 1000)
+})
 
 // 处理文件上传
 const handleFileUploaded = (file) => {
@@ -124,6 +182,27 @@ const handlePdfProcessed = (pages) => {
   totalPages.value = pages
   pdfLoaded.value = true
   showSnackbar(`PDF解析成功！共 ${pages} 页`, 'success')
+}
+
+// 处理PDF解析错误
+const handlePDFProcessError = (error) => {
+  const friendlyError = formatUserFriendlyError(error)
+
+  // 根据错误类型显示不同的提示
+  if (friendlyError.severity === 'error') {
+    showSnackbar(`${friendlyError.title} - ${friendlyError.suggestion}`, 'error')
+  } else if (friendlyError.severity === 'warning') {
+    showSnackbar(`${friendlyError.title} - ${friendlyError.suggestion}`, 'warning')
+  } else {
+    showSnackbar(friendlyError.title, 'info')
+  }
+
+  // 记录错误
+  console.error('PDF处理错误:', {
+    type: error.type,
+    message: error.message,
+    details: error.details
+  })
 }
 
 // 处理处理状态更新
@@ -163,7 +242,7 @@ const nextPage = () => {
   }
 }
 
-// 处理导出图片
+// 处理导出图片 - 真实实现（带性能优化）
 const handleExportImages = async (config) => {
   if (!pdfLoaded.value) {
     showSnackbar('请先解析PDF文件', 'warning')
@@ -177,54 +256,125 @@ const handleExportImages = async (config) => {
 
   exporting.value = true
   exportProgressDialog.value = true
+  exportProgress.value = 0
 
-  // 模拟导出过程
+  // 启动性能监控
+  perfMonitor.start()
+
   try {
-    const exportPages = config.range === 'current' ? 1 : totalPages.value
-    const processingTime = exportPages * 200 // 每页200ms模拟时间
+    // 检查浏览器支持（在导出时检查）
+    if (!checkBrowserSupportForExport()) {
+      throw new Error('浏览器不支持PDF处理')
+    }
 
-    await new Promise(resolve => setTimeout(resolve, processingTime))
+    // 读取PDF
+    const arrayBuffer = await pdfFile.value.arrayBuffer()
 
-    // 模拟下载过程
-    await simulateDownload()
+    // 确定导出范围
+    const pagesToExport = config.range === 'current'
+      ? [currentPage.value]
+      : Array.from({length: totalPages.value}, (_, i) => i + 1)
+
+    exportTotalPages.value = pagesToExport.length
+    exportCurrentPage.value = 0
+
+    // 处理每一页
+    const zip = new JSZip()
+    const format = config.format
+    const quality = config.quality / 3 // 转换为0-1范围
+
+    // 对于小文件，使用主线程处理（兼容性更好）
+    // 对于大文件，可以考虑使用Web Worker（需要额外配置）
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+    for (let i = 0; i < pagesToExport.length; i++) {
+      if (!exporting.value) {
+        // 用户取消了导出
+        throw new PDFToolError('导出已取消', 'cancelled')
+      }
+
+      // 检查内存使用
+      const memoryCheck = perfMonitor.checkMemory()
+      if (memoryCheck.warning) {
+        showSnackbar(memoryCheck.message, 'warning')
+      }
+
+      const pageNum = pagesToExport[i]
+      exportCurrentPage.value = i + 1
+
+      // 更新进度
+      const progress = ((i + 1) / pagesToExport.length) * 100
+      exportProgress.value = progress
+
+      // 渲染页面
+      const page = await pdf.getPage(pageNum)
+      const viewport = page.getViewport({ scale: 2.0 })
+
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      canvas.width = viewport.width
+      canvas.height = viewport.height
+
+      // 使用requestAnimationFrame避免阻塞UI
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          page.render({
+            canvasContext: ctx,
+            viewport: viewport
+          }).promise.then(resolve)
+        })
+      })
+
+      // 转换为图片数据
+      const imageData = canvas.toDataURL(`image/${format}`, quality)
+      const base64Data = imageData.split(',')[1]
+
+      // 添加到ZIP
+      const filename = `page-${pageNum}.${format}`
+      zip.file(filename, base64Data, {base64: true})
+
+      // 清理canvas内存
+      canvas.width = 0
+      canvas.height = 0
+      canvas.remove()
+    }
+
+    // 生成并下载ZIP - 自定义命名格式
+    const pdfName = pdfFile.value.name.replace('.pdf', '')
+    const formatName = config.format.toUpperCase()
+    const pageCount = pagesToExport.length
+    const zipName = `${pdfName}【转${formatName}${pageCount}张】.zip`
+
+    const content = await zip.generateAsync({type:"blob"})
+    saveAs(content, zipName)
 
     exportProgressDialog.value = false
     exporting.value = false
 
-    showSnackbar(
-        `导出成功！${exportPages} 页已转换为 ${config.format.toUpperCase()} 格式`,
-        'success'
-    )
+    const elapsed = perfMonitor.getElapsedTime()
+    showSnackbar(`成功导出 ${pagesToExport.length} 张图片 (耗时: ${elapsed}s)`, 'success')
+
   } catch (error) {
-    showSnackbar('导出失败，请重试', 'error')
+    // 使用错误处理模块
+    const handledError = error instanceof PDFToolError ? error : handleExportError(error)
+    handlePDFProcessError(handledError)
+
     exportProgressDialog.value = false
     exporting.value = false
   }
 }
 
-// 模拟下载
-const simulateDownload = async () => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      // 创建模拟文件
-      const content = `PDF to Image Export\nFormat: ${exportConfig.format}\nQuality: ${['低', '中', '高'][exportConfig.quality - 1]}\nPages: ${exportConfig.range === 'current' ? '1' : totalPages.value}\n\nThis is a simulated export.`
-      const blob = new Blob([content], {type: 'text/plain'})
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `pdf-export-${Date.now()}.txt`
-      a.click()
-      URL.revokeObjectURL(url)
-      resolve()
-    }, 500)
-  })
-}
-
 // 取消导出
 const cancelExport = () => {
-  exportProgressDialog.value = false
   exporting.value = false
+  exportProgressDialog.value = false
   showSnackbar('导出已取消', 'info')
+
+  // 清理资源
+  if (perfMonitor) {
+    const elapsed = perfMonitor.getElapsedTime()
+    console.log(`导出取消，耗时: ${elapsed}s`)
+  }
 }
 
 // 显示提示消息

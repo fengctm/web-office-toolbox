@@ -62,6 +62,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { PDFDocument } from 'pdf-lib'
+import * as pdfjsLib from 'pdfjs-dist'
+import { handlePDFError, validateFile } from '../utils/error-handler'
 
 const emit = defineEmits([
   'file-uploaded',
@@ -75,6 +78,12 @@ const pdfFile = ref(null)
 const uploading = ref(false)
 const processing = ref(false)
 const totalPages = ref(0)
+
+// 配置pdfjs worker（使用匹配的版本）
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+}
 
 // 工具函数：格式化文件大小
 const formatFileSize = (bytes) => {
@@ -92,17 +101,10 @@ const handleFileUpload = (file) => {
     return
   }
 
-  // 验证文件类型
-  if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-    emit('error', '请选择PDF格式的文件')
-    pdfFile.value = null
-    return
-  }
-
-  // 验证文件大小 (50MB限制)
-  const maxSize = 50 * 1024 * 1024
-  if (file.size > maxSize) {
-    emit('error', '文件大小超过50MB限制')
+  // 使用错误处理模块验证文件
+  const validation = validateFile(file)
+  if (!validation.valid) {
+    emit('error', validation.error.message)
     pdfFile.value = null
     return
   }
@@ -110,7 +112,7 @@ const handleFileUpload = (file) => {
   emit('file-uploaded', file)
 }
 
-// 解析PDF
+// 解析PDF - 真实实现（集成错误处理）
 const processPDF = async () => {
   if (!pdfFile.value) {
     emit('error', '请先选择PDF文件')
@@ -121,25 +123,41 @@ const processPDF = async () => {
   processing.value = true
   emit('update:processing', true)
 
-  // 模拟解析过程
   try {
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // 读取文件
+    const arrayBuffer = await pdfFile.value.arrayBuffer()
 
-    // 模拟随机页数 (5-50页)
-    totalPages.value = Math.floor(Math.random() * 46) + 5
+    // 使用pdf-lib获取总页数
+    const pdfDoc = await PDFDocument.load(arrayBuffer)
+    const pageCount = pdfDoc.getPageCount()
 
-    // 模拟额外的处理时间
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 验证PDF有效性
+    if (pageCount === 0) {
+      throw new Error('PDF文件不包含任何页面')
+    }
 
+    // 使用pdfjs验证可渲染性（预加载第一页）
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    const page = await pdf.getPage(1)
+
+    // 额外的处理时间，让用户看到进度
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    totalPages.value = pageCount
     uploading.value = false
     processing.value = false
     emit('update:processing', false)
-    emit('pdf-processed', totalPages.value)
+    emit('pdf-processed', pageCount)
+
   } catch (error) {
     uploading.value = false
     processing.value = false
     emit('update:processing', false)
-    emit('error', 'PDF解析失败，请重试')
+
+    // 使用错误处理模块
+    const handledError = handlePDFError(error)
+    emit('error', handledError.message)
+    console.error('PDF解析错误:', handledError)
   }
 }
 
