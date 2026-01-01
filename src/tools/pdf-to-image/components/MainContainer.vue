@@ -90,7 +90,7 @@ import PreviewModal from './PreviewModal.vue'
 import ExportPanel from './ExportPanel.vue'
 import TipsSection from './TipsSection.vue'
 import ExportProgressModal from './ExportProgressModal.vue'
-import NotificationSnackbar from './NotificationSnackbar.vue'
+import NotificationSnackbar from '@/components/NotificationSnackbar.vue'
 
 // 导入依赖
 import * as pdfjsLib from 'pdfjs-dist'

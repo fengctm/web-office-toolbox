@@ -1,6 +1,7 @@
 <template>
   <v-dialog
-    v-model="modelValue"
+    :model-value="modelValue"
+    @update:model-value="updateModelValue"
     max-width="900"
     persistent
   >
@@ -122,11 +123,10 @@ const emit = defineEmits([
 const previewImage = ref('')
 const loading = ref(false)
 
-// 计算属性：双向绑定对话框状态
-const modelValue = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+// 更新模型值
+const updateModelValue = (value) => {
+  emit('update:modelValue', value)
+}
 
 // 生成预览图片
 const generatePreview = async () => {

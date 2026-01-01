@@ -1,6 +1,7 @@
 <template>
   <v-dialog
-    v-model="modelValue"
+    :model-value="modelValue"
+    @update:model-value="updateModelValue"
     max-width="400"
     persistent
   >
@@ -122,15 +123,15 @@ const qualityLabels = {
   3: '高'
 }
 
-// 计算属性：双向绑定对话框状态
-const modelValue = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+// 更新模型值
+const updateModelValue = (value) => {
+  emit('update:modelValue', value)
+}
 
 // 取消导出
 const cancel = () => {
   emit('cancel')
+  emit('update:modelValue', false)
 }
 </script>
 
