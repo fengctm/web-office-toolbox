@@ -3,7 +3,7 @@
     <!-- 顶部工具栏 -->
     <div class="toolbar">
       <div class="d-flex justify-center align-center ga-2">
-        <div class="title">图片库</div>
+        <div class="text-subtitle-1 font-weight-medium text-high-emphasis">图片库</div>
         <v-chip size="small" color="primary" variant="outlined" class="count">
           {{ imageList.length }}
         </v-chip>
@@ -16,13 +16,13 @@
                 v-bind="props"
                 size="small"
                 variant="text"
-                color="surface-variant"
+                color="on-surface-variant"
                 prepend-icon="mdi-sort-variant"
             >
               排序
             </v-btn>
           </template>
-          <v-list density="compact">
+          <v-list density="compact" bg-color="surface">
             <v-list-item @click="handleSort('name')">
               <v-list-item-title>按文件名称</v-list-item-title>
             </v-list-item>
@@ -31,37 +31,26 @@
             </v-list-item>
           </v-list>
         </v-menu>
-        <v-spacer/>
-        <v-btn
-            size="small"
-            color="primary"
-            variant="tonal"
-            prepend-icon="mdi-plus"
-            @click="addMore"
-        >
-          添加图片
-        </v-btn>
       </div>
     </div>
 
     <!-- 图片网格容器 -->
     <div ref="gridContainer" class="grid-container">
-      <!-- 性能优化：使用 v-memo 减少不必要的重绘 -->
       <div
           v-for="(image, index) in imageList"
           :key="image.id"
-          v-memo="[image.id, index, imageList.length]"
+          v-memo="[image.id, index]"
           class="card"
           :data-id="image.id"
       >
         <!-- 图片区域 -->
         <div class="image-area">
-          <img :src="image.preview" alt="" draggable="false" loading="lazy"/>
+          <img :src="image.preview" alt="" draggable="false" loading="lazy" style="object-fit: contain; background: #f5f5f5;"/>
           <div class="overlay">
             <div class="card-actions">
               <v-btn
                   icon="mdi-close"
-                  size="x-small"
+                  size="small"
                   variant="elevated"
                   color="error"
                   @click.stop="remove(index)"
@@ -76,12 +65,15 @@
             <div class="name">{{ image.name }}</div>
           </div>
 
-          <!-- 新增：快捷排序控制条 -->
+          <!-- 快捷排序控制条 -->
           <div class="page-controls" @click.stop>
+            <!-- 左右按钮：使用 text 变体，颜色 on-surface-variant，清晰锐利 -->
             <v-btn
                 icon="mdi-chevron-left"
                 variant="text"
-                size="x-small"
+                density="comfortable"
+                size="small"
+                color="on-surface-variant"
                 :disabled="index === 0"
                 @click="moveOne(index, -1)"
             ></v-btn>
@@ -100,7 +92,9 @@
             <v-btn
                 icon="mdi-chevron-right"
                 variant="text"
-                size="x-small"
+                density="comfortable"
+                size="small"
+                color="on-surface-variant"
                 :disabled="index === imageList.length - 1"
                 @click="moveOne(index, 1)"
             ></v-btn>
@@ -121,58 +115,23 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['remove-image', 'add-more', 'move-image', 'sort-images'])
-
-// --- 逻辑处理 ---
+const emit = defineEmits(['remove-image', 'move-image', 'sort-images'])
 
 const remove = (index) => {
   emit('remove-image', index)
-}
-
-const addMore = () => {
-  emit('add-more')
 }
 
 const handleSort = (field) => {
   emit('sort-images', field)
 }
 
-/**
- * 左右移动一位
- */
 const moveOne = (index, delta) => {
   const to = index + delta
   if (to >= 0 && to < props.imageList.length) {
-    emit('move-image', { from: index, to })
+    emit('move-image', {from: index, to})
   }
 }
 
-/**
- * 跳转到指定页码
- */
-const handleJump = (event, currentIndex) => {
-  const val = parseInt(event.target.value)
-  if (isNaN(val)) {
-    event.target.value = currentIndex + 1
-    return
-  }
-
-  // 转换为从 0 开始的索引
-  let targetIndex = val - 1
-
-  // 边界约束
-  if (targetIndex < 0) targetIndex = 0
-  if (targetIndex >= props.imageList.length) targetIndex = props.imageList.length - 1
-
-  if (targetIndex === currentIndex) {
-    event.target.value = currentIndex + 1
-    return
-  }
-
-  emit('move-image', { from: currentIndex, to: targetIndex })
-}
-
-// --- Sortable.js 拖拽配置 ---
 const gridContainer = ref(null)
 let sortableInstance = null
 
@@ -186,20 +145,54 @@ const initSortable = async () => {
       sortableInstance.destroy()
     }
 
+    // 精准拖拽：只允许通过图片区域拖拽，避免干扰底部输入框
     sortableInstance = Sortable.create(gridContainer.value, {
       animation: 200,
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
-      handle: '.image-area', // 限制只有点击图片区域可以拖拽，避免干扰底部输入框
+      handle: '.image-area', // 限制拖拽手柄为图片区域
+      delay: 0, // 立即响应
+      forceFallback: false, // 使用原生拖拽
       onEnd(evt) {
         const {oldIndex, newIndex} = evt
         if (oldIndex === newIndex) return
+
+        // 显示拖拽成功提示
         emit('move-image', {from: oldIndex, to: newIndex})
       }
     })
   } catch (error) {
     console.error('Sortable init failed:', error)
   }
+}
+
+// 优化页码跳转：支持失焦和回车
+const handleJump = (event, currentIndex) => {
+  const input = event.target
+  const val = parseInt(input.value)
+
+  if (isNaN(val) || val < 1) {
+    input.value = currentIndex + 1
+    return
+  }
+
+  const targetIndex = Math.min(val - 1, props.imageList.length - 1)
+
+  if (targetIndex === currentIndex) {
+    input.value = currentIndex + 1
+    return
+  }
+
+  emit('move-image', {from: currentIndex, to: targetIndex})
+
+  // 自动聚焦到下一个输入框（提升效率）
+  nextTick(() => {
+    const inputs = document.querySelectorAll('.page-input-box input')
+    if (inputs[targetIndex]) {
+      inputs[targetIndex].focus()
+      inputs[targetIndex].select()
+    }
+  })
 }
 
 onMounted(() => {
@@ -212,25 +205,28 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* --- 容器布局 --- */
 .image-section {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: rgba(var(--v-theme-background), 1);
+  background-color: rgb(var(--v-theme-background));
   overflow: hidden;
 }
 
+/* --- 工具栏 --- */
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(var(--v-theme-surface), 1);
-  border-bottom: 1px solid rgba(var(--v-theme-outline-variant), 1);
+  background: rgb(var(--v-theme-surface));
+  border-bottom: 1px solid rgba(var(--v-theme-outline), 0.12);
   z-index: 10;
 }
 
+/* --- 网格容器 --- */
 .grid-container {
   flex: 1;
   overflow-y: auto;
@@ -241,129 +237,161 @@ onUnmounted(() => {
   align-content: start;
 }
 
+/* --- 卡片设计 --- */
 .card {
-  background-color: rgba(var(--v-theme-surface), 0.95);
+  background-color: rgb(var(--v-theme-surface));
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(var(--v-theme-outline-variant), 0.5);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(var(--v-theme-outline), 0.08);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border-color: rgba(var(--v-theme-primary), 0.8);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
+/* --- 图片区域 --- */
 .image-area {
   position: relative;
   width: 100%;
   padding-top: 75%;
-  background-color: rgba(var(--v-theme-surface-variant), 0.6);
+  /* 背景移除，保持透明或极淡，让图片内容凸显 */
+  background-color: transparent;
   cursor: grab;
 }
 
+/* 如果图片加载失败或透明背景时的占位色 */
 .image-area img {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  background: rgba(var(--v-theme-surface-variant), 0.3);
+  /* 图片本身无需背景，依靠容器背景 */
 }
 
 .overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 50%);
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 100%);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
   padding: 8px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
 }
 
 .card:hover .overlay {
   opacity: 1;
 }
 
-.badge {
-  position: absolute;
-  top: 8px; left: 8px;
-  background: rgba(var(--v-theme-primary), 0.9);
-  color: rgba(var(--v-theme-on-primary), 1);
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-/* 控制区域 */
+/* --- 底部控制区 --- */
 .control-wrapper {
-  padding: 8px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(var(--v-theme-surface), 0.95);
+  gap: 10px;
+  background: rgb(var(--v-theme-surface));
+  /* 边框极其淡化 */
+  border-top: 1px solid rgba(var(--v-theme-outline), 0.04);
 }
 
-.info-area .name {
-  font-size: 12px;
-  color: rgba(var(--v-theme-on-surface), 0.75);
+/* --- 文件名文字 --- */
+.info-area {
+  width: 100%;
+  min-height: 1.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.name {
+  width: 100%;
+  font-size: 13px;
+  color: rgb(var(--v-theme-on-surface));
+  font-weight: 500;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
+/* --- 页码控制器 --- */
 .page-controls {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: rgba(var(--v-theme-surface-variant), 0.5);
-  border-radius: 6px;
-  padding: 2px;
+  /* 背景色调整为极度透明的 outline，几乎不可见，仅用于微调层次 */
+  background-color: rgba(var(--v-theme-outline), 0.05);
+  border-radius: 8px;
+  padding: 4px 8px; /* 稍微增加内边距，让布局更舒展 */
+  height: 36px; /* 固定高度，防止抖动 */
 }
 
 .page-input-box {
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 32px;
 }
 
 .page-input-box input {
-  width: 40px;
-  height: 24px;
-  border: 1px solid rgba(var(--v-theme-outline), 0.6);
-  border-radius: 4px;
-  background: rgba(var(--v-theme-surface), 0.8);
+  width: 100%;
+  border: none;
+  background: transparent;
   text-align: center;
-  font-size: 12px;
-  font-weight: bold;
-  color: rgba(var(--v-theme-primary), 1);
+  font-size: 14px;
+  font-weight: 700;
+  color: rgb(var(--v-theme-primary));
   outline: none;
+  padding: 2px 0;
 }
 
-.page-input-box input:focus {
-  border-color: rgba(var(--v-theme-primary), 1);
-  background: rgba(var(--v-theme-surface), 1);
-}
-
-/* 移除 Chrome/Safari 数字输入框箭头 */
 .page-input-box input::-webkit-outer-spin-button,
 .page-input-box input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-/* 拖拽样式 */
+/* --- 拖拽状态 --- */
 .sortable-ghost {
-  opacity: 0.2;
-  border: 2px dashed rgba(var(--v-theme-primary), 1);
+  opacity: 0.4;
+  background-color: rgba(var(--v-theme-primary), 0.08) !important;
+  border: 1px dashed rgba(var(--v-theme-primary), 0.5);
 }
 
+.sortable-drag {
+  opacity: 1;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+  cursor: grabbing;
+  background-color: rgb(var(--v-theme-surface)) !important;
+}
+
+/* --- 响应式 --- */
 @media (max-width: 600px) {
   .grid-container {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     padding: 8px;
+    gap: 12px;
+  }
+  .name {
+    font-size: 12px;
+  }
+  .control-wrapper {
+    padding: 8px;
     gap: 8px;
+  }
+  .page-controls {
+    padding: 2px 4px;
+    height: 32px;
   }
 }
 </style>

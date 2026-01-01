@@ -26,9 +26,7 @@
           :image-list="imageList"
           @remove-image="removeImage"
           @move-image="moveImage"
-          @add-more="addMoreImages"
           @sort-images="sortImages"
-          @open-page-dialog="openPageDialog"
       />
 
       <!-- 预览和导出区域 -->
@@ -42,14 +40,6 @@
           @scroll-to-page="scrollToPage"
       />
     </v-card-text>
-
-    <!-- 页码跳转对话框 -->
-    <PageJumpDialog
-        v-model="pageDialog.show"
-        :current-index="pageDialog.currentIndex"
-        :total-pages="imageList.length"
-        @confirm="jumpToPage"
-    />
 
     <!-- 导出进度模态框 -->
     <ExportProgressModal
@@ -79,13 +69,12 @@ import { reactive, ref, onUnmounted } from 'vue'
 import FileUpload from './FileUpload.vue'
 import ImageList from './ImageList.vue'
 import PreviewExport from './PreviewExport.vue'
-import PageJumpDialog from './PageJumpDialog.vue'
 import ExportProgressModal from './ExportProgressModal.vue'
 import NotificationSnackbar from '@/components/NotificationSnackbar.vue'
 import PerformanceMonitor from './PerformanceMonitor.vue'
 
 // 导入依赖
-import { PDFWorkerManager } from '../utils/worker-manager'
+import { getWorkerManager } from '../utils/worker-manager'
 
 // 状态管理
 const imageList = ref([])
@@ -98,10 +87,6 @@ const pdfConfig = reactive({
   pageSize: 'A4'
 })
 
-const pageDialog = reactive({
-  show: false,
-  currentIndex: 0
-})
 
 const exportProgressDialog = reactive({
   show: false
@@ -133,48 +118,13 @@ const handleImagesAdded = (files) => {
   })
 
   showSnackbar(`成功添加 ${files.length} 张图片`, 'success')
+  console.log(imageList.value)
 }
 
 // 移除图片
 const removeImage = (index) => {
   imageList.value.splice(index, 1)
   showSnackbar('图片已移除', 'info')
-}
-
-// 移动行（处理拖拽排序）- 行索引转换为扁平数组操作
-const moveRow = ({ from, to }) => {
-  // 获取当前的列数（需要与 ImageList 组件同步）
-  const columns = getColumns()
-
-  // 计算行对应的扁平数组索引范围
-  const fromStartIndex = from * columns
-  const toStartIndex = to * columns
-
-  // 获取要移动的行的所有图片
-  const rowItems = imageList.value.slice(fromStartIndex, fromStartIndex + columns)
-
-  // 从原位置移除
-  imageList.value.splice(fromStartIndex, columns)
-
-  // 计算新的插入位置（需要考虑移除后索引的变化）
-  let insertIndex = toStartIndex
-  if (toStartIndex > fromStartIndex) {
-    // 如果移动到后面的位置，需要调整索引
-    insertIndex = toStartIndex - columns
-  }
-
-  // 插入到新位置
-  imageList.value.splice(insertIndex, 0, ...rowItems)
-
-  showSnackbar('图片顺序已更新', 'success')
-}
-
-// 获取当前列数（与 ImageList 组件逻辑保持一致）
-const getColumns = () => {
-  const width = window.innerWidth
-  if (width < 600) return 1
-  else if (width < 960) return 2
-  else return 4
 }
 
 // 移动图片（处理拖拽排序和按钮移动）
@@ -212,19 +162,6 @@ const addMoreImages = () => {
   }
 }
 
-// 打开页码跳转对话框
-const openPageDialog = (index) => {
-  pageDialog.currentIndex = index
-  pageDialog.show = true
-}
-
-// 跳转到指定页码
-const jumpToPage = (targetPage) => {
-  const targetIndex = Math.max(0, Math.min(targetPage - 1, imageList.value.length - 1))
-  const item = imageList.value.splice(pageDialog.currentIndex, 1)[0]
-  imageList.value.splice(targetIndex, 0, item)
-  showSnackbar(`已移动到第 ${targetPage} 页`, 'success')
-}
 
 // 滚动到指定页面
 const scrollToPage = (index) => {
@@ -253,10 +190,7 @@ const showSnackbar = (message, color = 'info') => {
   }
 }
 
-// Worker 管理器实例
-let workerManager = null
-
-// 导出 PDF - 使用 Worker 异步处理
+// 导出 PDF - 使用 Worker 异步处理（单例模式）
 const exportToPdf = async () => {
   if (imageList.value.length === 0) {
     showSnackbar('请先添加图片', 'warning')
@@ -276,10 +210,8 @@ const exportToPdf = async () => {
   exportCurrentPage.value = 0
 
   try {
-    // 获取或创建 Worker 管理器
-    if (!workerManager) {
-      workerManager = new PDFWorkerManager()
-    }
+    // 获取单例 Worker 管理器
+    const workerManager = getWorkerManager()
 
     // 启动性能监控
     if (performanceMonitor.value) {
@@ -291,7 +223,6 @@ const exportToPdf = async () => {
       .onProgress(({ current, total, percentage, currentPage, message }) => {
         exportProgress.value = percentage
         exportCurrentPage.value = currentPage
-        // 可以在这里显示更详细的消息
         if (message) {
           console.log(`进度: ${message}`)
         }
@@ -327,7 +258,8 @@ const exportToPdf = async () => {
 
 // 取消导出
 const cancelExport = () => {
-  if (workerManager) {
+  const workerManager = getWorkerManager()
+  if (workerManager.isProcessing) {
     workerManager.cancel()
   } else {
     cleanupExport()
@@ -342,10 +274,6 @@ const cleanupExport = () => {
   exportProgress.value = 0
   exportCurrentPage.value = 0
 
-  if (workerManager) {
-    workerManager.cleanup()
-  }
-
   // 停止性能监控
   if (performanceMonitor.value) {
     performanceMonitor.value.stop()
@@ -357,11 +285,9 @@ onUnmounted(() => {
   // 清理图片预览数据
   imageList.value = []
 
-  // 终止 Worker
-  if (workerManager) {
-    workerManager.terminate()
-    workerManager = null
-  }
+  // 清理 Worker 管理器
+  const workerManager = getWorkerManager()
+  workerManager.cleanup()
 })
 </script>
 

@@ -63,20 +63,43 @@
               ></v-text-field>
             </v-col>
 
-            <!-- 页面尺寸 -->
-            <v-col cols="12" sm="6">
-              <v-select
-                  :model-value="pdfConfig.pageSize"
-                  @update:model-value="updateConfig('pageSize', $event)"
-                  label="页面尺寸"
-                  :items="['A4', '图片原始尺寸', '适应屏幕']"
-                  variant="outlined"
-                  density="comfortable"
-                  hide-details
-                  prepend-inner-icon="mdi-file"
-                  color="primary"
-              ></v-select>
-            </v-col>
+          <!-- 页面尺寸 -->
+          <v-col cols="12" sm="6">
+            <v-select
+                :model-value="pdfConfig.pageSize"
+                @update:model-value="updateConfig('pageSize', $event)"
+                label="页面尺寸"
+                :items="['A4', '图片原始尺寸', '适应屏幕']"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+                prepend-inner-icon="mdi-file"
+                color="primary"
+            ></v-select>
+          </v-col>
+
+          <!-- 压缩质量 -->
+          <v-col cols="12" class="mt-2">
+            <v-slider
+                :model-value="pdfConfig.compressionQuality || 0.92"
+                @update:model-value="updateConfig('compressionQuality', $event)"
+                label="图片压缩质量"
+                min="0.5"
+                max="1.0"
+                step="0.05"
+                thumb-label
+                color="primary"
+                density="comfortable"
+                hide-details
+            >
+              <template v-slot:append>
+                <span class="text-primary font-weight-bold">{{ ((pdfConfig.compressionQuality || 0.92) * 100).toFixed(0) }}%</span>
+              </template>
+            </v-slider>
+            <div class="text-caption text-on-surface-variant mt-1">
+              质量越低，文件越小，但图片会变模糊
+            </div>
+          </v-col>
           </v-row>
 
           <!-- 说明卡片 -->
@@ -139,7 +162,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   imageList: {
@@ -164,18 +187,52 @@ const emit = defineEmits([
 
 const activeTab = ref('preview')
 
-// 估算文件大小
+// 估算文件大小 - 基于压缩质量和实际图片大小
 const estimatedSize = computed(() => {
   if (props.imageList.length === 0) return '0 KB'
 
-  // 粗略估算：每张图片平均 200KB，压缩后约 50KB
-  const estimatedKB = props.imageList.length * 50
-  if (estimatedKB < 1024) {
-    return `${estimatedKB} KB`
+  // 获取压缩质量（默认0.92）
+  const quality = props.pdfConfig.compressionQuality || 0.92
+
+  // 根据实际图片大小估算
+  let totalBytes = 0
+  props.imageList.forEach(img => {
+    if (img.file && img.file.size) {
+      // 估算逻辑：
+      // 1. 压缩质量影响：quality * 0.8 (经验系数)
+      // 2. JPEG压缩比：通常为原始的 30-70%
+      // 3. 综合系数：quality * 0.6
+      const compressionRatio = quality * 0.6
+      totalBytes += img.file.size * compressionRatio
+    } else {
+      totalBytes += 50 * 1024 // 默认 50KB
+    }
+  })
+
+  if (totalBytes < 1024 * 1024) {
+    return `${(totalBytes / 1024).toFixed(1)} KB`
   } else {
-    return `${(estimatedKB / 1024).toFixed(1)} MB`
+    return `${(totalBytes / 1024 / 1024).toFixed(1)} MB`
   }
 })
+
+// 自动文件名生成 - 格式：图片转PDF【图片数量】张
+const autoFileName = computed(() => {
+  if (props.imageList.length === 0) return '图片转PDF'
+
+  const count = props.imageList.length
+  return `图片转PDF【${count}】张`
+})
+
+// 当图片数量变化时，自动更新文件名
+watch(() => props.imageList.length, (newLength, oldLength) => {
+  if (newLength > 0 && newLength !== oldLength) {
+    // 只有当用户没有手动修改过文件名时才自动更新
+    if (!props.pdfConfig.fileName || props.pdfConfig.fileName.startsWith('图片转PDF')) {
+      emit('update-config', 'fileName', autoFileName.value)
+    }
+  }
+}, { immediate: true })
 
 // 更新配置
 const updateConfig = (key, value) => {
