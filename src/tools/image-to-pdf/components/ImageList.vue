@@ -39,7 +39,6 @@
       <div
           v-for="(image, index) in imageList"
           :key="image.id"
-          v-memo="[image.id, index]"
           class="card"
           :data-id="image.id"
       >

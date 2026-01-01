@@ -84,7 +84,12 @@ const performanceMonitor = ref(null)
 
 const pdfConfig = reactive({
   fileName: '图片转PDF',
-  pageSize: 'A4'
+  pageSize: 'A4',
+  compressionQuality: 0.92,
+  marginTop: 20,
+  marginRight: 20,
+  marginBottom: 20,
+  marginLeft: 20
 })
 
 
@@ -247,7 +252,12 @@ const exportToPdf = async () => {
     // 开始异步导出
     await workerManager.start(files, {
       fileName: pdfConfig.fileName,
-      pageSize: pdfConfig.pageSize
+      pageSize: pdfConfig.pageSize,
+      compressionQuality: pdfConfig.compressionQuality,
+      marginTop: pdfConfig.marginTop,
+      marginRight: pdfConfig.marginRight,
+      marginBottom: pdfConfig.marginBottom,
+      marginLeft: pdfConfig.marginLeft
     })
 
   } catch (error) {

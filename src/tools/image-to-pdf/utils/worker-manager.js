@@ -1,6 +1,6 @@
 /**
  * PDF Worker Manager
- * 修复：针对新版 Safari/iOS 的下载策略优化
+ * 修复：去除默认页码生成
  */
 export class PDFWorkerManager {
     constructor() {
@@ -70,8 +70,27 @@ export class PDFWorkerManager {
                 })
             )
 
-            if (!config.compressionQuality) {
-                config.compressionQuality = 0.92
+            // 1. 确保压缩质量有默认值
+            config.compressionQuality = config.compressionQuality ?? 0.92
+
+            // 2. 处理边距配置（核心修复：支持 0 边距）
+            const hasSpecificMargins =
+                config.marginTop != null ||
+                config.marginBottom != null ||
+                config.marginLeft != null ||
+                config.marginRight != null
+
+            if (!hasSpecificMargins) {
+                const margin = config.pageMargin ?? 0 // 默认改为 0
+                config.marginTop = margin
+                config.marginRight = margin
+                config.marginBottom = margin
+                config.marginLeft = margin
+            } else {
+                config.marginTop = config.marginTop ?? 0
+                config.marginBottom = config.marginBottom ?? 0
+                config.marginLeft = config.marginLeft ?? 0
+                config.marginRight = config.marginRight ?? 0
             }
 
             this.worker.postMessage({
@@ -86,7 +105,8 @@ export class PDFWorkerManager {
     }
 
     async generateFinalPDF(processedImages, config) {
-        const {PDFDocument, rgb} = await import('pdf-lib')
+        // 移除了 rgb 的引入，因为不再用于绘制页码
+        const {PDFDocument} = await import('pdf-lib')
         const pdfDoc = await PDFDocument.create()
 
         for (let i = 0; i < processedImages.length; i++) {
@@ -108,19 +128,18 @@ export class PDFWorkerManager {
                     height: imgData.drawHeight
                 })
 
-                // 添加页码 (颜色稍微柔和一点，适配深色背景阅读)
-                page.drawText(`${i + 1}/${processedImages.length}`, {
-                    x: imgData.pageWidth / 2 - 10,
-                    y: 15,
-                    size: 9,
-                    color: rgb(0.5, 0.5, 0.5)
-                })
+                // --- 已移除页码生成代码 ---
+                // page.drawText(...)
+
             } catch (embedError) {
                 console.error(`第 ${i + 1} 张图片嵌入失败:`, embedError)
             }
         }
 
-        const pdfBytes = await pdfDoc.save()
+        const pdfBytes = await pdfDoc.save({
+            useObjectStreams: true,
+            addDefaultPage: false
+        })
         const blob = new Blob([pdfBytes], {type: 'application/pdf'})
 
         const autoFileName = config.fileName || `图片转PDF_${processedImages.length}张.pdf`
@@ -149,23 +168,21 @@ export class PDFWorkerManager {
             link.click()
             document.body.removeChild(link)
             setTimeout(() => URL.revokeObjectURL(url), 1000)
+            this.callbacks.onComplete?.()
+            this.cleanup()
             return
         }
 
         // 2. iOS Safari 策略
-        // 使用 window.open 强制在新标签页打开，确保工具栏可见
-        // 不要使用 <a> 标签点击，否则经常在当前页预览且无工具栏
         const opened = window.open(url, '_blank')
 
         if (opened) {
-            // 成功打开新窗口
             this.showIOSSuccessGuide(fileName, () => {
                 URL.revokeObjectURL(url)
                 this.callbacks.onComplete?.()
                 this.cleanup()
             })
         } else {
-            // 弹窗被拦截（极其罕见，通常是用户没在点击事件中触发）
             console.error('无法打开新窗口，可能是被拦截')
             this.showIOSManualLink(url, fileName)
         }
@@ -175,11 +192,9 @@ export class PDFWorkerManager {
      * iOS 成功打开预览后的引导界面
      */
     showIOSSuccessGuide(fileName, cleanupCallback) {
-        // 创建全屏遮罩
         const overlay = document.createElement('div')
         overlay.className = 'ios-download-guide-overlay'
 
-        // 内部 HTML 结构
         overlay.innerHTML = `
             <div class="guide-card">
                 <div class="icon-success">✓</div>
@@ -202,7 +217,6 @@ export class PDFWorkerManager {
             </div>
         `
 
-        // 插入样式
         const style = document.createElement('style')
         style.textContent = `
             .ios-download-guide-overlay {
@@ -305,7 +319,6 @@ export class PDFWorkerManager {
         document.head.appendChild(style)
         document.body.appendChild(overlay)
 
-        // 绑定关闭事件
         document.getElementById('guideCloseBtn').onclick = () => {
             overlay.remove()
             style.remove()
@@ -327,18 +340,17 @@ export class PDFWorkerManager {
         a.style.padding = '20px'
         a.style.background = '#eee'
         document.body.appendChild(a)
-        // 不立即 revoke，等用户操作
         setTimeout(() => URL.revokeObjectURL(url), 60000)
     }
 
     handleComplete(data) {
         if (!data?.processedImages) {
             this.callbacks.onError?.('数据损坏')
+            this.cleanup()
             return
         }
         this.generateFinalPDF(data.processedImages, data.config)
             .catch(err => {
-                // 这里的 catch 已经在 generateFinalPDF 内部处理了大部分，主要是兜底
                 this.callbacks.onError?.('PDF处理异常', err)
                 this.cleanup()
             })
