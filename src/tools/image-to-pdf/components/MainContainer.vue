@@ -58,15 +58,15 @@
     />
 
     <!-- 性能监控 -->
-    <PerformanceMonitor ref="performanceMonitor" />
+    <PerformanceMonitor ref="performanceMonitor"/>
 
     <!-- 滚动到顶部/底部按钮 -->
-    <ScrollToTopButton />
+<!--    <ScrollToTopButton/>-->
   </v-card>
 </template>
 
 <script setup>
-import { reactive, ref, onUnmounted } from 'vue'
+import {reactive, ref, onUnmounted} from 'vue'
 
 // 导入子组件
 import FileUpload from './FileUpload.vue'
@@ -78,7 +78,7 @@ import PerformanceMonitor from './PerformanceMonitor.vue'
 import ScrollToTopButton from './ScrollToTopButton.vue'
 
 // 导入依赖
-import { getWorkerManager } from '../utils/worker-manager'
+import {getWorkerManager} from '../utils/worker-manager'
 
 // 状态管理
 const imageList = ref([])
@@ -140,7 +140,7 @@ const removeImage = (index) => {
 const moveImage = (params) => {
   if (params && typeof params === 'object' && 'from' in params && 'to' in params) {
     // 拖拽排序模式：from 和 to 是索引
-    const { from, to } = params
+    const {from, to} = params
     if (from >= 0 && from < imageList.value.length && to >= 0 && to < imageList.value.length) {
       const item = imageList.value.splice(from, 1)[0]
       imageList.value.splice(to, 0, item)
@@ -176,7 +176,7 @@ const addMoreImages = () => {
 const scrollToPage = (index) => {
   const el = document.getElementById(`page-${index}`)
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    el.scrollIntoView({behavior: 'smooth', block: 'center'})
   }
 }
 
@@ -229,26 +229,26 @@ const exportToPdf = async () => {
 
     // 设置回调函数
     workerManager
-      .onProgress(({ current, total, percentage, currentPage, message }) => {
-        exportProgress.value = percentage
-        exportCurrentPage.value = currentPage
-        if (message) {
-          console.log(`进度: ${message}`)
-        }
-      })
-      .onComplete(() => {
-        showSnackbar(`成功导出 ${validImages.length} 页 PDF`, 'success')
-        cleanupExport()
-      })
-      .onError((errorMessage, error) => {
-        console.error('导出错误:', error)
-        showSnackbar('导出失败: ' + errorMessage, 'error')
-        cleanupExport()
-      })
-      .onCancel(() => {
-        showSnackbar('导出已取消', 'info')
-        cleanupExport()
-      })
+        .onProgress(({current, total, percentage, currentPage, message}) => {
+          exportProgress.value = percentage
+          exportCurrentPage.value = currentPage
+          if (message) {
+            console.log(`进度: ${message}`)
+          }
+        })
+        .onComplete(() => {
+          showSnackbar(`成功导出 ${validImages.length} 页 PDF`, 'success')
+          cleanupExport()
+        })
+        .onError((errorMessage, error) => {
+          console.error('导出错误:', error)
+          showSnackbar('导出失败: ' + errorMessage, 'error')
+          cleanupExport()
+        })
+        .onCancel(() => {
+          showSnackbar('导出已取消', 'info')
+          cleanupExport()
+        })
 
     // 准备文件列表（只传递原始文件对象）
     const files = validImages.map(img => img.file)
@@ -293,6 +293,7 @@ const cleanupExport = () => {
     performanceMonitor.value.stop()
   }
 }
+
 
 // 组件卸载时清理
 onUnmounted(() => {

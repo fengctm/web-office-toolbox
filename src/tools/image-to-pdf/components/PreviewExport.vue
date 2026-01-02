@@ -13,6 +13,14 @@
         <!-- 主预览区域 - 使用新版PDF预览组件 -->
         <PDFPreview
             :files="imageList.map(img => img.file)"
+            :page-size="pdfConfig.pageSize"
+            :margins="{
+              top: pdfConfig.marginTop || 0,
+              right: pdfConfig.marginRight || 0,
+              bottom: pdfConfig.marginBottom || 0,
+              left: pdfConfig.marginLeft || 0
+            }"
+            :compression-quality="pdfConfig.compressionQuality || 0.92"
         />
       </v-window-item>
 

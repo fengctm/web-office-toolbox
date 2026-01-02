@@ -1,22 +1,21 @@
 <template>
-  <v-fade-transition>
-    <v-btn
-        v-if="showButton"
-        class="scroll-to-top-btn"
-        :class="{ 'is-at-bottom': isAtBottom }"
-        elevation="6"
-        size="large"
-        :icon="isAtBottom ? 'mdi-arrow-up' : 'mdi-arrow-down'"
-        @click="handleClick"
-        :style="buttonStyle"
-    />
-  </v-fade-transition>
+  <!-- 直接渲染按钮，不使用过渡和条件 -->
+  <v-btn
+      class="scroll-to-top-btn"
+      :class="{ 'is-at-bottom': isAtBottom }"
+      elevation="6"
+      size="large"
+      :icon="isAtBottom ? 'mdi-arrow-up' : 'mdi-arrow-down'"
+      @click="handleClick"
+      :style="buttonStyle"
+  />
 </template>
 
 <script setup>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 
-const showButton = ref(false)
+const showButton = ref(true) // 恢复正常逻辑
+const debug = ref(false) // 关闭调试模式
 const isAtBottom = ref(false)
 const scrollY = ref(0)
 const scrollHeight = ref(0)
@@ -32,10 +31,14 @@ const buttonStyle = computed(() => {
     bottom: `${bottomOffset}px`,
     right: `${rightOffset}px`,
     zIndex: 1000,
+    // 强制显示
+    display: 'flex !important',
+    opacity: '1 !important',
+    visibility: 'visible !important',
     // Apple 风格的平滑过渡
     transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     // 轻微的缩放效果
-    transform: showButton.value ? 'scale(1)' : 'scale(0)',
+    transform: 'scale(1)',
     // Google 风格的阴影
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)'
   }
@@ -49,14 +52,6 @@ const checkScrollPosition = () => {
       document.querySelector('.image-to-pdf-wrapper') ||
       document.querySelector('#app')
 
-  // 调试日志
-  console.log('Scroll check:', {
-    container: container?.className || 'window',
-    scrollY: container ? container.scrollTop : window.scrollY,
-    scrollHeight: container ? container.scrollHeight : document.documentElement.scrollHeight,
-    clientHeight: container ? container.clientHeight : window.innerHeight
-  })
-
   if (container) {
     scrollY.value = container.scrollTop
     scrollHeight.value = container.scrollHeight
@@ -67,8 +62,6 @@ const checkScrollPosition = () => {
 
     // 判断是否在底部（允许 10px 误差）
     isAtBottom.value = scrollY.value + clientHeight.value >= scrollHeight.value - 10
-
-    console.log('Container mode:', {showButton: showButton.value, isAtBottom: isAtBottom.value})
   } else {
     // 回退：检查 window
     scrollY.value = window.scrollY
@@ -77,8 +70,6 @@ const checkScrollPosition = () => {
 
     showButton.value = scrollY.value > 100
     isAtBottom.value = scrollY.value + clientHeight.value >= scrollHeight.value - 10
-
-    console.log('Window mode:', {showButton: showButton.value, isAtBottom: isAtBottom.value})
   }
 }
 
@@ -124,6 +115,11 @@ const handleScroll = () => {
     checkScrollPosition()
     scrollTimeout = null
   }, 100) // 100ms 防抖
+}
+
+// 立即检查一次，确保按钮状态正确
+const immediateCheck = () => {
+  checkScrollPosition()
 }
 
 onMounted(() => {
