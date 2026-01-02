@@ -28,7 +28,13 @@
 
           <!-- 主预览区域 - 使用公共PDF预览组件 -->
           <v-col cols="12" sm="9" md="10" class="overflow-y-auto bg-surface pa-4" style="height: 60vh; opacity: 0.85;">
-            <PDFPreview :images="imageList" />
+            <PDFPreview
+                :images="imageList"
+                :show-toolbar="false"
+                :show-thumbnails-toggle="false"
+                :use-virtual-scroll="false"
+                @render-complete="onRenderComplete"
+            />
           </v-col>
         </v-row>
       </v-window-item>
@@ -249,8 +255,14 @@ const props = defineProps({
 const emit = defineEmits([
   'update-config',
   'export-pdf',
-  'scroll-to-page'
+  'scroll-to-page',
+  'render-complete'
 ])
+
+// 渲染完成回调
+const onRenderComplete = (pageCount) => {
+  emit('render-complete', pageCount)
+}
 
 const activeTab = ref('preview')
 
@@ -390,22 +402,22 @@ const clearMargins = () => {
   border-bottom: 1px solid rgba(var(--v-theme-outline-variant), 1);
 }
 
-/* 自定义滚动条 - 使用主题颜色 */
+/* 自定义滚动条 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(var(--v-theme-surface-variant), 1);
+  background: #e0e0e0;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(var(--v-theme-primary), 1);
+  background: #009688;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--v-theme-primary), 0.8);
+  background: #00796b;
 }
 </style>

@@ -1,20 +1,31 @@
 <template>
-  <div class="pdf-viewer flex-grow-1 pa-6">
-    <div class="viewer-canvas mx-auto elevation-10 relative">
-      <!-- 使用公共 PDFPreview 组件 -->
-      <PDFPreview
-        :images="[{ preview: mockPreview }]"
-        :watermark-config="watermarkConfig"
-      />
+  <div class="watermark-preview-container flex-grow-1">
+    <!-- 使用通用 PDFPreview 组件 -->
+    <PDFPreview
+      :pdf-file="file"
+      :watermark-config="watermarkConfig"
+      :show-toolbar="false"
+      :show-thumbnails="false"
+      :show-thumbnails-toggle="false"
+      :use-virtual-scroll="false"
+      @render-complete="onRenderComplete"
+    />
+
+    <!-- 状态提示 -->
+    <div v-if="rendering" class="rendering-indicator">
+      <v-progress-circular indeterminate size="20" color="teal" class="mr-2" />
+      <span>正在渲染预览...</span>
     </div>
-    <div class="text-center mt-4 text-grey-darken-1 text-caption">
-      文件名：{{ file.name }} | 水印预览
+
+    <div v-if="!rendering && file" class="file-info text-caption mt-2">
+      <v-icon size="14" color="teal">mdi-file-pdf-box</v-icon>
+      {{ file.name }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import PDFPreview from '@/components/PDFPreview.vue'
 
 const props = defineProps({
@@ -22,35 +33,75 @@ const props = defineProps({
   settings: Object
 })
 
-// 水印配置
+const rendering = ref(false)
+
+// 水印配置 - 转换为 PDFPreview 期望的格式
 const watermarkConfig = computed(() => ({
   text: props.settings.text,
-  opacity: props.settings.opacity,
   color: props.settings.color,
-  size: props.settings.fontSize,
-  rotate: props.settings.rotation,
-  count: props.settings.density * 2
+  opacity: props.settings.opacity,
+  fontSize: props.settings.fontSize,
+  rotation: props.settings.rotation,
+  density: props.settings.density,
+  offset: props.settings.offset || 0
 }))
 
-// 模拟预览图（实际应使用 pdf.js 渲染真实PDF）
-// 这里使用一个简单的 SVG 作为占位符
-const mockPreview = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjcwNyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ3aGl0ZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5QREYgUHJldmlldyAoTW9jayk8L3RleHQ+PC9zdmc+'
+// 渲染完成回调
+const onRenderComplete = (pageCount) => {
+  rendering.value = false
+}
+
+// 监听文件变化，显示加载状态
+watch(() => props.file, (newFile) => {
+  if (newFile) {
+    rendering.value = true
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
-.pdf-viewer {
+.watermark-preview-container {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  overflow-y: auto;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  background: var(--v-theme-surface);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.viewer-canvas {
-  background: white;
-  width: 100%;
-  max-width: 500px;
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
+.rendering-indicator {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 150, 136, 0.9);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  z-index: 5;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.file-info {
+  text-align: center;
+  color: var(--v-theme-grey-darken-1);
+  padding: 8px;
+  background: var(--v-theme-surface-variant);
+  border-top: 1px solid var(--v-theme-outline-variant);
+}
+
+/* 确保 PDFPreview 占满容器 */
+.watermark-preview-container :deep(.pdf-preview-container) {
+  height: 100%;
+  border-radius: 0;
+}
+
+.watermark-preview-container :deep(.main-preview) {
+  background: var(--v-theme-surface);
 }
 </style>
