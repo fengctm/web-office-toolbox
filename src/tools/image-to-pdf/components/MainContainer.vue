@@ -59,6 +59,9 @@
 
     <!-- 性能监控 -->
     <PerformanceMonitor ref="performanceMonitor" />
+
+    <!-- 滚动到顶部/底部按钮 -->
+    <ScrollToTopButton />
   </v-card>
 </template>
 
@@ -72,6 +75,7 @@ import PreviewExport from './PreviewExport.vue'
 import ExportProgressModal from './ExportProgressModal.vue'
 import NotificationSnackbar from '@/components/NotificationSnackbar.vue'
 import PerformanceMonitor from './PerformanceMonitor.vue'
+import ScrollToTopButton from './ScrollToTopButton.vue'
 
 // 导入依赖
 import { getWorkerManager } from '../utils/worker-manager'

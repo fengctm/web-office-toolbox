@@ -1,512 +1,321 @@
 <template>
-  <div class="chrome-pdf-viewer">
-    <!-- 顶部工具栏：模仿 Chrome 风格 -->
-    <header class="pdf-toolbar" v-if="showToolbar">
-      <div class="toolbar-left">
-        <v-btn icon variant="text" color="white" @click="toggleThumbnails" v-if="showThumbnailsToggle">
-          <v-icon>{{ showThumbnails ? 'mdi- some-page-close' : 'mdi-view-thumbnail' }}</v-icon>
-        </v-btn>
-        <span class="file-name text-truncate" v-if="pdfFile">{{ pdfFile.name }}</span>
+  <div class="chrome-pdf-container" :class="{ 'is-mobile': isMobile }">
+
+    <!-- 1. 顶部工具栏：增加缩放控制 -->
+    <div class="pdf-header">
+      <v-btn
+          icon="mdi-view-thumbnail"
+          variant="text"
+          color="white"
+          density="comfortable"
+          @click="showSidebar = !showSidebar"
+      ></v-btn>
+
+      <div class="file-name text-truncate ml-2" v-if="!isMobile">{{ fileName }}</div>
+
+      <v-spacer></v-spacer>
+
+      <!-- 缩放控制组 -->
+      <div class="zoom-controls d-flex align-center bg-black-o-2 rounded-pill px-2 mx-2">
+        <v-btn icon="mdi-minus" size="x-small" variant="text" color="white" @click="changeZoom(-0.1)" :disabled="zoom <= 0.5"></v-btn>
+        <span class="zoom-text mx-2">{{ Math.round(zoom * 100) }}%</span>
+        <v-btn icon="mdi-plus" size="x-small" variant="text" color="white" @click="changeZoom(0.1)" :disabled="zoom >= 2.0"></v-btn>
       </div>
 
-      <div class="toolbar-center">
-        <div class="page-controls">
-          <input
-              type="number"
-              :value="currentPage"
-              @change="e => scrollToPage(parseInt(e.target.value))"
-              min="1"
-              :max="totalPages"
-          />
-          <span class="divider">/</span>
-          <span class="total-pages">{{ totalPages }}</span>
-        </div>
+      <v-spacer v-if="!isMobile"></v-spacer>
+
+      <div class="page-indicator">
+        {{ currentPage }} / {{ pages.length }}
       </div>
 
-      <div class="toolbar-right">
-        <v-btn icon variant="text" color="white" @click="zoomOut" :disabled="zoom <= 0.5">
-          <v-icon>mdi-minus</v-icon>
-        </v-btn>
-        <span class="zoom-percent">{{ Math.round(zoom * 100) }}%</span>
-        <v-btn icon variant="text" color="white" @click="zoomIn" :disabled="zoom >= 3">
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
-        <v-divider vertical class="mx-2" dark></v-divider>
-        <v-btn icon variant="text" color="white" title="打印" @click="handlePrint">
-          <v-icon>mdi-printer</v-icon>
-        </v-btn>
-      </div>
-    </header>
+      <v-btn icon="mdi-printer" variant="text" color="white" @click="handlePrint" v-if="!isMobile"></v-btn>
+    </div>
 
-    <div class="pdf-main-container">
-      <!-- 左侧缩略图栏 -->
-      <aside
-          class="pdf-sidebar"
-          :class="{ 'is-open': showThumbnailsPanel && hasThumbnails }"
-      >
-        <div class="sidebar-content">
-          <div
-              v-for="(page, index) in displayPages"
-              :key="`thumb-${page.id}`"
-              class="thumb-wrapper"
-              :class="{ active: currentPage === index + 1 }"
-              @click="scrollToPage(index + 1)"
-          >
-            <div class="thumb-canvas-container" :style="{ aspectRatio: pageRatio }">
-              <canvas :ref="el => setThumbnailRef(el, index)"/>
-            </div>
-            <div class="thumb-number">{{ index + 1 }}</div>
-          </div>
-        </div>
-      </aside>
+    <div class="pdf-body">
 
-      <!-- 主预览区 -->
-      <main class="pdf-viewport" ref="mainPreviewRef">
-        <RecycleScroller
-            v-if="useVirtualScroll && displayPages.length > 0"
-            class="scroller"
-            :items="displayPages"
-            :item-size="computedItemSize"
-            key-field="id"
-            v-slot="{ item, index }"
-            @scroll="onScroll"
-        >
-          <div class="page-canvas-wrapper" :style="pageWrapperStyle">
-            <div class="page-shadow-box" :style="{ aspectRatio: pageRatio }">
-              <canvas
-                  :ref="el => setPageRef(el, index)"
-                  class="pdf-canvas"
-              />
-              <!-- 水印层 -->
-              <div
-                  v-if="watermarkConfig && watermarkConfig.text"
-                  class="watermark-overlay"
-                  :style="watermarkStyle"
-              >
-                <div
-                    class="watermark-grid"
-                    :style="watermarkGridStyle"
-                >
-                  <div v-for="n in (watermarkConfig.density * 4)" :key="n" class="watermark-text">
-                    {{ watermarkConfig.text }}
-                  </div>
-                </div>
+      <!-- 2. 移动端遮罩层：侧边栏打开时显示，点击关闭侧边栏 -->
+      <transition name="fade">
+        <div v-if="isMobile && showSidebar" class="pdf-scrim" @click="showSidebar = false"></div>
+      </transition>
+
+      <!-- 3. 左侧缩略图：移动端采用绝对定位抽屉 -->
+      <transition name="slide">
+        <aside v-show="showSidebar" class="pdf-sidebar">
+          <div class="thumb-list">
+            <div
+                v-for="(page, index) in pages"
+                :key="page.id"
+                class="thumb-item"
+                :class="{ 'active': currentPage === index + 1 }"
+                @click="handleThumbClick(index)"
+            >
+              <div class="thumb-paper">
+                <img :src="page.url" class="thumb-img" />
               </div>
+              <div class="thumb-num">{{ index + 1 }}</div>
             </div>
           </div>
-        </RecycleScroller>
+        </aside>
+      </transition>
 
-        <!-- 非虚拟滚动模式 -->
-        <div v-else-if="!useVirtualScroll" class="static-scroll-container">
+      <!-- 4. 右侧主预览区 -->
+      <main class="pdf-main" ref="scrollContainer" @scroll="onScroll">
+        <div class="pdf-content-wrapper" :style="contentWrapperStyle">
           <div
-              v-for="(page, index) in displayPages"
-              :key="page.id"
-              class="page-canvas-wrapper"
-              :style="pageWrapperStyle"
+              v-for="(page, index) in pages"
+              :key="'page-' + page.id"
+              :ref="el => pageRefs[index] = el"
+              class="pdf-page-container"
+              :style="pageStyle"
           >
-            <div class="page-shadow-box" :style="{ aspectRatio: pageRatio }">
-              <canvas :ref="el => setPageRef(el, index)" class="pdf-canvas"/>
-              <!-- 水印同上 -->
+            <div class="a4-sheet">
+              <v-img :src="page.url" width="100%" aspect-ratio="0.707" cover>
+                <template v-slot:placeholder>
+                  <div class="fill-height d-flex align-center justify-center bg-grey-darken-3">
+                    <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+                  </div>
+                </template>
+              </v-img>
             </div>
           </div>
-        </div>
-
-        <!-- 空状态与加载 -->
-        <div v-if="loading" class="overlay-state">
-          <v-progress-circular indeterminate color="white"></v-progress-circular>
-        </div>
-        <div v-if="!loading && displayPages.length === 0" class="overlay-state">
-          <v-icon size="64" color="grey-lighten-1">mdi-file-document-outline</v-icon>
-          <p class="mt-2 text-white">等待加载文档...</p>
+          <div class="footer-spacer"></div>
         </div>
       </main>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import {computed, nextTick, ref, watch} from 'vue'
-import {RecycleScroller} from 'vue-virtual-scroller'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
 
 const props = defineProps({
-  images: {type: Array, default: () => []},
-  pdfFile: {type: File, default: null},
-  watermarkConfig: {
-    type: Object,
-    default: () => ({
-      text: '', color: '#009688', opacity: 0.3, fontSize: 24, rotation: -45, density: 6, offset: 0
-    })
-  },
-  showToolbar: {type: Boolean, default: true},
-  showThumbnails: {type: Boolean, default: true},
-  showThumbnailsToggle: {type: Boolean, default: true},
-  enableRealtime: {type: Boolean, default: true},
-  useVirtualScroll: {type: Boolean, default: true}
+  files: { type: Array, default: () => [] }
 })
 
-const emit = defineEmits(['page-change', 'render-complete'])
-
-// 状态
-const loading = ref(false)
-const zoom = ref(1.0)
-const currentPage = ref(1)
-const showThumbnailsPanel = ref(props.showThumbnails)
-const displayPages = ref([])
+const showSidebar = ref(window.innerWidth > 600)
+const isMobile = ref(window.innerWidth <= 600)
+const scrollContainer = ref(null)
 const pageRefs = ref([])
-const thumbnailRefs = ref([])
-const mainPreviewRef = ref(null)
+const currentPage = ref(1)
+const zoom = ref(1.0) // 缩放倍数
 
-// 计算属性
-const totalPages = computed(() => displayPages.value.length)
-const hasThumbnails = computed(() => totalPages.value > 0)
-const pageRatio = computed(() => props.pdfFile ? 0.707 : 0.75) // A4 宽高比 (W/H)
+const fileName = computed(() => props.files.length > 0 ? '文档预览' : '未选择文件')
 
-// 关键：根据缩放计算虚拟滚动条目高度
-const computedItemSize = computed(() => {
-  const baseWidth = 800 // 基准渲染宽度
-  const height = baseWidth / pageRatio.value
-  return (height * zoom.value) + 40 // 加上 margin 上下间距
+// 页面数据映射
+const pages = computed(() => {
+  return props.files.map((file, index) => ({
+    id: `${file.name}-${file.size}-${file.lastModified}`,
+    url: URL.createObjectURL(file)
+  }))
 })
 
-const pageWrapperStyle = computed(() => ({
-  width: `${800 * zoom.value}px`,
-  margin: '0 auto',
-  padding: '20px 0'
+// 动态样式计算
+const pageStyle = computed(() => ({
+  width: `${Math.min(800 * zoom.value, window.innerWidth - 40)}px`,
+  transition: 'width 0.2s ease-out'
 }))
 
-// 水印样式
-const watermarkStyle = computed(() => ({
-  opacity: props.watermarkConfig.opacity,
-  color: props.watermarkConfig.color,
-  fontSize: `${props.watermarkConfig.fontSize * zoom.value}px`,
+const contentWrapperStyle = computed(() => ({
+  padding: isMobile.value ? '10px' : '20px'
 }))
 
-const watermarkGridStyle = computed(() => ({
-  transform: `rotate(${props.watermarkConfig.rotation}deg)`,
-  gap: `${100 / props.watermarkConfig.density}px`
-}))
-
-// 功能函数
-const setPageRef = (el, index) => {
-  if (el) pageRefs.value[index] = el
-}
-const setThumbnailRef = (el, index) => {
-  if (el) thumbnailRefs.value[index] = el
-}
-
-const toggleThumbnails = () => {
-  showThumbnailsPanel.value = !showThumbnailsPanel.value
-}
-
-const zoomIn = () => {
-  if (zoom.value < 3) zoom.value += 0.1
-}
-const zoomOut = () => {
-  if (zoom.value > 0.5) zoom.value -= 0.1
-}
-
-const scrollToPage = (pageNum) => {
-  if (pageNum < 1 || pageNum > totalPages.value) return
-  currentPage.value = pageNum
-
-  const scroller = mainPreviewRef.value?.querySelector('.scroller')
-  if (scroller) {
-    scroller.scrollTop = (pageNum - 1) * computedItemSize.value
+// 处理窗口大小变化
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 600
+  if (isMobile.value) {
+    showSidebar.value = false
   }
 }
 
-const onScroll = (event) => {
-  const scrollTop = event.target.scrollTop
-  const index = Math.round(scrollTop / computedItemSize.value) + 1
-  if (index !== currentPage.value && index > 0) {
-    currentPage.value = index
-    emit('page-change', index)
+onMounted(() => window.addEventListener('resize', handleResize))
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  pages.value.forEach(p => URL.revokeObjectURL(p.url))
+})
+
+// 缩放控制
+const changeZoom = (delta) => {
+  const newZoom = parseFloat((zoom.value + delta).toFixed(1))
+  if (newZoom >= 0.5 && newZoom <= 2.0) {
+    zoom.value = newZoom
   }
 }
 
-// 核心渲染逻辑 (优化 PDF 渲染清晰度)
-const renderPage = async (canvas, index, isThumbnail = false) => {
-  if (!canvas) return
-  const ctx = canvas.getContext('2d')
-  const page = displayPages.value[index]
-  if (!page) return
-
-  const dpr = window.devicePixelRatio || 1
-  const width = isThumbnail ? 120 : 800 * zoom.value
-  const height = width / pageRatio.value
-
-  canvas.width = width * dpr
-  canvas.height = height * dpr
-  canvas.style.width = `${width}px`
-  canvas.style.height = `${height}px`
-  ctx.scale(dpr, dpr)
-
-  if (page.canvas) {
-    ctx.drawImage(page.canvas, 0, 0, width, height)
-  } else if (page.image) {
-    const img = new Image()
-    img.src = page.image
-    await new Promise(r => img.onload = r)
-    ctx.drawImage(img, 0, 0, width, height)
+// 缩略图点击
+const handleThumbClick = (index) => {
+  scrollToPage(index)
+  if (isMobile.value) {
+    showSidebar.value = false // 移动端点击后自动收起
   }
 }
 
-// 监听缩放和数据变化重新渲染
-watch([zoom, displayPages], async () => {
-  await nextTick()
+const scrollToPage = (index) => {
+  const container = scrollContainer.value
+  const target = pageRefs.value[index]
+  if (container && target) {
+    container.scrollTo({ top: target.offsetTop - 10, behavior: 'smooth' })
+  }
+}
+
+const onScroll = (e) => {
+  const container = e.target
+  const viewportCenter = container.scrollTop + (container.clientHeight / 2)
   for (let i = 0; i < pageRefs.value.length; i++) {
-    renderPage(pageRefs.value[i], i)
-  }
-  if (showThumbnailsPanel.value) {
-    for (let i = 0; i < thumbnailRefs.value.length; i++) {
-      renderPage(thumbnailRefs.value[i], i, true)
+    const el = pageRefs.value[i]
+    if (el && el.offsetTop <= viewportCenter && (el.offsetTop + el.offsetHeight) >= viewportCenter) {
+      currentPage.value = i + 1
+      break
     }
-  }
-}, {deep: true})
-
-// 加载 PDF 文件
-const processPDF = async (file) => {
-  if (!file) return
-  loading.value = true
-  try {
-    const pdfjsLib = await import('pdfjs-dist')
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-
-    const arrayBuffer = await file.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise
-
-    const pages = []
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i)
-      const viewport = page.getViewport({scale: 2.0}) // 高清离屏渲染
-      const offCanvas = document.createElement('canvas')
-      offCanvas.width = viewport.width
-      offCanvas.height = viewport.height
-      await page.render({canvasContext: offCanvas.getContext('2d'), viewport}).promise
-
-      pages.push({id: `page-${i}`, canvas: offCanvas})
-    }
-    displayPages.value = pages
-    emit('render-complete', pages.length)
-  } catch (e) {
-    console.error(e)
-  } finally {
-    loading.value = false
   }
 }
 
-watch(() => props.pdfFile, processPDF, {immediate: true})
-
-const handlePrint = () => {
-  window.print()
-}
+const handlePrint = () => window.print()
 </script>
 
-<style scoped>
-.chrome-pdf-viewer {
+<style scoped lang="scss">
+.chrome-pdf-container {
   display: flex;
   flex-direction: column;
+  height: 100%; /* 由外部容器决定高度 */
   width: 100%;
-  height: 100%;
-  background-color: #525659; /* Chrome PDF 经典背景色 */
-  color: white;
+  background-color: #525659;
   overflow: hidden;
-  font-family: Roboto, Arial, sans-serif;
+  position: relative;
+  border-radius: 4px;
+
+  &.is-mobile {
+    .pdf-header { padding: 0 8px; }
+    .pdf-sidebar {
+      position: absolute;
+      left: 0;
+      top: 48px;
+      height: calc(100% - 48px);
+      z-index: 100;
+      box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    }
+  }
 }
 
-/* 工具栏样式 */
-.pdf-toolbar {
+/* 遮罩层 */
+.pdf-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 90;
+}
+
+.pdf-header {
   height: 48px;
   background-color: #323639;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-}
-
-.toolbar-left, .toolbar-right {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-.toolbar-center {
-  display: flex;
-  justify-content: center;
-  flex: 1;
-}
-
-.file-name {
-  font-size: 14px;
-  margin-left: 8px;
-  max-width: 200px;
-}
-
-.page-controls {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.page-controls input {
-  width: 40px;
-  background: transparent;
-  border: none;
+  z-index: 110;
   color: white;
-  text-align: right;
-  outline: none;
+
+  .zoom-controls {
+    background: rgba(0,0,0,0.3);
+    .zoom-text { font-size: 12px; min-width: 40px; text-align: center; }
+  }
+
+  .page-indicator {
+    background: rgba(0,0,0,0.3);
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
 }
 
-.zoom-percent {
-  font-size: 13px;
-  width: 45px;
-  text-align: center;
-}
-
-/* 主内容区 */
-.pdf-main-container {
+.pdf-body {
   display: flex;
   flex: 1;
   overflow: hidden;
   position: relative;
 }
 
-/* 侧边栏 */
 .pdf-sidebar {
-  width: 0;
-  background: #323639;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 160px;
+  background-color: #323639;
+  border-right: 1px solid rgba(255,255,255,0.1);
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
-.pdf-sidebar.is-open {
-  width: 200px;
-}
-
-.sidebar-content {
-  width: 200px;
-  height: 100%;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.thumb-wrapper {
-  margin-bottom: 24px;
-  cursor: pointer;
-  text-align: center;
-}
-
-.thumb-canvas-container {
-  width: 120px;
-  margin: 0 auto;
-  background: white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  transition: transform 0.2s;
-}
-
-.thumb-wrapper:hover .thumb-canvas-container {
-  transform: scale(1.05);
-}
-
-.thumb-wrapper.active .thumb-canvas-container {
-  outline: 3px solid #8ab4f8;
-}
-
-.thumb-number {
-  font-size: 12px;
-  margin-top: 8px;
-  color: #bdc1c6;
-}
-
-/* 视口区域 */
-.pdf-viewport {
+.thumb-list {
   flex: 1;
-  overflow: hidden;
-  position: relative;
+  overflow-y: auto;
+  padding: 16px 0;
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
 }
 
-.scroller {
-  height: 100%;
-}
-
-.page-canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  will-change: transform;
-}
-
-.page-shadow-box {
-  position: relative;
-  background: white;
-  box-shadow: 0 0 8px rgba(0, 0, 0, .5);
-}
-
-.pdf-canvas {
-  display: block;
-}
-
-/* 水印层 */
-.watermark-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.watermark-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  align-content: space-around;
-  width: 200%;
-  height: 200%;
-  margin-left: -50%;
-  margin-top: -50%;
-}
-
-.watermark-text {
-  padding: 20px;
-  white-space: nowrap;
-  font-weight: bold;
-  user-select: none;
-}
-
-.overlay-state {
-  position: absolute;
-  inset: 0;
+.thumb-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  background: rgba(82, 86, 89, 0.8);
+  margin-bottom: 20px;
+  cursor: pointer;
+
+  .thumb-paper {
+    width: 100px;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    border: 2px solid transparent;
+    line-height: 0;
+    transition: transform 0.2s;
+    .thumb-img { width: 100%; aspect-ratio: 0.707; object-fit: cover; }
+  }
+
+  &.active {
+    .thumb-paper { border-color: #8ab4f8; transform: scale(1.05); }
+    .thumb-num { color: #8ab4f8; font-weight: bold; }
+  }
+}
+.thumb-num { font-size: 11px; color: #bdc1c6; margin-top: 6px; }
+
+.pdf-main {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #525659;
+
+  &::-webkit-scrollbar { width: 10px; }
+  &::-webkit-scrollbar-track { background: #525659; }
+  &::-webkit-scrollbar-thumb {
+    background: #777;
+    border: 2px solid #525659;
+    border-radius: 10px;
+  }
 }
 
-/* 自定义滚动条 */
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+.pdf-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-::-webkit-scrollbar-track {
-  background: #525659;
+.pdf-page-container {
+  margin-bottom: 16px;
+  will-change: width;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #bdc1c6;
-  border: 3px solid #525659;
-  border-radius: 10px;
+.a4-sheet {
+  background: white;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #9aa0a6;
+.footer-spacer { height: 40px; }
+
+/* 动画 */
+.slide-enter-active, .slide-leave-active { transition: transform 0.3s ease; }
+.slide-enter-from, .slide-leave-to { transform: translateX(-160px); }
+
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+@media print {
+  .pdf-header, .pdf-sidebar, .pdf-scrim { display: none !important; }
+  .pdf-main { overflow: visible !important; }
 }
 </style>

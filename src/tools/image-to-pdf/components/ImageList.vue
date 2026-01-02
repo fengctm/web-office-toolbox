@@ -34,16 +34,17 @@
       </div>
     </div>
 
-    <!-- 图片网格容器 -->
-    <div ref="gridContainer" class="grid-container">
+    <!-- 移动端：列表视图 | 桌面端：网格视图 -->
+    <div ref="gridContainer" class="grid-container" :class="{ 'mobile-list': isMobile }">
       <div
           v-for="(image, index) in imageList"
           :key="image.id"
           class="card"
+          :class="{ 'mobile-card': isMobile }"
           :data-id="image.id"
       >
         <!-- 图片区域 -->
-        <div class="image-area">
+        <div class="image-area" :class="{ 'mobile-image': isMobile }">
           <img :src="image.preview" alt="" draggable="false" loading="lazy" style="object-fit: contain; background: #f5f5f5;"/>
           <div class="overlay">
             <div class="card-actions">
@@ -59,45 +60,80 @@
         </div>
 
         <!-- 信息与控制区域 -->
-        <div class="control-wrapper">
-          <div class="info-area">
-            <div class="name">{{ image.name }}</div>
-          </div>
-
-          <!-- 快捷排序控制条 -->
-          <div class="page-controls" @click.stop>
-            <!-- 左右按钮：使用 text 变体，颜色 on-surface-variant，清晰锐利 -->
-            <v-btn
-                icon="mdi-chevron-left"
-                variant="text"
-                density="comfortable"
-                size="small"
-                color="on-surface-variant"
-                :disabled="index === 0"
-                @click="moveOne(index, -1)"
-            ></v-btn>
-
-            <div class="page-input-box">
-              <input
-                  type="number"
-                  :value="index + 1"
-                  min="1"
-                  :max="imageList.length"
-                  @keyup.enter="handleJump($event, index)"
-                  @blur="handleJump($event, index)"
+        <div class="control-wrapper" :class="{ 'mobile-control': isMobile }">
+          <!-- 移动端：显示完整文件名和更紧凑的控制 -->
+          <div v-if="isMobile" class="mobile-info">
+            <div class="mobile-name">{{ image.name }}</div>
+            <div class="mobile-controls">
+              <v-btn
+                  icon="mdi-chevron-left"
+                  variant="text"
+                  density="compact"
+                  size="small"
+                  color="on-surface-variant"
+                  :disabled="index === 0"
+                  @click="moveOne(index, -1)"
+              />
+              <div class="mobile-page-input">
+                <input
+                    type="number"
+                    :value="index + 1"
+                    min="1"
+                    :max="imageList.length"
+                    @keyup.enter="handleJump($event, index)"
+                    @blur="handleJump($event, index)"
+                />
+                <!--                -->
+                <span>/{{ imageList.length }}</span>
+              </div>
+              <v-btn
+                  icon="mdi-chevron-right"
+                  variant="text"
+                  density="compact"
+                  size="small"
+                  color="on-surface-variant"
+                  :disabled="index === imageList.length - 1"
+                  @click="moveOne(index, 1)"
               />
             </div>
-
-            <v-btn
-                icon="mdi-chevron-right"
-                variant="text"
-                density="comfortable"
-                size="small"
-                color="on-surface-variant"
-                :disabled="index === imageList.length - 1"
-                @click="moveOne(index, 1)"
-            ></v-btn>
           </div>
+
+          <!-- 桌面端：保持原有布局 -->
+          <template v-else>
+            <div class="info-area">
+              <div class="name">{{ image.name }}</div>
+            </div>
+            <div class="page-controls" @click.stop>
+              <v-btn
+                  icon="mdi-chevron-left"
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  color="on-surface-variant"
+                  :disabled="index === 0"
+                  @click="moveOne(index, -1)"
+              />
+              <div class="page-input-box">
+                <input
+                    type="number"
+                    :value="index + 1"
+                    min="1"
+                    :max="imageList.length"
+                    @keyup.enter="handleJump($event, index)"
+                    @blur="handleJump($event, index)"
+                />
+              </div>
+              <v-btn
+                  icon="mdi-chevron-right"
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  color="on-surface-variant"
+                  :disabled="index === imageList.length - 1"
+                  @click="moveOne(index, 1)"
+              />
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -105,7 +141,8 @@
 </template>
 
 <script setup>
-import {nextTick, onMounted, onUnmounted, ref} from 'vue'
+import {nextTick, onMounted, onUnmounted, ref, computed} from 'vue'
+import {useDisplay} from 'vuetify'
 
 const props = defineProps({
   imageList: {
@@ -115,6 +152,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['remove-image', 'move-image', 'sort-images'])
+
+// 检测是否为移动端
+const display = useDisplay()
+const isMobile = computed(() => display.smAndDown.value)
 
 const remove = (index) => {
   emit('remove-image', index)
@@ -186,7 +227,7 @@ const handleJump = (event, currentIndex) => {
 
   // 自动聚焦到下一个输入框（提升效率）
   nextTick(() => {
-    const inputs = document.querySelectorAll('.page-input-box input')
+    const inputs = document.querySelectorAll('.page-input-box input, .mobile-page-input input')
     if (inputs[targetIndex]) {
       inputs[targetIndex].focus()
       inputs[targetIndex].select()
@@ -225,7 +266,7 @@ onUnmounted(() => {
   z-index: 10;
 }
 
-/* --- 网格容器 --- */
+/* --- 网格容器（桌面端） --- */
 .grid-container {
   flex: 1;
   overflow-y: auto;
@@ -236,7 +277,15 @@ onUnmounted(() => {
   align-content: start;
 }
 
-/* --- 卡片设计 --- */
+/* --- 移动端列表视图 --- */
+.grid-container.mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 8px;
+}
+
+/* --- 卡片设计（桌面端） --- */
 .card {
   background-color: rgb(var(--v-theme-surface));
   border-radius: 12px;
@@ -253,17 +302,36 @@ onUnmounted(() => {
   border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
-/* --- 图片区域 --- */
+/* --- 移动端卡片 --- */
+.card.mobile-card {
+  flex-direction: row;
+  border-radius: 8px;
+  min-height: 80px;
+  gap: 12px;
+  padding: 8px;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-outline), 0.08);
+}
+
+/* --- 图片区域（桌面端） --- */
 .image-area {
   position: relative;
   width: 100%;
   padding-top: 75%;
-  /* 背景移除，保持透明或极淡，让图片内容凸显 */
   background-color: transparent;
   cursor: grab;
 }
 
-/* 如果图片加载失败或透明背景时的占位色 */
+/* --- 移动端图片区域 --- */
+.image-area.mobile-image {
+  width: 80px;
+  min-width: 80px;
+  height: 80px;
+  padding-top: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .image-area img {
   position: absolute;
   top: 0;
@@ -271,7 +339,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  /* 图片本身无需背景，依靠容器背景 */
+  background: rgba(var(--v-theme-surface-variant), 0.5);
 }
 
 .overlay {
@@ -290,18 +358,77 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-/* --- 底部控制区 --- */
+/* --- 底部控制区（桌面端） --- */
 .control-wrapper {
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   background: rgb(var(--v-theme-surface));
-  /* 边框极其淡化 */
   border-top: 1px solid rgba(var(--v-theme-outline), 0.04);
 }
 
-/* --- 文件名文字 --- */
+/* --- 移动端控制区 --- */
+.control-wrapper.mobile-control {
+  flex: 1;
+  padding: 0;
+  border-top: none;
+  justify-content: center;
+}
+
+/* --- 移动端信息布局 --- */
+.mobile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.mobile-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mobile-page-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(var(--v-theme-outline), 0.05);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.mobile-page-input input {
+  width: 40px;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(var(--v-theme-primary));
+  outline: none;
+}
+
+.mobile-page-input span {
+  font-size: 12px;
+  font-weight: 500;
+  /* 深色模式显示浅色，浅色模式显示深色 */
+  color: rgb(var(--v-theme-on-surface));
+  opacity: 0.85;
+}
+
+/* --- 文件名文字（桌面端） --- */
 .info-area {
   width: 100%;
   min-height: 1.5em;
@@ -322,17 +449,16 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
-/* --- 页码控制器 --- */
+/* --- 页码控制器（桌面端） --- */
 .page-controls {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  /* 背景色调整为极度透明的 outline，几乎不可见，仅用于微调层次 */
   background-color: rgba(var(--v-theme-outline), 0.05);
   border-radius: 8px;
-  padding: 4px 8px; /* 稍微增加内边距，让布局更舒展 */
-  height: 36px; /* 固定高度，防止抖动 */
+  padding: 4px 8px;
+  height: 36px;
 }
 
 .page-input-box {
@@ -374,20 +500,23 @@ onUnmounted(() => {
   background-color: rgb(var(--v-theme-surface)) !important;
 }
 
-/* --- 响应式 --- */
+/* --- 响应式调整 --- */
 @media (max-width: 600px) {
   .grid-container {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     padding: 8px;
     gap: 12px;
   }
+
   .name {
     font-size: 12px;
   }
+
   .control-wrapper {
     padding: 8px;
     gap: 8px;
   }
+
   .page-controls {
     padding: 2px 4px;
     height: 32px;

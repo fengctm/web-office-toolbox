@@ -9,34 +9,11 @@
     <!-- 标签页内容 -->
     <v-window v-model="activeTab">
       <!-- 预览面板 -->
-      <v-window-item value="preview" class="bg-surface-variant pa-4">
-        <v-row no-gutters>
-          <!-- 侧边栏缩略图 -->
-          <v-col cols="3" md="2" class="d-none d-sm-block bg-surface-darken-1 overflow-y-auto"
-                 style="height: 60vh; opacity: 0.8;">
-            <div v-for="(img, index) in imageList" :key="index" class="pa-2 text-center">
-              <v-img
-                  :src="img.preview"
-                  class="mb-1 cursor-pointer rounded elevation-2"
-                  @click="scrollToPage(index)"
-                  aspect-ratio="1"
-                  cover
-              ></v-img>
-              <span class="text-caption text-on-surface-variant">{{ index + 1 }}</span>
-            </div>
-          </v-col>
-
-          <!-- 主预览区域 - 使用公共PDF预览组件 -->
-          <v-col cols="12" sm="9" md="10" class="overflow-y-auto bg-surface pa-4" style="height: 60vh; opacity: 0.85;">
-            <PDFPreview
-                :images="imageList"
-                :show-toolbar="false"
-                :show-thumbnails-toggle="false"
-                :use-virtual-scroll="false"
-                @render-complete="onRenderComplete"
-            />
-          </v-col>
-        </v-row>
+      <v-window-item value="preview" class="bg-surface-variant pa-4" style="height: 80vh;">
+        <!-- 主预览区域 - 使用新版PDF预览组件 -->
+        <PDFPreview
+            :files="imageList.map(img => img.file)"
+        />
       </v-window-item>
 
       <!-- 导出设置面板 -->
@@ -259,11 +236,6 @@ const emit = defineEmits([
   'render-complete'
 ])
 
-// 渲染完成回调
-const onRenderComplete = (pageCount) => {
-  emit('render-complete', pageCount)
-}
-
 const activeTab = ref('preview')
 
 // 估算文件大小 - 基于实际压缩效果
@@ -398,8 +370,8 @@ const clearMargins = () => {
 
 .page-header {
   padding: 4px 8px;
-  background: rgba(var(--v-theme-surface-variant), 1);
-  border-bottom: 1px solid rgba(var(--v-theme-outline-variant), 1);
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 /* 自定义滚动条 */
