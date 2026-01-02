@@ -26,21 +26,9 @@
             </div>
           </v-col>
 
-          <!-- 主预览区域 -->
+          <!-- 主预览区域 - 使用公共PDF预览组件 -->
           <v-col cols="12" sm="9" md="10" class="overflow-y-auto bg-surface pa-4" style="height: 60vh; opacity: 0.85;">
-            <div class="pdf-viewer-mock mx-auto">
-              <div
-                  v-for="(img, index) in imageList"
-                  :key="index"
-                  :id="'page-' + index"
-                  class="pdf-page-mock mb-4 elevation-4 bg-surface"
-              >
-                <div class="page-header text-caption text-on-surface-variant">
-                  第 {{ index + 1 }} 页 / 共 {{ imageList.length }} 页
-                </div>
-                <v-img :src="img.preview" width="100%" contain></v-img>
-              </div>
-            </div>
+            <PDFPreview :images="imageList" />
           </v-col>
         </v-row>
       </v-window-item>
@@ -241,6 +229,7 @@
 
 <script setup>
 import {computed, ref, watch} from 'vue'
+import PDFPreview from '@/components/PDFPreview.vue'
 
 const props = defineProps({
   imageList: {
