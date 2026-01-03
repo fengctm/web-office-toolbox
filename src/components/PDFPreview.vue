@@ -4,7 +4,7 @@
     <!-- 1. 顶部工具栏 -->
     <div class="pdf-header">
       <v-btn
-          icon="mdi-view-thumbnail"
+          icon="mdi-view-headline"
           variant="text"
           color="white"
           density="comfortable"
@@ -22,9 +22,11 @@
 
       <!-- 缩放控制组 -->
       <div class="zoom-controls d-flex align-center bg-black-o-2 rounded-pill px-2 mx-2">
-        <v-btn icon="mdi-minus" size="x-small" variant="text" color="white" @click="changeZoom(-0.1)" :disabled="zoom <= 0.5"></v-btn>
+        <v-btn icon="mdi-minus" size="x-small" variant="text" color="white" @click="changeZoom(-0.1)"
+               :disabled="zoom <= 0.5"></v-btn>
         <span class="zoom-text mx-2">{{ Math.round(zoom * 100) }}%</span>
-        <v-btn icon="mdi-plus" size="x-small" variant="text" color="white" @click="changeZoom(0.1)" :disabled="zoom >= 2.0"></v-btn>
+        <v-btn icon="mdi-plus" size="x-small" variant="text" color="white" @click="changeZoom(0.1)"
+               :disabled="zoom >= 2.0"></v-btn>
       </div>
 
       <v-spacer v-if="!isMobile"></v-spacer>
@@ -57,7 +59,7 @@
               <!-- 缩略图纸张 -->
               <div class="thumb-paper" :style="getPaperStyle(page, 100)">
                 <div class="image-box">
-                  <img :src="page.url" class="fit-img" @load="e => onImageLoad(e, index)" />
+                  <img :src="page.url" class="fit-img" @load="e => onImageLoad(e, index)"/>
                 </div>
               </div>
               <div class="thumb-num">{{ index + 1 }}</div>
@@ -79,7 +81,7 @@
             <!-- 动态尺寸纸张 -->
             <div class="pdf-sheet" :style="getPaperStyle(page, BASE_WIDTH_PX * zoom)">
               <div class="image-box">
-                <img :src="page.url" class="fit-img" />
+                <img :src="page.url" class="fit-img"/>
               </div>
             </div>
           </div>
@@ -92,21 +94,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, onMounted, reactive } from 'vue'
+import {ref, computed, onUnmounted, onMounted, reactive} from 'vue'
 
 const props = defineProps({
-  files: { type: Array, default: () => [] },
+  files: {type: Array, default: () => []},
   // 页边距 (mm)
   margins: {
     type: Object,
-    default: () => ({ top: 20, right: 20, bottom: 20, left: 20 })
+    default: () => ({top: 20, right: 20, bottom: 20, left: 20})
   },
   // 页面尺寸模式: "A4" 或 "original" (对应你说的图片原始尺寸/适应屏幕)
   pageSize: {
     type: String,
     default: "A4"
   },
-  compressionQuality: { type: Number, default: 0.92 }
+  compressionQuality: {type: Number, default: 0.92}
 })
 
 // 常量
@@ -137,7 +139,7 @@ const pages = computed(() => {
 
 // 获取图片加载后的比例
 const onImageLoad = (event, index) => {
-  const { naturalWidth, naturalHeight } = event.target
+  const {naturalWidth, naturalHeight} = event.target
   imageRatios[index] = naturalWidth / naturalHeight
 }
 
@@ -221,7 +223,7 @@ const scrollToPage = (index) => {
   const container = scrollContainer.value
   const target = pageRefs.value[index]
   if (container && target) {
-    container.scrollTo({ top: target.offsetTop - 10, behavior: 'smooth' })
+    container.scrollTo({top: target.offsetTop - 10, behavior: 'smooth'})
   }
 }
 
@@ -242,74 +244,204 @@ const handlePrint = () => window.print()
 
 <style scoped lang="scss">
 .chrome-pdf-container {
-  display: flex; flex-direction: column; height: 100%; width: 100%;
-  background-color: #525659; overflow: hidden; position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #525659;
+  overflow: hidden;
+  position: relative;
+
   &.is-mobile .pdf-sidebar {
-    position: absolute; left: 0; top: 48px; height: calc(100% - 48px);
-    z-index: 100; box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+    position: absolute;
+    left: 0;
+    top: 48px;
+    height: calc(100% - 48px);
+    z-index: 100;
+    box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
   }
 }
 
 .pdf-header {
-  height: 48px; background-color: #323639; display: flex; align-items: center;
-  padding: 0 16px; z-index: 110; color: white;
-  .zoom-controls { background: rgba(0,0,0,0.3); .zoom-text { font-size: 12px; min-width: 40px; text-align: center; } }
-  .page-indicator { background: rgba(0,0,0,0.3); padding: 2px 10px; border-radius: 4px; font-size: 12px; }
+  height: 48px;
+  background-color: #323639;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 110;
+  color: white;
+
+  .zoom-controls {
+    background: rgba(0, 0, 0, 0.3);
+
+    .zoom-text {
+      font-size: 12px;
+      min-width: 40px;
+      text-align: center;
+    }
+  }
+
+  .page-indicator {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
 }
 
-.pdf-body { display: flex; flex: 1; overflow: hidden; position: relative; }
+.pdf-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
 
 .pdf-sidebar {
-  width: 160px; background-color: #323639; border-right: 1px solid rgba(255,255,255,0.1);
-  overflow: hidden; display: flex; flex-direction: column;
+  width: 160px;
+  background-color: #323639;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .thumb-list {
-  flex: 1; overflow-y: auto; padding: 16px 0;
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .thumb-item {
-  display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  cursor: pointer;
+
   .thumb-paper {
-    transition: all 0.2s; overflow: hidden;
-    .image-box { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-    .fit-img { width: 100%; height: auto; max-height: 100%; display: block; object-fit: contain; }
+    transition: all 0.2s;
+    overflow: hidden;
+
+    .image-box {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fit-img {
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      display: block;
+      object-fit: contain;
+    }
   }
+
   &.active {
-    .thumb-paper { transform: scale(1.05); box-shadow: 0 0 0 2px #8ab4f8; }
-    .thumb-num { color: #8ab4f8; font-weight: bold; }
+    .thumb-paper {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 2px #8ab4f8;
+    }
+
+    .thumb-num {
+      color: #8ab4f8;
+      font-weight: bold;
+    }
   }
 }
-.thumb-num { font-size: 11px; color: #bdc1c6; margin-top: 6px; }
+
+.thumb-num {
+  font-size: 11px;
+  color: #bdc1c6;
+  margin-top: 6px;
+}
 
 .pdf-main {
-  flex: 1; overflow-y: auto; background-color: #525659;
-  &::-webkit-scrollbar { width: 10px; }
-  &::-webkit-scrollbar-track { background: #525659; }
-  &::-webkit-scrollbar-thumb { background: #777; border: 2px solid #525659; border-radius: 10px; }
+  flex: 1;
+  overflow-y: auto;
+  background-color: #525659;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #525659;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #777;
+    border: 2px solid #525659;
+    border-radius: 10px;
+  }
 }
 
-.pdf-content-wrapper { display: flex; flex-direction: column; align-items: center; }
+.pdf-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
 /* 纸张内部布局 */
 .image-box {
-  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-}
-.fit-img {
-  width: 100%; height: auto; max-height: 100%; display: block; object-fit: contain;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pdf-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
-.footer-spacer { height: 40px; }
-.slide-enter-active, .slide-leave-active { transition: transform 0.3s ease; }
-.slide-enter-from, .slide-leave-to { transform: translateX(-160px); }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fit-img {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.pdf-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+}
+
+.footer-spacer {
+  height: 40px;
+}
+
+.slide-enter-active, .slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-enter-from, .slide-leave-to {
+  transform: translateX(-160px);
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 
 @media print {
-  .pdf-header, .pdf-sidebar, .pdf-scrim { display: none !important; }
-  .pdf-main { overflow: visible !important; }
+  .pdf-header, .pdf-sidebar, .pdf-scrim {
+    display: none !important;
+  }
+  .pdf-main {
+    overflow: visible !important;
+  }
 }
 </style>

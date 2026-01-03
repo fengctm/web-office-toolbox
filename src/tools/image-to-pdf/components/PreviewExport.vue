@@ -21,6 +21,7 @@
               left: pdfConfig.marginLeft || 0
             }"
             :compression-quality="pdfConfig.compressionQuality || 0.92"
+            :loading="isImageLoading"
         />
       </v-window-item>
 
@@ -237,6 +238,10 @@ const props = defineProps({
   }
 })
 
+// 图片加载状态管理
+const isImageLoading = ref(false)
+const loadingTimeout = ref(null)
+
 const emit = defineEmits([
   'update-config',
   'export-pdf',
@@ -328,6 +333,45 @@ const clearMargins = () => {
   updateConfig('marginBottom', 0)
   updateConfig('marginLeft', 0)
 }
+
+// 监听图片列表变化，管理加载状态
+watch(() => props.imageList, (newList) => {
+  if (newList.length > 0) {
+    // 开始加载状态
+    isImageLoading.value = true
+    
+    // 清除之前的定时器
+    if (loadingTimeout.value) {
+      clearTimeout(loadingTimeout.value)
+    }
+    
+    // 设置超时保护（5秒后自动关闭loading）
+    loadingTimeout.value = setTimeout(() => {
+      isImageLoading.value = false
+    }, 5000)
+  } else {
+    // 没有图片时关闭loading
+    isImageLoading.value = false
+    if (loadingTimeout.value) {
+      clearTimeout(loadingTimeout.value)
+    }
+  }
+}, { deep: true, immediate: true })
+
+// 监听 PDFPreview 的 render-complete 事件
+const handleRenderComplete = (pageCount) => {
+  // 图片全部加载完成，关闭loading
+  isImageLoading.value = false
+  if (loadingTimeout.value) {
+    clearTimeout(loadingTimeout.value)
+  }
+  console.log(`PDFPreview 渲染完成，共 ${pageCount} 页`)
+}
+
+// 暴露方法给父组件
+defineExpose({
+  handleRenderComplete
+})
 </script>
 
 <style scoped>
