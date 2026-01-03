@@ -21,7 +21,7 @@
 
         <!-- 导出按钮直接放在工具栏 -->
         <v-btn
-            v-if="pdfFile"
+            v-if="pdfState.file"
             prepend-icon="mdi-download"
             variant="flat"
             color="teal-accent-4"
@@ -52,13 +52,12 @@
       <!-- 主体内容 -->
       <v-main class="main-bg">
         <!-- 文件上传区域 -->
-        <div v-if="!pdfFile" class="fill-height d-flex flex-column align-center justify-center">
+        <div v-if="!pdfState.file" class="fill-height d-flex flex-column align-center justify-center">
           <FileUpload
               ref="fileUploadRef"
-              :pdf-file="pdfFile"
+              :pdf-file="pdfState.file"
               @file-loaded="handleFileLoaded"
               @password-submitted="handlePasswordSubmitted"
-              @error="handleError"
               @reset="reset"
           />
         </div>
@@ -66,7 +65,7 @@
         <!-- PDF 预览区域 -->
         <div v-else class="preview-wrapper fill-height">
           <PreviewArea
-              :preview-files="previewFiles"
+              :preview-files="pdfState.pages"
               :watermark-config="config"
           />
         </div>
@@ -83,127 +82,154 @@
 </template>
 
 <script setup>
-import {ref, reactive, onMounted} from 'vue'
-import {processPDF, exportWatermarkedPDF} from '../utils/pdf-processor'
-import {showNotification, isPasswordError, formatErrorMessage} from '../utils/helpers'
-
-// 导入子组件
-import FileUpload from './FileUpload.vue'
-import SettingsPanel from './SettingsPanel.vue'
-import PreviewArea from './PreviewArea.vue'
-import NotificationSnackbar from '@/components/NotificationSnackbar.vue'
+import {ref, reactive, onMounted, useTemplateRef} from 'vue'
+import {PDFHelper} from '@/utils-scripts/PdfHelper'
+import {showNotification, formatErrorMessage} from '../utils/helpers'
+import FileUpload from "@/tools/pdf-watermark/components/FileUpload.vue";
+import SettingsPanel from "@/tools/pdf-watermark/components/SettingsPanel.vue";
+import PreviewArea from "@/tools/pdf-watermark/components/PreviewArea.vue";
+import NotificationSnackbar from "@/components/NotificationSnackbar.vue";
+import {exportWatermarkedPDF} from "@/tools/pdf-watermark/utils/pdf-processor.js";
 
 // --- 状态变量 ---
 const loading = ref(false)
 const loadingText = ref('')
 const showSettings = ref(true)
-const pdfFile = ref(null)
-const previewFiles = ref([])
-const fileUploadRef = ref(null)
 const isMobile = ref(window.innerWidth < 600)
+const fileUploadRef = useTemplateRef('fileUploadRef')
 
-// 通知状态
-const notification = reactive({
-  show: false,
-  message: '',
-  color: 'info'
+// 核心 PDF 数据状态
+const pdfState = reactive({
+  file: null,
+  password: '',
+  pages: [],
+  isEncrypted: false
 })
+
+const notification = reactive({show: false, message: '', color: 'info'})
 
 const config = reactive({
   text: '内部文档 请勿外传',
-  font: 'Standard',
-  fontSize: 30,
-  color: '#ff0000',
-  opacity: 0.3,
-  rotation: -45,
-  gap: 150,
-  offsetX: 0,
-  offsetY: 0
+  font: 'Standard', fontSize: 30, color: '#ff0000',
+  opacity: 0.3, rotation: -45, gap: 150, offsetX: 0, offsetY: 0
 })
 
-// --- 文件处理 ---
-const handleFileLoaded = async (file) => {
-  pdfFile.value = file
-  await processFile(file, '')
-}
-
-const handlePasswordSubmitted = (password) => {
-  if (fileUploadRef.value) {
-    fileUploadRef.value.password = password
-  }
-  // 使用密码重新处理PDF
-  processFile(pdfFile.value, password)
-}
-
-const processFile = async (file, password) => {
+/**
+ * 核心逻辑：处理 PDF 加载与解密
+ * @param {File} file
+ * @param {string} password
+ */
+const runPdfPipeline = async (file, password = '') => {
   loading.value = true
-  loadingText.value = '正在解析 PDF...'
+  loadingText.value = password ? '正在解密并解析...' : '正在解析 PDF...'
 
   try {
-    const pages = await processPDF(file, password)
-    previewFiles.value = pages
-    loading.value = false
-    showNotification(notification, `PDF解析成功！共 ${pages.length} 页`, 'success')
-  } catch (error) {
-    loading.value = false
+    // 1. 尝试获取实例（PdfHelper.getPdfjsInstance 内部封装了加密捕获）
+    const {pdf, isEncrypted} = await PDFHelper.getPdfjsInstance(file, password)
 
-    if (isPasswordError(error)) {
-      showNotification(notification, '密码错误，请重新输入', 'error')
-      if (fileUploadRef.value) {
-        fileUploadRef.value.showPasswordInput()
+    // 2. 处理加密逻辑
+    if (isEncrypted) {
+      pdfState.isEncrypted = true
+      // 如果提供了密码但仍返回 isEncrypted，说明密码错误
+      if (password) {
+        showNotification(notification, '密码错误，请重新输入', 'error')
+      } else {
+        showNotification(notification, '文档已加密，请输入密码', 'warning')
       }
-    } else {
-      handleError('文件加载失败: ' + formatErrorMessage(error))
-      reset()
+      fileUploadRef.value?.showPasswordInput()
+      return
     }
+
+    // 3. 走到这里说明解密成功或无需密码
+    const pages = await PDFHelper.renderToImages(file, password, 1.5)
+
+    // 更新持久状态
+    pdfState.file = file
+    pdfState.password = password
+    pdfState.pages = pages
+    pdfState.isEncrypted = false
+
+    showNotification(notification, `解析成功！共 ${pages.length} 页`, 'success')
+  } catch (error) {
+    handleGeneralError(error)
+  } finally {
+    loading.value = false
   }
 }
 
-// --- 导出 PDF ---
+// --- 事件处理 ---
+
+// 上传新文件
+const handleFileLoaded = (file) => {
+  reset() // 先清空旧状态
+  runPdfPipeline(file)
+}
+
+// 用户提交密码
+const handlePasswordSubmitted = (password) => {
+  runPdfPipeline(pdfState.file, password)
+}
+
+// 导出 PDF
 const exportPDF = async () => {
+  if (!pdfState.file) return
+
   loading.value = true
   loadingText.value = '正在注入水印并打包...'
 
   try {
-    const password = fileUploadRef.value?.password || ''
-    const blob = await exportWatermarkedPDF(pdfFile.value, config, password)
-    
-    // 下载文件
-    const fileName = `${pdfFile.value.name.replace('.pdf', '')}_水印版.pdf`
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = fileName
-    a.click()
-    URL.revokeObjectURL(url)
+    // 1. 使用保存的密码直接脱密（PdfHelper 会处理 AES-256 等兼容性）
+    const exportResult = await PDFHelper.exportPDF(
+        pdfState.file,
+        pdfState.password,
+        'temp.pdf'
+    )
 
-    loading.value = false
+    // 2. 注入水印逻辑 (注意：这里应调用你之前的 pdf-lib 水印函数)
+    // 假设 exportWatermarkedPDF 是你定义的添加水印的函数
+    const finalBlob = await exportWatermarkedPDF(exportResult.blob, config)
+
+    // 3. 触发下载
+    triggerDownload(finalBlob)
+
     showNotification(notification, 'PDF 导出成功！', 'success')
   } catch (error) {
+    // 导出时的错误通常是由于某些特殊的加密限制
+    handleGeneralError(error, '导出失败')
+  } finally {
     loading.value = false
-    
-    if (isPasswordError(error)) {
-      showNotification(notification, '密码错误或 PDF 已加密', 'warning')
-      if (fileUploadRef.value) {
-        fileUploadRef.value.showPasswordInput()
-      }
-    } else {
-      handleError('导出失败: ' + formatErrorMessage(error))
-    }
   }
 }
 
-// --- 错误处理 ---
-const handleError = (message) => {
-  showNotification(notification, message, 'error')
+/**
+ * 辅助函数：统一错误处理
+ */
+const handleGeneralError = (error, prefix = '加载失败') => {
+  console.error(error)
+  const msg = error.name === 'PasswordException' || error.message?.includes('password')
+      ? '密码验证失败，请重试'
+      : `${prefix}: ${formatErrorMessage(error)}`
+
+  showNotification(notification, msg, 'error')
+
+  // 如果不是密码错误导致的彻底失败，则重置
+  if (!pdfState.isEncrypted) reset()
 }
 
-// --- 重置 ---
+const triggerDownload = (blob) => {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${pdfState.file.name.replace('.pdf', '')}_水印版.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 const reset = () => {
-  pdfFile.value = null
-  previewFiles.value = []
-  loading.value = false
-  loadingText.value = ''
+  pdfState.file = null
+  pdfState.password = ''
+  pdfState.pages = []
+  pdfState.isEncrypted = false
 }
 
 // --- 生命周期 ---

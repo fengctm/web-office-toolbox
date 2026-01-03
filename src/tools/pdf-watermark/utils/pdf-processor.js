@@ -1,102 +1,36 @@
 import {PDFDocument, rgb, degrees, StandardFonts} from 'pdf-lib'
-import * as pdfjsLib from 'pdfjs-dist'
-
-// 配置 pdfjs worker
-if (typeof window !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-}
-
-/**
- * 处理PDF文件并生成预览
- * @param {File} file - PDF文件
- * @param {string} password - 密码（可选）
- * @returns {Promise<File[]>} - 预览图片文件数组
- */
-export const processPDF = async (file, password = '') => {
-    const arrayBuffer = await file.arrayBuffer()
-    const pdfPassword = password || undefined
-
-    let pdf
-    try {
-        // 优先使用pdfjs加载（对加密支持更好）
-        pdf = await pdfjsLib.getDocument({
-            data: arrayBuffer,
-            password: pdfPassword
-        }).promise
-    } catch (pdfjsError) {
-        // 如果pdfjs失败，尝试pdf-lib
-        console.warn('pdfjs加载失败，尝试pdf-lib:', pdfjsError.message)
-
-        try {
-            const pdfDoc = await PDFDocument.load(arrayBuffer, {
-                ignoreEncryption: true,
-                password: pdfPassword
-            })
-            const pageCount = pdfDoc.getPageCount()
-
-            if (pageCount === 0) {
-                throw new Error('PDF文件不包含任何页面')
-            }
-
-            // 重新用pdfjs加载验证
-            pdf = await pdfjsLib.getDocument({
-                data: arrayBuffer,
-                password: pdfPassword
-            }).promise
-
-        } catch (pdfLibError) {
-            // 如果都失败，检查是否是密码错误
-            if (pdfjsError.message.includes('password') ||
-                pdfLibError.message.includes('password') ||
-                pdfjsError.message.includes('encrypted') ||
-                pdfLibError.message.includes('encrypted')) {
-                throw new Error('密码错误，请重新输入')
-            }
-            throw pdfjsError
-        }
-    }
-
-    // 渲染预览图
-    const pages = []
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i)
-        const viewport = page.getViewport({scale: 1.5})
-        const canvas = document.createElement('canvas')
-        const context = canvas.getContext('2d')
-        canvas.height = viewport.height
-        canvas.width = viewport.width
-
-        await page.render({canvasContext: context, viewport}).promise
-
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8))
-        pages.push(new File([blob], `page-${i}.jpg`, {type: 'image/jpeg'}))
-    }
-
-    return pages
-}
 
 /**
  * 导出带水印的PDF
- * @param {File} pdfFile - 原始PDF文件
+ * @param {File|Blob} pdfFile - 原始PDF文件或Blob
  * @param {Object} watermarkConfig - 水印配置
  * @param {string} password - PDF密码（可选）
  * @returns {Promise<Blob>} - 导出的PDF Blob
  */
 export const exportWatermarkedPDF = async (pdfFile, watermarkConfig, password = '') => {
-    const arrayBuffer = await pdfFile.arrayBuffer()
-    const pdfDoc = await PDFDocument.load(arrayBuffer, {password})
+  // 将File或Blob转换为ArrayBuffer
+  let arrayBuffer
+  if (pdfFile instanceof Blob) {
+    arrayBuffer = await pdfFile.arrayBuffer()
+  } else if (pdfFile instanceof File) {
+    arrayBuffer = await pdfFile.arrayBuffer()
+  } else {
+    arrayBuffer = pdfFile
+  }
 
-    // 检查水印文本是否包含中文字符
-    const hasChinese = /[\u4e00-\u9fa5]/.test(watermarkConfig.text)
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { password })
 
-    if (hasChinese) {
-        await addChineseWatermarkAsImage(pdfDoc, watermarkConfig)
-    } else {
-        await addEnglishWatermark(pdfDoc, watermarkConfig)
-    }
+  // 检查水印文本是否包含中文字符
+  const hasChinese = /[\u4e00-\u9fa5]/.test(watermarkConfig.text)
 
-    const pdfBytes = await pdfDoc.save()
-    return new Blob([pdfBytes], {type: 'application/pdf'})
+  if (hasChinese) {
+    await addChineseWatermarkAsImage(pdfDoc, watermarkConfig)
+  } else {
+    await addEnglishWatermark(pdfDoc, watermarkConfig)
+  }
+
+  const pdfBytes = await pdfDoc.save()
+  return new Blob([pdfBytes], { type: 'application/pdf' })
 }
 
 /**

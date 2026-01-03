@@ -81,14 +81,8 @@
 
 <script setup>
 import {ref} from 'vue'
-import * as pdfjsLib from 'pdfjs-dist'
 import {formatFileSize} from '../utils/helpers'
-
-// 配置pdfjs worker（使用匹配的版本）
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-}
+import {PDFHelper} from '@/utils-scripts/PdfHelper'
 
 const emit = defineEmits([
   'file-loaded',
