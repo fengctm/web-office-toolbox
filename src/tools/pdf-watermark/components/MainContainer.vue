@@ -68,6 +68,17 @@
               :preview-files="pdfState.pages"
               :watermark-config="config"
           />
+          <!-- 当需要密码时，仍然显示 FileUpload 组件的密码输入功能 -->
+          <FileUpload
+              v-if="pdfState.isEncrypted"
+              ref="fileUploadRef"
+              :pdf-file="pdfState.file"
+              :is-locked="pdfState.isEncrypted"
+              :is-checking="loading"
+              @password-submitted="handlePasswordSubmitted"
+              @reset="reset"
+              class="password-overlay"
+          />
         </div>
       </v-main>
     </v-layout>
@@ -115,87 +126,94 @@ const config = reactive({
 })
 
 /**
- * 核心逻辑：处理 PDF 加载与解密
- * @param {File} file
- * @param {string} password
+ * 核心逻辑：处理 PDF 解析
+ * 修复：确保 file 对象在闭包中始终可用
  */
 const runPdfPipeline = async (file, password = '') => {
+  if (!file) return;
+
   loading.value = true
-  loadingText.value = password ? '正在解密并解析...' : '正在解析 PDF...'
+  loadingText.value = password ? '正在解密文档...' : '正在解析 PDF...'
 
   try {
-    // 1. 尝试获取实例（PdfHelper.getPdfjsInstance 内部封装了加密捕获）
-    const {pdf, isEncrypted} = await PDFHelper.getPdfjsInstance(file, password)
+    // 1. 调用 PdfHelper 进行实例获取
+    const result = await PDFHelper.getPdfjsInstance(file, password)
 
-    // 2. 处理加密逻辑
-    if (isEncrypted) {
-      pdfState.isEncrypted = true
-      // 如果提供了密码但仍返回 isEncrypted，说明密码错误
-      if (password) {
-        showNotification(notification, '密码错误，请重新输入', 'error')
-      } else {
-        showNotification(notification, '文档已加密，请输入密码', 'warning')
+      // 2. 检查加密状态
+      if (result.isEncrypted) {
+        pdfState.isEncrypted = true
+        // 这里的逻辑修复：如果已经传了 password 还是返回 isEncrypted，说明密码真的错了
+        if (password !== '') {
+          showNotification(notification, '密码错误，请重新输入', 'error')
+        } else {
+          showNotification(notification, '该文档受密码保护', 'warning')
+        }
+
+        loading.value = false
+        return // 只有在需要密码时才中断
       }
-      fileUploadRef.value?.showPasswordInput()
-      return
-    }
 
-    // 3. 走到这里说明解密成功或无需密码
+    // 3. 解析成功：走到这里说明密码正确或文档无加密
+    loadingText.value = '正在生成高清预览...'
     const pages = await PDFHelper.renderToImages(file, password, 1.5)
 
-    // 更新持久状态
-    pdfState.file = file
+    // 4. 统一更新状态 (只有在解析成功后才更新 pages)
     pdfState.password = password
     pdfState.pages = pages
     pdfState.isEncrypted = false
 
-    showNotification(notification, `解析成功！共 ${pages.length} 页`, 'success')
+    showNotification(notification, `解析成功，共 ${pages.length} 页`, 'success')
   } catch (error) {
-    handleGeneralError(error)
+    console.error('Pipeline Error:', error)
+    showNotification(notification, '文件加载失败: ' + formatErrorMessage(error), 'error')
+    reset() // 只有真正的系统错误才重置
   } finally {
     loading.value = false
   }
 }
-
 // --- 事件处理 ---
 
 // 上传新文件
 const handleFileLoaded = (file) => {
-  reset() // 先清空旧状态
-  runPdfPipeline(file)
+  pdfState.file = file // 第一时间赋值！
+  runPdfPipeline(file, '')
 }
 
 // 用户提交密码
 const handlePasswordSubmitted = (password) => {
-  runPdfPipeline(pdfState.file, password)
+  if (pdfState.file) {
+    runPdfPipeline(pdfState.file, password)
+  }
 }
 
 // 导出 PDF
 const exportPDF = async () => {
   if (!pdfState.file) return
-
   loading.value = true
-  loadingText.value = '正在注入水印并打包...'
+  loadingText.value = '正在处理高保真 PDF...'
 
   try {
-    // 1. 使用保存的密码直接脱密（PdfHelper 会处理 AES-256 等兼容性）
+    // 1. 获取脱密后的 PDF Blob
     const exportResult = await PDFHelper.exportPDF(
         pdfState.file,
-        pdfState.password,
-        'temp.pdf'
+        pdfState.password
     )
 
-    // 2. 注入水印逻辑 (注意：这里应调用你之前的 pdf-lib 水印函数)
-    // 假设 exportWatermarkedPDF 是你定义的添加水印的函数
+    // 2. 注入水印
     const finalBlob = await exportWatermarkedPDF(exportResult.blob, config)
 
-    // 3. 触发下载
-    triggerDownload(finalBlob)
+    // 3. 下载
+    const url = URL.createObjectURL(finalBlob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${pdfState.file.name.replace('.pdf', '')}_水印版.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
 
-    showNotification(notification, 'PDF 导出成功！', 'success')
+    showNotification(notification, '导出成功！', 'success')
   } catch (error) {
-    // 导出时的错误通常是由于某些特殊的加密限制
-    handleGeneralError(error, '导出失败')
+    console.error('Export Error:', error)
+    showNotification(notification, '导出失败: ' + formatErrorMessage(error), 'error')
   } finally {
     loading.value = false
   }
@@ -216,14 +234,6 @@ const handleGeneralError = (error, prefix = '加载失败') => {
   if (!pdfState.isEncrypted) reset()
 }
 
-const triggerDownload = (blob) => {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${pdfState.file.name.replace('.pdf', '')}_水印版.pdf`
-  a.click()
-  URL.revokeObjectURL(url)
-}
 
 const reset = () => {
   pdfState.file = null
@@ -322,5 +332,30 @@ onMounted(() => {
 /* 深色模式下的工具栏标题 */
 :root[data-theme="dark"] .v-toolbar-title {
   color: #ffffff !important;
+}
+
+/* 密码覆盖层样式 */
+.password-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="dark"] .password-overlay {
+  background: rgba(30, 30, 30, 0.95);
+}
+
+/* 预览区域容器需要相对定位以支持绝对定位的覆盖层 */
+.preview-wrapper {
+  position: relative;
+  overflow: visible !important;
 }
 </style>

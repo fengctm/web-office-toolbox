@@ -1,294 +1,294 @@
 <template>
-  <div class="file-upload-section">
-    <!-- 未上传状态 -->
-    <div v-if="!pdfFile" class="upload-area">
-      <v-hover v-slot="{ isHovering, props }">
-        <v-card
-            v-bind="props"
-            :elevation="isHovering ? 8 : 2"
-            class="upload-card pa-10 text-center"
-            @click="triggerUpload"
-        >
-          <v-icon
-              size="80"
-              color="teal-lighten-2"
-              :class="{'pulse': isHovering}"
-          >
-            mdi-cloud-upload
-          </v-icon>
-          <h2 class="mt-4 text-h5">点击或拖拽 PDF 文件</h2>
-          <p class="text-grey mt-2">完全本地处理，保护您的隐私</p>
-          <input
-              type="file"
-              ref="fileInput"
-              hidden
-              accept="application/pdf"
-              @change="onFileChange"
-          >
-        </v-card>
-      </v-hover>
-    </div>
+  <div class="file-upload-wrapper">
+    <transition name="view-switch" mode="out-in">
 
-    <!-- 文件已上传状态 -->
-    <div v-else class="file-info">
-      <v-alert
-          type="info"
-          variant="tonal"
-          color="teal"
-          icon="mdi-file-pdf-box"
-          title="PDF 已加载"
-      >
-        <div class="d-flex align-center justify-space-between mt-2">
-          <span>{{ pdfFile.name }} ({{ formatFileSize(pdfFile.size) }})</span>
-          <v-btn
-              size="small"
-              color="error"
-              variant="outlined"
-              prepend-icon="mdi-close"
-              @click="resetFile"
-          >
-            移除文件
-          </v-btn>
-        </div>
-      </v-alert>
-    </div>
+      <!-- 模式 A：密码解锁界面 (Apple Security Style) -->
+      <div v-if="pdfFile && isLocked" :key="'locked'" class="view-container">
+        <v-card class="unlock-card" elevation="10">
+          <div class="security-badge">
+            <v-icon size="32" color="teal">mdi-shield-key-outline</v-icon>
+          </div>
 
-    <!-- 密码对话框 -->
-    <v-dialog v-model="showPasswordDialog" max-width="400" persistent>
-      <v-card class="rounded-xl pa-4">
-        <v-card-title>文档已加密</v-card-title>
-        <v-card-text>
-          该 PDF 文件受密码保护，请输入密码以继续。
+          <div class="text-center mb-6">
+            <h3 class="text-h5 font-weight-bold mb-1">私密文档</h3>
+            <p class="text-body-2 text-grey">请输入访问密码以解锁内容</p>
+          </div>
+
+          <div class="file-snippet mb-6">
+            <v-icon color="teal-lighten-2" class="mr-2">mdi-file-pdf-box</v-icon>
+            <span class="text-truncate font-weight-medium">{{ pdfFile.name }}</span>
+          </div>
+
           <v-text-field
               v-model="password"
               label="访问密码"
               type="password"
-              variant="outlined"
-              class="mt-4"
+              variant="solo-filled"
+              flat
+              density="comfortable"
               color="teal"
+              class="password-input mb-4"
+              rounded="lg"
               autofocus
-          ></v-text-field>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="cancelPassword">取消</v-btn>
-          <v-btn color="teal" variant="flat" @click="submitPassword">确认</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+              persistent-placeholder
+              placeholder="••••••••"
+              @keyup.enter="submitPassword"
+          >
+            <template v-slot:append-inner>
+              <v-icon color="teal-lighten-3">mdi-lock-outline</v-icon>
+            </template>
+          </v-text-field>
+
+          <div class="action-row">
+            <v-btn
+                variant="text"
+                color="grey-darken-1"
+                rounded="pill"
+                class="flex-grow-1"
+                @click="cancelPassword"
+            >
+              取消
+            </v-btn>
+            <v-btn
+                color="teal"
+                variant="elevated"
+                rounded="pill"
+                class="flex-grow-1 unlock-btn"
+                :loading="isChecking"
+                @click="submitPassword"
+            >
+              验证并解锁
+            </v-btn>
+          </div>
+        </v-card>
+      </div>
+
+      <!-- 模式 B：初始上传界面 (Google Material Design) -->
+      <div v-else-if="!pdfFile" :key="'upload'" class="view-container">
+        <v-hover v-slot="{ isHovering, props }">
+          <v-card
+              v-bind="props"
+              class="upload-drop-zone"
+              :class="{ 'is-active': isHovering }"
+              @click="triggerUpload"
+          >
+            <div class="pulse-container">
+              <v-icon size="64" color="teal-lighten-2">mdi-cloud-upload-outline</v-icon>
+            </div>
+            <h2 class="text-h6 font-weight-bold mt-4">导入 PDF 文件</h2>
+            <p class="text-caption text-grey-darken-1">点击此处或拖拽文件到这里</p>
+            <div class="security-note mt-6">
+              <v-icon size="14" class="mr-1">mdi-shield-check</v-icon>
+              <span>100% 本地解析，确保隐私安全</span>
+            </div>
+            <input type="file" ref="fileInput" hidden accept="application/pdf" @change="onFileChange">
+          </v-card>
+        </v-hover>
+      </div>
+
+      <!-- 模式 C：文件已就绪状态 -->
+      <div v-else :key="'ready'" class="view-container">
+        <v-card variant="flat" border class="ready-card pa-6">
+          <v-icon size="48" color="teal" class="mb-2">mdi-check-circle-outline</v-icon>
+          <div class="text-h6 font-weight-bold">{{ pdfFile.name }}</div>
+          <div class="text-caption text-grey mb-4">{{ formatFileSize(pdfFile.size) }}</div>
+          <v-btn
+              variant="outlined"
+              color="error"
+              prepend-icon="mdi-delete-sweep"
+              rounded="pill"
+              @click="resetFile"
+          >
+            更换文件
+          </v-btn>
+        </v-card>
+      </div>
+
+    </transition>
   </div>
 </template>
 
 <script setup>
-import {ref} from 'vue'
-import {formatFileSize} from '../utils/helpers'
-import {PDFHelper} from '@/utils-scripts/PdfHelper'
+import { ref, watch } from 'vue'
+import { formatFileSize } from '../utils/helpers'
 
-const emit = defineEmits([
-  'file-loaded',
-  'password-required',
-  'password-submitted',
-  'error',
-  'reset'
-])
+const emit = defineEmits(['file-loaded', 'password-submitted', 'error', 'reset'])
 
 const props = defineProps({
-  pdfFile: {
-    type: Object,
-    default: null
-  }
+  pdfFile: { type: Object, default: null },
+  isLocked: { type: Boolean, default: false },
+  isChecking: { type: Boolean, default: false }
 })
 
 const fileInput = ref(null)
-const showPasswordDialog = ref(false)
 const password = ref('')
 
-// 触发文件选择
-const triggerUpload = () => {
-  fileInput.value.click()
-}
+watch(() => props.pdfFile, (newFile) => {
+  if (newFile) password.value = ''
+})
 
-// 文件选择变化
+const triggerUpload = () => fileInput.value.click()
+
 const onFileChange = (e) => {
   const file = e.target.files[0]
   if (!file) return
-
   if (file.type !== 'application/pdf') {
     emit('error', '请选择 PDF 文件')
     return
   }
-
   emit('file-loaded', file)
 }
 
-// 重置文件
-const resetFile = () => {
-  emit('reset')
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-}
-
-// 显示密码输入框
-const showPasswordInput = () => {
-  showPasswordDialog.value = true
-}
-
-// 提交密码
 const submitPassword = () => {
-  if (password.value) {
-    const cleanPassword = password.value.trim() // 去除前后空格
-    emit('password-submitted', cleanPassword)
-    showPasswordDialog.value = false
-    // 不清空密码，让父组件可以保存和使用
-  }
+  if (!password.value) return
+  emit('password-submitted', password.value.trim())
 }
 
-// 取消密码输入
 const cancelPassword = () => {
-  showPasswordDialog.value = false
   password.value = ''
   emit('reset')
 }
 
-// 暴露方法给父组件
-defineExpose({
-  showPasswordInput,
-  triggerUpload,
-  password  // 暴露密码，让父组件可以访问
-})
+const resetFile = () => {
+  password.value = ''
+  emit('reset')
+  if (fileInput.value) fileInput.value.value = ''
+}
 </script>
 
-<style scoped>
-.file-upload-section {
+<style scoped lang="scss">
+.file-upload-wrapper {
   width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
-.upload-area {
+.view-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
+  min-height: 380px;
 }
 
-.upload-card {
-  width: 90%;
-  max-width: 500px;
-  border: 2px dashed;
-  border-radius: 24px;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  background: white;
-  color: #333333;
-  border-color: #009688;
-}
-
-.upload-card:hover {
-  background-color: #e0f2f1;
-  transform: translateY(-5px);
-  border-width: 3px;
-}
-
-/* 深色模式适配 */
-:root[data-theme="dark"] .upload-card {
-  background: #1e1e1e !important;
-  color: #e0e0e0 !important;
-  border-color: #4dd0e1 !important;
-}
-
-:root[data-theme="dark"] .upload-card:hover {
-  background-color: #263238 !important;
-  border-color: #4dd0e1 !important;
-}
-
-/* 图标颜色 - 深色模式适配 */
-:root[data-theme="dark"] .upload-card .v-icon {
-  color: #4dd0e1 !important;
-}
-
-/* 标题文字 - 深色模式适配 */
-:root[data-theme="dark"] .upload-card h2 {
-  color: #e0e0e0 !important;
-  font-weight: 600;
-}
-
-/* 描述文字 - 深色模式适配 */
-:root[data-theme="dark"] .upload-card p {
-  color: #9e9e9e !important;
-}
-
-/* 深色模式下的文件信息警告框 */
-:root[data-theme="dark"] .file-info .v-alert {
-  background-color: rgba(77, 208, 225, 0.08) !important;
-  border-color: rgba(77, 208, 225, 0.4) !important;
-  color: #e0e0e0 !important;
-}
-
-:root[data-theme="dark"] .file-info .v-alert .v-alert__content {
-  color: #e0e0e0 !important;
-}
-
-/* 深色模式下的密码对话框 */
-:root[data-theme="dark"] .v-card {
-  background-color: #1e1e1e !important;
-  color: #e0e0e0 !important;
-}
-
-:root[data-theme="dark"] .v-card .v-card-title {
-  color: #ffffff !important;
-}
-
-:root[data-theme="dark"] .v-card .v-card-text {
-  color: #e0e0e0 !important;
-}
-
-/* 深色模式下的输入框 */
-:root[data-theme="dark"] .v-text-field .v-field__input {
-  color: #e0e0e0 !important;
-}
-
-:root[data-theme="dark"] .v-text-field .v-field__label {
-  color: #9e9e9e !important;
-}
-
-/* 深色模式下的按钮 */
-:root[data-theme="dark"] .v-btn {
-  color: #e0e0e0 !important;
-}
-
-/* 悬停时的图标动画 */
-.upload-card:hover .v-icon {
-  transform: scale(1.1);
-  transition: transform 0.3s ease;
-}
-
-.pulse {
-  animation: pulse-animation 2s infinite;
-}
-
-@keyframes pulse-animation {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.file-info {
+/* --- 解锁卡片 (Apple Style) --- */
+.unlock-card {
   width: 100%;
+  padding: 32px;
+  border-radius: 32px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  text-align: center;
+  position: relative;
+
+  .security-badge {
+    width: 64px;
+    height: 64px;
+    background: #e0f2f1;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+
+  .file-snippet {
+    background: rgba(0, 150, 136, 0.05);
+    padding: 8px 16px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 12px;
+  }
 }
 
-/* 文件信息卡片深色适配 */
-:root[data-theme="dark"] .file-info .v-alert {
-  background-color: rgba(77, 208, 225, 0.05) !important;
-  border-color: rgba(77, 208, 225, 0.3) !important;
+/* --- 上传区域 (Material Style) --- */
+.upload-drop-zone {
+  width: 100%;
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 32px !important;
+  border: 2px dashed #b2dfdb !important;
+  background: #fdfdfd !important;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  &.is-active {
+    border-color: #009688 !important;
+    background: #e0f2f1 !important;
+    transform: scale(1.02);
+  }
+
+  .pulse-container {
+    animation: pulse 2s infinite;
+  }
+
+  .security-note {
+    font-size: 11px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
 }
 
-:root[data-theme="dark"] .file-info .v-alert .v-alert__content {
-  color: #e0e0e0 !important;
+.ready-card {
+  width: 100%;
+  border-radius: 32px !important;
+  text-align: center;
+  background: white !important;
+}
+
+/* --- 动画 --- */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.view-switch-enter-active, .view-switch-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.view-switch-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+.view-switch-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+
+/* --- 深色模式 --- */
+:root[data-theme="dark"] {
+  .unlock-card {
+    background: rgba(30, 30, 30, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.1);
+
+    .security-badge { background: #263238; }
+    .file-snippet { background: rgba(77, 208, 225, 0.1); }
+  }
+
+  .upload-drop-zone {
+    background: #1e1e1e !important;
+    border-color: #333 !important;
+    &.is-active {
+      background: #263238 !important;
+      border-color: #4dd0e1 !important;
+    }
+    .security-note { background: #2d2d2d; color: #666; }
+  }
+
+  .ready-card { background: #1e1e1e !important; border-color: #333 !important; }
 }
 </style>
