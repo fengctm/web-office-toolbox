@@ -82,6 +82,7 @@
 <script setup>
 import {ref} from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
+import {formatFileSize} from '../utils/helpers'
 
 // 配置pdfjs worker（使用匹配的版本）
 if (typeof window !== 'undefined') {
@@ -126,15 +127,6 @@ const onFileChange = (e) => {
   emit('file-loaded', file)
 }
 
-// 格式化文件大小
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
 // 重置文件
 const resetFile = () => {
   emit('reset')
@@ -155,22 +147,6 @@ const submitPassword = () => {
     emit('password-submitted', cleanPassword)
     showPasswordDialog.value = false
     // 不清空密码，让父组件可以保存和使用
-  }
-}
-
-// 检查PDF是否加密
-const checkIfEncrypted = async (file) => {
-  try {
-    // 重新读取文件，避免ArrayBuffer被分离
-    const arrayBuffer = await file.arrayBuffer()
-    // 尝试用空密码加载（传递undefined而不是空字符串）
-    await pdfjsLib.getDocument({data: arrayBuffer, password: undefined}).promise
-    return false
-  } catch (e) {
-    if (e.message.includes('password') || e.message.includes('encrypted')) {
-      return true
-    }
-    throw e
   }
 }
 
