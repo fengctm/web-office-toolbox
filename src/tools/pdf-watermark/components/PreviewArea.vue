@@ -119,4 +119,21 @@ const watermarkStyle = computed(() => ({
 :root[data-theme="dark"] .empty-state p {
   color: #9e9e9e;
 }
+
+/* 深色模式下的预览容器 */
+:root[data-theme="dark"] .preview-area {
+  background-color: #121212;
+}
+
+/* 深色模式下的水印文字颜色调整 */
+:root[data-theme="dark"] .watermark-item {
+  color: #ff6b6b !important; /* 深色模式下使用更亮的红色 */
+}
+
+/* 深色模式下的PDF预览背景增强 */
+:root[data-theme="dark"] .preview-container {
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+}
 </style>

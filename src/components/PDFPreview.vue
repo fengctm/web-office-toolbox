@@ -99,15 +99,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, onMounted, reactive } from 'vue'
+import {ref, computed, onUnmounted, onMounted, reactive} from 'vue'
 
 const props = defineProps({
-  files: { type: Array, default: () => [] },
+  files: {type: Array, default: () => []},
   margins: {
     type: Object,
-    default: () => ({ top: 20, right: 20, bottom: 20, left: 20 })
+    default: () => ({top: 20, right: 20, bottom: 20, left: 20})
   },
-  pageSize: { type: String, default: "A4" },
+  pageSize: {type: String, default: "A4"},
   // 【新增】水印配置
   watermarkConfig: {
     type: Object,
@@ -195,7 +195,7 @@ const watermarkStyle = computed(() => {
 
 // 获取图片加载后的比例
 const onImageLoad = (event, index) => {
-  const { naturalWidth, naturalHeight } = event.target
+  const {naturalWidth, naturalHeight} = event.target
   imageRatios[index] = naturalWidth / naturalHeight
 }
 
@@ -268,7 +268,7 @@ const scrollToPage = (index) => {
   const container = scrollContainer.value
   const target = pageRefs.value[index]
   if (container && target) {
-    container.scrollTo({ top: target.offsetTop - 10, behavior: 'smooth' })
+    container.scrollTo({top: target.offsetTop - 10, behavior: 'smooth'})
   }
 }
 
@@ -308,19 +308,82 @@ const handlePrint = () => window.print()
   }
 }
 
+/* 深色模式适配修正 */
+:root[data-theme="dark"] .chrome-pdf-container {
+  background-color: #1e1e1e !important;
+}
+
+:root[data-theme="dark"] .pdf-header {
+  background-color: #2d2d2d !important;
+}
+
+:root[data-theme="dark"] .pdf-sidebar {
+  background-color: #2d2d2d !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+:root[data-theme="dark"] .pdf-main {
+  background-color: #1e1e1e !important;
+}
+
+/* 关键：深色模式下，PDF 纸张如果依然是预览图片，建议不要强制改背景色为深色 */
+:root[data-theme="dark"] .pdf-sheet {
+  background-color: #ffffff !important; /* 保持白色以匹配 PDF 图片底色 */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6) !important;
+}
+
+:root[data-theme="dark"] .thumb-num {
+  color: #9e9e9e !important;
+}
+
+:root[data-theme="dark"] .zoom-controls {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+:root[data-theme="dark"] .page-indicator {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .file-name {
+  color: #e0e0e0 !important;
+}
+
+:root[data-theme="dark"] .v-chip {
+  color: #bdc1c6 !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 深色模式下的滚动条 */
+:root[data-theme="dark"] .pdf-main::-webkit-scrollbar-thumb {
+  background: #666 !important;
+  border: 3px solid #1e1e1e !important;
+}
+
+:root[data-theme="dark"] .thumb-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 深色模式下的遮罩层 */
+:root[data-theme="dark"] .pdf-scrim {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+
 /* 水印覆盖层核心样式 */
 .watermark-overlay {
-  position: absolute;
+  position: absolute !important;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; // 确保不影响鼠标操作
+  pointer-events: none;
   z-index: 5;
+  /* 移除全局可能存在的 mix-blend-mode */
+  mix-blend-mode: normal !important;
 
   &.mini {
-    transform: scale(1); // 缩略图模式
-    background-size: 50% !important; // 缩略图水印减小
+    background-size: 50% !important;
   }
 }
 
@@ -332,12 +395,15 @@ const handlePrint = () => window.print()
   padding: 0 16px;
   z-index: 110;
   color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 
   .zoom-controls {
     background: rgba(255, 255, 255, 0.1);
     transition: background 0.3s;
-    &:hover { background: rgba(255, 255, 255, 0.2); }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
 
     .zoom-text {
       font-size: 12px;
@@ -378,8 +444,14 @@ const handlePrint = () => window.print()
   overflow-y: auto;
   padding: 20px 0;
 
-  &::-webkit-scrollbar { width: 4px; }
-  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
 }
 
 .thumb-item {
@@ -401,7 +473,11 @@ const handlePrint = () => window.print()
       align-items: center;
     }
 
-    .fit-img { width: 100%; height: auto; display: block; }
+    .fit-img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
   }
 
   &:hover .thumb-paper {
@@ -411,9 +487,13 @@ const handlePrint = () => window.print()
   &.active {
     .thumb-paper {
       transform: scale(1.08);
-      box-shadow: 0 0 0 2px #8ab4f8, 0 10px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 0 0 2px #8ab4f8, 0 10px 20px rgba(0, 0, 0, 0.5);
     }
-    .thumb-num { color: #8ab4f8; font-weight: bold; }
+
+    .thumb-num {
+      color: #8ab4f8;
+      font-weight: bold;
+    }
   }
 }
 
@@ -429,8 +509,14 @@ const handlePrint = () => window.print()
   background-color: #525659;
   scroll-behavior: smooth;
 
-  &::-webkit-scrollbar { width: 12px; }
-  &::-webkit-scrollbar-track { background: #525659; }
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #525659;
+  }
+
   &::-webkit-scrollbar-thumb {
     background: #777;
     border: 3px solid #525659;
@@ -468,13 +554,25 @@ const handlePrint = () => window.print()
   z-index: 90;
 }
 
-.slide-enter-active, .slide-leave-active { transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); }
-.slide-enter-from, .slide-leave-to { transform: translateX(-180px); }
+.slide-enter-active, .slide-leave-active {
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.slide-enter-from, .slide-leave-to {
+  transform: translateX(-180px);
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 
 @media print {
-  .pdf-header, .pdf-sidebar, .pdf-scrim, .watermark-overlay { display: none !important; }
+  .pdf-header, .pdf-sidebar, .pdf-scrim, .watermark-overlay {
+    display: none !important;
+  }
 }
 </style>

@@ -81,6 +81,13 @@
 
 <script setup>
 import {ref} from 'vue'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// 配置pdfjs worker（使用匹配的版本）
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+}
 
 const emit = defineEmits([
   'file-loaded',
@@ -144,9 +151,26 @@ const showPasswordInput = () => {
 // 提交密码
 const submitPassword = () => {
   if (password.value) {
-    emit('password-submitted', password.value)
+    const cleanPassword = password.value.trim() // 去除前后空格
+    emit('password-submitted', cleanPassword)
     showPasswordDialog.value = false
-    password.value = ''
+    // 不清空密码，让父组件可以保存和使用
+  }
+}
+
+// 检查PDF是否加密
+const checkIfEncrypted = async (file) => {
+  try {
+    // 重新读取文件，避免ArrayBuffer被分离
+    const arrayBuffer = await file.arrayBuffer()
+    // 尝试用空密码加载（传递undefined而不是空字符串）
+    await pdfjsLib.getDocument({data: arrayBuffer, password: undefined}).promise
+    return false
+  } catch (e) {
+    if (e.message.includes('password') || e.message.includes('encrypted')) {
+      return true
+    }
+    throw e
   }
 }
 
@@ -160,7 +184,8 @@ const cancelPassword = () => {
 // 暴露方法给父组件
 defineExpose({
   showPasswordInput,
-  triggerUpload
+  triggerUpload,
+  password  // 暴露密码，让父组件可以访问
 })
 </script>
 
@@ -220,6 +245,45 @@ defineExpose({
 /* 描述文字 - 深色模式适配 */
 :root[data-theme="dark"] .upload-card p {
   color: #9e9e9e !important;
+}
+
+/* 深色模式下的文件信息警告框 */
+:root[data-theme="dark"] .file-info .v-alert {
+  background-color: rgba(77, 208, 225, 0.08) !important;
+  border-color: rgba(77, 208, 225, 0.4) !important;
+  color: #e0e0e0 !important;
+}
+
+:root[data-theme="dark"] .file-info .v-alert .v-alert__content {
+  color: #e0e0e0 !important;
+}
+
+/* 深色模式下的密码对话框 */
+:root[data-theme="dark"] .v-card {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+}
+
+:root[data-theme="dark"] .v-card .v-card-title {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .v-card .v-card-text {
+  color: #e0e0e0 !important;
+}
+
+/* 深色模式下的输入框 */
+:root[data-theme="dark"] .v-text-field .v-field__input {
+  color: #e0e0e0 !important;
+}
+
+:root[data-theme="dark"] .v-text-field .v-field__label {
+  color: #9e9e9e !important;
+}
+
+/* 深色模式下的按钮 */
+:root[data-theme="dark"] .v-btn {
+  color: #e0e0e0 !important;
 }
 
 /* 悬停时的图标动画 */

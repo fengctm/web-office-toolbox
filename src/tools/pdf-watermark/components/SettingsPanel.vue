@@ -106,6 +106,7 @@ const config = computed({
   get: () => props.config,
   set: (value) => emit('update:config', value)
 })
+
 </script>
 
 <style scoped>
@@ -168,5 +169,30 @@ const config = computed({
 
 :root[data-theme="dark"] .settings-panel :deep(.v-text-field[type="color"] input) {
   color-scheme: dark;
+}
+
+/* 深色模式下的卡片边框增强 */
+:root[data-theme="dark"] .settings-panel :deep(.v-card) {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 深色模式下的滑块轨道增强 */
+:root[data-theme="dark"] .settings-panel :deep(.v-slider__track) {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 深色模式下的输入框背景 */
+:root[data-theme="dark"] .settings-panel :deep(.v-field__outline) {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* 深色模式下的数字输入框 */
+:root[data-theme="dark"] .settings-panel :deep(.v-text-field[type="number"] .v-field__input) {
+  color: #4dd0e1 !important;
+}
+
+/* 深色模式下的文本输入框 */
+:root[data-theme="dark"] .settings-panel :deep(.v-text-field .v-field__input) {
+  color: #e0e0e0 !important;
 }
 </style>

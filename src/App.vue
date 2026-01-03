@@ -95,6 +95,14 @@ const toggleTheme = () => {
   isDark.value = !isDark.value
   theme.global.name.value = isDark.value ? 'dark' : 'light'
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  
+  // 更新HTML的data-theme属性，使CSS深色模式生效
+  if (isDark.value) {
+    document.documentElement.setAttribute('data-theme', 'dark')
+  } else {
+    document.documentElement.removeAttribute('data-theme')
+  }
+  
   showNotification(`已切换到${isDark.value ? '深色' : '浅色'}模式`, 'info')
 }
 
@@ -118,6 +126,13 @@ const initTheme = () => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     isDark.value = prefersDark
     theme.global.name.value = prefersDark ? 'dark' : 'light'
+  }
+  
+  // 初始化时也设置data-theme属性
+  if (isDark.value) {
+    document.documentElement.setAttribute('data-theme', 'dark')
+  } else {
+    document.documentElement.removeAttribute('data-theme')
   }
 }
 
