@@ -1,9 +1,9 @@
 <template>
   <v-dialog
-    :model-value="modelValue"
-    @update:model-value="updateModelValue"
-    max-width="900"
-    persistent
+      :model-value="modelValue"
+      @update:model-value="updateModelValue"
+      max-width="900"
+      persistent
   >
     <v-card>
       <v-toolbar color="teal-darken-2">
@@ -23,10 +23,10 @@
           <!-- 加载中状态 -->
           <div v-if="loading" class="loading-state">
             <v-progress-circular
-              indeterminate
-              size="60"
-              color="teal"
-              class="mb-4"
+                indeterminate
+                size="60"
+                color="teal"
+                class="mb-4"
             ></v-progress-circular>
             <div class="text-body-1 text-grey">正在生成预览...</div>
           </div>
@@ -34,9 +34,9 @@
           <!-- 显示预览图片 -->
           <div v-else-if="previewImage" class="image-scroll-container">
             <img
-              :src="previewImage"
-              :alt="`第${currentPage}页预览`"
-              class="preview-image-full"
+                :src="previewImage"
+                :alt="`第${currentPage}页预览`"
+                class="preview-image-full"
             />
           </div>
 
@@ -51,12 +51,12 @@
         <!-- 导航控制 - 固定在底部 -->
         <div class="navigation-controls">
           <v-btn
-            color="teal"
-            variant="outlined"
-            :disabled="currentPage <= 1 || loading"
-            @click="prevPage"
-            prepend-icon="mdi-chevron-left"
-            class="mr-2"
+              color="teal"
+              variant="outlined"
+              :disabled="currentPage <= 1 || loading"
+              @click="prevPage"
+              prepend-icon="mdi-chevron-left"
+              class="mr-2"
           >
             上一页
           </v-btn>
@@ -66,12 +66,12 @@
           </v-chip>
 
           <v-btn
-            color="teal"
-            variant="outlined"
-            :disabled="currentPage >= totalPages || loading"
-            @click="nextPage"
-            append-icon="mdi-chevron-right"
-            class="ml-2"
+              color="teal"
+              variant="outlined"
+              :disabled="currentPage >= totalPages || loading"
+              @click="nextPage"
+              append-icon="mdi-chevron-right"
+              class="ml-2"
           >
             下一页
           </v-btn>
@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import {ref, watch} from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 
 const props = defineProps({
@@ -139,7 +139,7 @@ const generatePreview = async () => {
     // 配置pdfjs worker
     if (typeof window !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
     }
 
     // 读取文件
@@ -168,7 +168,7 @@ const generatePreview = async () => {
     const page = await pdf.getPage(props.currentPage)
 
     // 设置缩放比例（大图预览）
-    const viewport = page.getViewport({ scale: 1.5 })
+    const viewport = page.getViewport({scale: 1.5})
 
     // 创建canvas
     const canvas = document.createElement('canvas')

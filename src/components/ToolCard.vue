@@ -1,16 +1,16 @@
 <template>
   <v-card
-    class="tool-card mx-auto"
-    hover
-    elevation="2"
-    @click="$emit('click')"
+      class="tool-card mx-auto"
+      hover
+      elevation="2"
+      @click="$emit('click')"
   >
     <!-- 工具图标 -->
     <v-card-item class="text-center">
       <v-icon
-        size="48"
-        color="teal"
-        class="tool-icon mb-2"
+          size="48"
+          color="teal"
+          class="tool-icon mb-2"
       >
         {{ tool.icon }}
       </v-icon>
@@ -25,11 +25,11 @@
     <!-- 底部操作区 -->
     <v-card-actions class="justify-center">
       <v-btn
-        color="teal"
-        variant="tonal"
-        rounded="lg"
-        class="use-btn"
-        @click.stop="$emit('click')"
+          color="teal"
+          variant="tonal"
+          rounded="lg"
+          class="use-btn"
+          @click.stop="$emit('click')"
       >
         使用工具
         <v-icon end icon="mdi-arrow-right"></v-icon>

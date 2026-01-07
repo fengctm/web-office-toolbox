@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import {computed} from 'vue'
 import PDFPreview from '@/components/PDFPreview.vue'
 
 const props = defineProps({

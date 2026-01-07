@@ -1,6 +1,6 @@
 <template>
   <!-- 入口组件：仅导入并渲染主容器 -->
-  <MainContainer />
+  <MainContainer/>
 </template>
 
 <script setup>

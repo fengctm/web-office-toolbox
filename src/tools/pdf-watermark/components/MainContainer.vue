@@ -4,7 +4,7 @@
     <transition name="apple-loader">
       <div v-if="loading" class="pdf-loading-overlay">
         <div class="loader-content">
-          <v-progress-circular indeterminate color="teal" size="64" width="4" class="mb-4"></v-progress-circular>
+          <v-progress-circular class="mb-4" color="teal" indeterminate size="64" width="4"></v-progress-circular>
           <div class="loading-text">{{ loadingText }}</div>
         </div>
       </div>
@@ -22,13 +22,13 @@
         <!-- 导出按钮直接放在工具栏 -->
         <v-btn
             v-if="pdfState.file"
+            :disabled="loading"
+            :loading="loading"
+            class="mr-2"
+            color="teal-accent-4"
             prepend-icon="mdi-download"
             variant="flat"
-            color="teal-accent-4"
             @click="exportPDF"
-            :loading="loading"
-            :disabled="loading"
-            class="mr-2"
         >
           导出 PDF
         </v-btn>
@@ -38,9 +38,9 @@
       <v-navigation-drawer
           v-model="showSettings"
           :width="isMobile ? 320 : 380"
+          class="settings-drawer"
           elevation="1"
           location="left"
-          class="settings-drawer"
       >
         <div class="pa-4">
           <SettingsPanel
@@ -54,10 +54,8 @@
         <!-- 文件上传区域 -->
         <div v-if="!pdfState.file" class="fill-height d-flex flex-column align-center justify-center">
           <FileUpload
-              ref="fileUploadRef"
-              :pdf-file="pdfState.file"
-              @file-loaded="handleFileLoaded"
-              @password-submitted="handlePasswordSubmitted"
+              label="选择或拖拽 PDF 文件"
+              @success="handleFileSelected"
               @reset="reset"
           />
         </div>
@@ -68,17 +66,7 @@
               :preview-files="pdfState.pages"
               :watermark-config="config"
           />
-          <!-- 当需要密码时，仍然显示 FileUpload 组件的密码输入功能 -->
-          <FileUpload
-              v-if="pdfState.isEncrypted"
-              ref="fileUploadRef"
-              :pdf-file="pdfState.file"
-              :is-locked="pdfState.isEncrypted"
-              :is-checking="loading"
-              @password-submitted="handlePasswordSubmitted"
-              @reset="reset"
-              class="password-overlay"
-          />
+          <!-- 当需要密码时，PDFSecureUpload 会自动显示密码输入界面 -->
         </div>
       </v-main>
     </v-layout>
@@ -86,21 +74,21 @@
     <!-- 公共通知组件 -->
     <NotificationSnackbar
         v-model="notification.show"
-        :message="notification.message"
         :color="notification.color"
+        :message="notification.message"
     />
   </div>
 </template>
 
 <script setup>
-import {ref, reactive, onMounted, useTemplateRef} from 'vue'
+import {onMounted, reactive, ref, useTemplateRef} from 'vue'
 import {PDFHelper} from '@/utils-scripts/PdfHelper'
-import {showNotification, formatErrorMessage} from '../utils/helpers'
+import {formatErrorMessage, showNotification} from '../utils/helpers'
 import FileUpload from "@/tools/pdf-watermark/components/FileUpload.vue";
 import SettingsPanel from "@/tools/pdf-watermark/components/SettingsPanel.vue";
 import PreviewArea from "@/tools/pdf-watermark/components/PreviewArea.vue";
-import NotificationSnackbar from "@/components/NotificationSnackbar.vue";
-import {exportWatermarkedPDF} from "@/tools/pdf-watermark/utils/pdf-processor.js";
+import NotificationSnackbar from "../../../components/NotificationSnackbar.vue";
+import {exportWatermarkedPDF} from "../../pdf-watermark/utils/pdf-processor.js";
 
 // --- 状态变量 ---
 const loading = ref(false)
@@ -139,19 +127,19 @@ const runPdfPipeline = async (file, password = '') => {
     // 1. 调用 PdfHelper 进行实例获取
     const result = await PDFHelper.getPdfjsInstance(file, password)
 
-      // 2. 检查加密状态
-      if (result.isEncrypted) {
-        pdfState.isEncrypted = true
-        // 这里的逻辑修复：如果已经传了 password 还是返回 isEncrypted，说明密码真的错了
-        if (password !== '') {
-          showNotification(notification, '密码错误，请重新输入', 'error')
-        } else {
-          showNotification(notification, '该文档受密码保护', 'warning')
-        }
-
-        loading.value = false
-        return // 只有在需要密码时才中断
+    // 2. 检查加密状态
+    if (result.isEncrypted) {
+      pdfState.isEncrypted = true
+      // 这里的逻辑修复：如果已经传了 password 还是返回 isEncrypted，说明密码真的错了
+      if (password !== '') {
+        showNotification(notification, '密码错误，请重新输入', 'error')
+      } else {
+        showNotification(notification, '该文档受密码保护', 'warning')
       }
+
+      loading.value = false
+      return // 只有在需要密码时才中断
+    }
 
     // 3. 解析成功：走到这里说明密码正确或文档无加密
     loadingText.value = '正在生成高清预览...'
@@ -173,17 +161,16 @@ const runPdfPipeline = async (file, password = '') => {
 }
 // --- 事件处理 ---
 
-// 上传新文件
-const handleFileLoaded = (file) => {
-  pdfState.file = file // 第一时间赋值！
-  runPdfPipeline(file, '')
-}
+// PDFSecureUpload 成功回调：文件已验证（可能已解密）
+const handleFileSelected = (result) => {
+  const {file, password} = result
 
-// 用户提交密码
-const handlePasswordSubmitted = (password) => {
-  if (pdfState.file) {
-    runPdfPipeline(pdfState.file, password)
-  }
+  // 1. 保存文件和密码
+  pdfState.file = file
+  pdfState.password = password || ''
+
+  // 2. 开始解析流程
+  runPdfPipeline(file, password || '')
 }
 
 // 导出 PDF

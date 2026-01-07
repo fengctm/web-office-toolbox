@@ -17,13 +17,17 @@ export class PDFWorkerManager {
     init() {
         if (this.worker) this.terminate()
         const workerUrl = new URL('/workers/pdf-generator.js', import.meta.url)
-        this.worker = new Worker(workerUrl, { type: 'module' })
+        this.worker = new Worker(workerUrl, {type: 'module'})
 
         this.worker.onmessage = (e) => {
-            const { type, data, message, error } = e.data
+            const {type, data, message, error} = e.data
             switch (type) {
-                case 'progress': this.callbacks.onProgress?.(data); break
-                case 'complete': this.handleComplete(e.data); break
+                case 'progress':
+                    this.callbacks.onProgress?.(data);
+                    break
+                case 'complete':
+                    this.handleComplete(e.data);
+                    break
                 case 'error':
                     this.callbacks.onError?.(message || '未知错误', error)
                     this.cleanup()
@@ -66,7 +70,7 @@ export class PDFWorkerManager {
 
             this.worker.postMessage({
                 type: 'start',
-                data: { files: fileData, config }
+                data: {files: fileData, config}
             }, transferables)
 
         } catch (error) {
@@ -76,7 +80,7 @@ export class PDFWorkerManager {
     }
 
     async generateFinalPDF(processedImages, config) {
-        const { PDFDocument } = await import('pdf-lib')
+        const {PDFDocument} = await import('pdf-lib')
         const pdfDoc = await PDFDocument.create()
 
         for (const imgData of processedImages) {
@@ -95,8 +99,8 @@ export class PDFWorkerManager {
             }
         }
 
-        const pdfBytes = await pdfDoc.save({ useObjectStreams: true, addDefaultPage: false })
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+        const pdfBytes = await pdfDoc.save({useObjectStreams: true, addDefaultPage: false})
+        const blob = new Blob([pdfBytes], {type: 'application/pdf'})
         const fileName = config.fileName || `Document_${Date.now()}.pdf`
 
         this.handleDownload(blob, fileName)
@@ -141,7 +145,7 @@ export class PDFWorkerManager {
     }
 
     cancel() {
-        if (this.worker) this.worker.postMessage({ type: 'cancel' })
+        if (this.worker) this.worker.postMessage({type: 'cancel'})
     }
 
     cleanup() {
@@ -153,13 +157,29 @@ export class PDFWorkerManager {
     }
 
     // 链式调用注册
-    onProgress(cb) { this.callbacks.onProgress = cb; return this }
-    onComplete(cb) { this.callbacks.onComplete = cb; return this }
-    onError(cb) { this.callbacks.onError = cb; return this }
-    onCancel(cb) { this.callbacks.onCancel = cb; return this }
+    onProgress(cb) {
+        this.callbacks.onProgress = cb;
+        return this
+    }
+
+    onComplete(cb) {
+        this.callbacks.onComplete = cb;
+        return this
+    }
+
+    onError(cb) {
+        this.callbacks.onError = cb;
+        return this
+    }
+
+    onCancel(cb) {
+        this.callbacks.onCancel = cb;
+        return this
+    }
 }
 
 let managerInstance = null
+
 export function getWorkerManager() {
     if (!managerInstance) managerInstance = new PDFWorkerManager()
     return managerInstance

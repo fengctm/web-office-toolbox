@@ -1,4 +1,4 @@
-import {PDFDocument, rgb, degrees, StandardFonts} from 'pdf-lib'
+import {degrees, PDFDocument, rgb, StandardFonts} from 'pdf-lib'
 
 /**
  * 导出带水印的PDF
@@ -8,29 +8,29 @@ import {PDFDocument, rgb, degrees, StandardFonts} from 'pdf-lib'
  * @returns {Promise<Blob>} - 导出的PDF Blob
  */
 export const exportWatermarkedPDF = async (pdfFile, watermarkConfig, password = '') => {
-  // 将File或Blob转换为ArrayBuffer
-  let arrayBuffer
-  if (pdfFile instanceof Blob) {
-    arrayBuffer = await pdfFile.arrayBuffer()
-  } else if (pdfFile instanceof File) {
-    arrayBuffer = await pdfFile.arrayBuffer()
-  } else {
-    arrayBuffer = pdfFile
-  }
+    // 将File或Blob转换为ArrayBuffer
+    let arrayBuffer
+    if (pdfFile instanceof Blob) {
+        arrayBuffer = await pdfFile.arrayBuffer()
+    } else if (pdfFile instanceof File) {
+        arrayBuffer = await pdfFile.arrayBuffer()
+    } else {
+        arrayBuffer = pdfFile
+    }
 
-  const pdfDoc = await PDFDocument.load(arrayBuffer, { password })
+    const pdfDoc = await PDFDocument.load(arrayBuffer, {password})
 
-  // 检查水印文本是否包含中文字符
-  const hasChinese = /[\u4e00-\u9fa5]/.test(watermarkConfig.text)
+    // 检查水印文本是否包含中文字符
+    const hasChinese = /[\u4e00-\u9fa5]/.test(watermarkConfig.text)
 
-  if (hasChinese) {
-    await addChineseWatermarkAsImage(pdfDoc, watermarkConfig)
-  } else {
-    await addEnglishWatermark(pdfDoc, watermarkConfig)
-  }
+    if (hasChinese) {
+        await addChineseWatermarkAsImage(pdfDoc, watermarkConfig)
+    } else {
+        await addEnglishWatermark(pdfDoc, watermarkConfig)
+    }
 
-  const pdfBytes = await pdfDoc.save()
-  return new Blob([pdfBytes], { type: 'application/pdf' })
+    const pdfBytes = await pdfDoc.save()
+    return new Blob([pdfBytes], {type: 'application/pdf'})
 }
 
 /**

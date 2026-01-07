@@ -12,14 +12,11 @@
     </v-card-item>
 
     <v-card-text>
-      <!-- 文件上传区域 -->
-      <FileUpload
-          ref="fileUploadRef"
-          @file-uploaded="handleFileUploaded"
-          @pdf-processed="handlePdfProcessed"
-          @error="handleError"
-          @update:processing="handleProcessingUpdate"
-          @password-required="handlePasswordRequired"
+      <!-- 文件上传区域 - 使用 PDFSecureUpload -->
+      <PDFSecureUpload
+          label="选择或拖拽 PDF 文件"
+          @success="handleFileSelected"
+          @reset="handleReset"
       />
 
       <!-- 预览网格区域 -->
@@ -84,7 +81,7 @@
 import {onMounted, reactive, ref} from 'vue'
 
 // 导入子组件
-import FileUpload from './FileUpload.vue'
+import PDFSecureUpload from '@/components/PDFSecureUpload.vue'
 import PreviewGrid from './PreviewGrid.vue'
 import PreviewModal from './PreviewModal.vue'
 import ExportPanel from './ExportPanel.vue'
@@ -132,8 +129,7 @@ const snackbar = ref({
   color: 'info'
 })
 
-// 子组件引用
-const fileUploadRef = ref(null)
+// 子组件引用（已移除，直接使用 PDFSecureUpload）
 
 // 配置pdfjs worker（使用匹配的版本）
 if (typeof window !== 'undefined') {
@@ -173,74 +169,86 @@ onMounted(() => {
   }, 1000)
 })
 
-// 处理文件上传
-const handleFileUploaded = (file) => {
-  // 重置所有相关状态，避免旧状态影响新文件
+// 处理 PDFSecureUpload 文件选择成功
+const handleFileSelected = (result) => {
+  const {file, password} = result
+
+  // 保存文件和密码
   pdfFile.value = file
+  pdfPassword.value = password || ''
   pdfLoaded.value = false
   totalPages.value = 0
-  pdfPassword.value = ''
 
-  if (file) {
-    showSnackbar('文件选择成功，请点击"解析PDF"按钮', 'success')
-  }
+  // 自动开始解析 PDF
+  processPDF()
 }
 
-// 处理PDF解析完成
-const handlePdfProcessed = (pages) => {
-  totalPages.value = pages
-  pdfLoaded.value = true
-  showSnackbar(`PDF解析成功！共 ${pages} 页`, 'success')
-}
-
-// 处理PDF解析错误
-const handlePDFProcessError = (error) => {
-  const friendlyError = formatUserFriendlyError(error)
-
-  // 根据错误类型显示不同的提示
-  if (friendlyError.severity === 'error') {
-    showSnackbar(`${friendlyError.title} - ${friendlyError.suggestion}`, 'error')
-  } else if (friendlyError.severity === 'warning') {
-    showSnackbar(`${friendlyError.title} - ${friendlyError.suggestion}`, 'warning')
-  } else {
-    showSnackbar(friendlyError.title, 'info')
-  }
-
-  // 记录错误
-  console.error('PDF处理错误:', {
-    type: error.type,
-    message: error.message,
-    details: error.details
-  })
-}
-
-// 处理处理状态更新
-const handleProcessingUpdate = (isProcessing) => {
-  processing.value = isProcessing
-}
-
-// 处理错误
-const handleError = (message) => {
-  showSnackbar(message, 'error')
-  // 重置相关状态
-  if (fileUploadRef.value) {
-    fileUploadRef.value.reset()
-  }
+// 处理重置
+const handleReset = () => {
   pdfFile.value = null
+  pdfPassword.value = ''
   pdfLoaded.value = false
   totalPages.value = 0
-  pdfPassword.value = ''
+  processing.value = false
+  showSnackbar('已重置选择', 'info')
 }
 
-// 处理密码需求（从FileUpload组件获取密码）
-const handlePasswordRequired = (password) => {
-  if (password) {
-    // 存储密码供后续使用
-    pdfPassword.value = password
-    showSnackbar('密码已设置，可以正常处理加密PDF', 'success')
-  } else {
-    // 需要密码但还没有
-    showSnackbar('此PDF文件需要密码，请输入密码', 'info')
+// 解析PDF（从FileUpload组件迁移过来的逻辑）
+const processPDF = async () => {
+  if (!pdfFile.value) {
+    showSnackbar('请先选择PDF文件', 'warning')
+    return
+  }
+
+  processing.value = true
+  showSnackbar('正在解析PDF文件...', 'info')
+
+  try {
+    // 读取文件
+    const arrayBuffer = await pdfFile.value.arrayBuffer()
+
+    // 使用 PDFSecureUpload 已经验证过的密码
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer,
+      password: pdfPassword.value || ''
+    }).promise
+
+    const pageCount = pdf.numPages
+
+    if (pageCount === 0) {
+      throw new Error('PDF文件不包含任何页面')
+    }
+
+    // 验证可访问性 - 获取第一页
+    const page = await pdf.getPage(1)
+
+    // 额外的处理时间，让用户看到进度
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    totalPages.value = pageCount
+    pdfLoaded.value = true
+    processing.value = false
+    showSnackbar(`PDF解析成功！共 ${pageCount} 页`, 'success')
+
+  } catch (error) {
+    processing.value = false
+
+    // 处理错误
+    const friendlyError = formatUserFriendlyError(error)
+
+    if (friendlyError.severity === 'error') {
+      showSnackbar(`${friendlyError.title} - ${friendlyError.suggestion}`, 'error')
+    } else if (friendlyError.severity === 'warning') {
+      showSnackbar(`${friendlyError.title} - ${friendlyError.suggestion}`, 'warning')
+    } else {
+      showSnackbar(friendlyError.title, 'info')
+    }
+
+    console.error('PDF解析错误:', {
+      type: error.type,
+      message: error.message,
+      details: error.details
+    })
   }
 }
 
@@ -305,28 +313,11 @@ const handleExportImages = async (config) => {
     const format = config.format
     const quality = config.quality / 3 // 转换为0-1范围
 
-    // 加载PDF，支持加密文件（使用存储的密码）
-    let pdf
-    try {
-      pdf = await pdfjsLib.getDocument({
-        data: arrayBuffer,
-        password: pdfPassword.value || ''
-      }).promise
-    } catch (e) {
-      if (e.message.includes('password') || e.message.includes('encrypted')) {
-        // 如果有密码但失败，说明密码可能错误
-        if (pdfPassword.value) {
-          throw new Error('密码错误，无法导出')
-        }
-        console.warn('PDF已加密，尝试忽略加密访问...')
-        pdf = await pdfjsLib.getDocument({
-          data: arrayBuffer,
-          disableEncryption: true
-        }).promise
-      } else {
-        throw e
-      }
-    }
+    // 加载PDF，使用 PDFSecureUpload 已验证的密码
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer,
+      password: pdfPassword.value || ''
+    }).promise
 
     for (let i = 0; i < pagesToExport.length; i++) {
       if (!exporting.value) {

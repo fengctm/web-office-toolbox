@@ -16,13 +16,13 @@
           <div class="mb-4">
             <label class="text-subtitle-2 mb-2 d-block">图片格式</label>
             <v-select
-              v-model="exportConfig.format"
-              :items="formatOptions"
-              item-title="text"
-              item-value="value"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-image"
+                v-model="exportConfig.format"
+                :items="formatOptions"
+                item-title="text"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-image"
             ></v-select>
           </div>
 
@@ -30,17 +30,17 @@
           <div class="mb-4">
             <label class="text-subtitle-2 mb-2 d-block">图片质量</label>
             <v-slider
-              v-model="exportConfig.quality"
-              :min="1"
-              :max="3"
-              :step="1"
-              :ticks="qualityLabels"
-              show-ticks="always"
-              tick-size="4"
-              color="teal"
-              density="comfortable"
-              thumb-label
-              @update:model-value="(val) => exportConfig.quality = val"
+                v-model="exportConfig.quality"
+                :min="1"
+                :max="3"
+                :step="1"
+                :ticks="qualityLabels"
+                show-ticks="always"
+                tick-size="4"
+                color="teal"
+                density="comfortable"
+                thumb-label
+                @update:model-value="(val) => exportConfig.quality = val"
             >
               <template v-slot:append>
                 <v-chip size="small" color="teal" variant="outlined">
@@ -54,36 +54,36 @@
           <div class="mb-4">
             <label class="text-subtitle-2 mb-2 d-block">导出范围</label>
             <v-select
-              v-model="exportConfig.range"
-              :items="rangeOptions"
-              item-title="text"
-              item-value="value"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-selection-drag"
+                v-model="exportConfig.range"
+                :items="rangeOptions"
+                item-title="text"
+                item-value="value"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-selection-drag"
             ></v-select>
           </div>
 
           <!-- 导出按钮 -->
           <v-btn
-            block
-            color="teal"
-            size="large"
-            :loading="exporting"
-            :disabled="exporting"
-            prepend-icon="mdi-download"
-            @click="exportImages"
+              block
+              color="teal"
+              size="large"
+              :loading="exporting"
+              :disabled="exporting"
+              prepend-icon="mdi-download"
+              @click="exportImages"
           >
             {{ exporting ? '正在导出...' : '导出为图片' }}
           </v-btn>
 
           <!-- 导出提示 -->
           <v-alert
-            v-if="!exporting"
-            type="info"
-            variant="tonal"
-            class="mt-3"
-            icon="mdi-shield-check"
+              v-if="!exporting"
+              type="info"
+              variant="tonal"
+              class="mt-3"
+              icon="mdi-shield-check"
           >
             该工具为本地运行计算，运行速度以本地设备配置决定。所有处理在浏览器中完成，不会上传到服务器。
           </v-alert>
@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import {reactive} from 'vue'
 
 const props = defineProps({
   pdfLoaded: {
@@ -125,9 +125,9 @@ const exportConfig = reactive({
 
 // 格式选项
 const formatOptions = [
-  { text: 'PNG (无损，高质量)', value: 'png' },
-  { text: 'JPG (有损，文件较小)', value: 'jpg' },
-  { text: 'WEBP (现代格式，平衡)', value: 'webp' }
+  {text: 'PNG (无损，高质量)', value: 'png'},
+  {text: 'JPG (有损，文件较小)', value: 'jpg'},
+  {text: 'WEBP (现代格式，平衡)', value: 'webp'}
 ]
 
 // 质量标签
@@ -139,8 +139,8 @@ const qualityLabels = {
 
 // 导出范围选项
 const rangeOptions = [
-  { text: '全部页面', value: 'all' },
-  { text: '当前页面', value: 'current' }
+  {text: '全部页面', value: 'all'},
+  {text: '当前页面', value: 'current'}
 ]
 
 // 导出图片

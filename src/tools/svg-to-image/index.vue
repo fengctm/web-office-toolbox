@@ -129,7 +129,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 // --- 状态变量 ---
 const svgCode = ref('')
@@ -187,7 +187,7 @@ const handleDownloadImage = async () => {
 
     // 将SVG转换为图片
     const svgString = new XMLSerializer().serializeToString(svgElement)
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' })
+    const svgBlob = new Blob([svgString], {type: 'image/svg+xml'})
     const url = URL.createObjectURL(svgBlob)
 
     const img = new Image()
@@ -236,7 +236,7 @@ const handleDownloadSvg = () => {
   }
 
   try {
-    const blob = new Blob([svgCode.value], { type: 'image/svg+xml' })
+    const blob = new Blob([svgCode.value], {type: 'image/svg+xml'})
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -276,7 +276,7 @@ const handleHelp = () => {
 - 支持深色模式
 - 所有处理在本地完成，保护隐私
   `.trim()
-  
+
   alert(helpText)
 }
 
@@ -292,9 +292,9 @@ const showSnackbar = (message, type = 'info') => {
   snackbar.value = {
     show: true,
     message,
-    color: type === 'success' ? 'success' : 
-           type === 'error' ? 'error' : 
-           type === 'warning' ? 'warning' : 'info',
+    color: type === 'success' ? 'success' :
+        type === 'error' ? 'error' :
+            type === 'warning' ? 'warning' : 'info',
     timeout: 3000
   }
 }
@@ -314,7 +314,7 @@ const showSnackbar = (message, type = 'info') => {
 .app-bar-blur {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .app-content {
@@ -323,7 +323,7 @@ const showSnackbar = (message, type = 'info') => {
 }
 
 .input-section {
-  border-right: 1px solid rgba(0,0,0,0.05);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
 }
@@ -350,7 +350,7 @@ const showSnackbar = (message, type = 'info') => {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: zoom-in;
   display: flex;
   align-items: center;
@@ -366,11 +366,10 @@ const showSnackbar = (message, type = 'info') => {
 .checkerboard-bg {
   position: absolute;
   inset: 0;
-  background-image:
-      linear-gradient(45deg, #eee 25%, transparent 25%),
-      linear-gradient(-45deg, #eee 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #eee 75%),
-      linear-gradient(-45deg, transparent 75%, #eee 75%);
+  background-image: linear-gradient(45deg, #eee 25%, transparent 25%),
+  linear-gradient(-45deg, #eee 25%, transparent 25%),
+  linear-gradient(45deg, transparent 75%, #eee 75%),
+  linear-gradient(-45deg, transparent 75%, #eee 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   z-index: 0;
@@ -388,7 +387,7 @@ const showSnackbar = (message, type = 'info') => {
   :deep(svg) {
     width: 100%;
     height: auto;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
   }
 }
 
@@ -420,6 +419,7 @@ const showSnackbar = (message, type = 'info') => {
   .zoom-content {
     max-width: 80vw;
     max-height: 80vh;
+
     :deep(svg) {
       width: 100%;
       height: 100%;
@@ -431,6 +431,7 @@ const showSnackbar = (message, type = 'info') => {
 .apple-zoom-enter-active, .apple-zoom-leave-active {
   transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }
+
 .apple-zoom-enter-from, .apple-zoom-leave-to {
   opacity: 0;
   transform: scale(0.9);
@@ -438,20 +439,43 @@ const showSnackbar = (message, type = 'info') => {
 
 /* 深色模式适配 */
 :root[data-theme="dark"] {
-  .svg-to-image-app { background-color: #1e1e1e; }
-  .app-bar-blur { background-color: rgba(30,30,30,0.8); border-color: rgba(255,255,255,0.1); }
-  .preview-section { background-color: #121212; }
-  .checkerboard-bg { background-image:
-      linear-gradient(45deg, #252525 25%, transparent 25%),
-      linear-gradient(-45deg, #252525 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #252525 75%),
-      linear-gradient(-45deg, transparent 75%, #252525 75%); }
-  .code-editor { :deep(.v-field) { background-color: #2d2d2d !important; } }
-  .fullscreen-overlay { background: rgba(18, 18, 18, 0.95); }
+  .svg-to-image-app {
+    background-color: #1e1e1e;
+  }
+
+  .app-bar-blur {
+    background-color: rgba(30, 30, 30, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .preview-section {
+    background-color: #121212;
+  }
+
+  .checkerboard-bg {
+    background-image: linear-gradient(45deg, #252525 25%, transparent 25%),
+    linear-gradient(-45deg, #252525 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #252525 75%),
+    linear-gradient(-45deg, transparent 75%, #252525 75%);
+  }
+
+  .code-editor {
+    :deep(.v-field) {
+      background-color: #2d2d2d !important;
+    }
+  }
+
+  .fullscreen-overlay {
+    background: rgba(18, 18, 18, 0.95);
+  }
 }
 
 @media (max-width: 960px) {
-  .app-content { overflow-y: auto; }
-  .preview-canvas-wrapper { min-height: 300px; }
+  .app-content {
+    overflow-y: auto;
+  }
+  .preview-canvas-wrapper {
+    min-height: 300px;
+  }
 }
 </style>

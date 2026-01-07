@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import {ref, computed, onUnmounted, onMounted, reactive} from 'vue'
+import {computed, onMounted, onUnmounted, reactive, ref} from 'vue'
 
 const props = defineProps({
   files: {type: Array, default: () => []},

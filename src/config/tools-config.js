@@ -35,7 +35,7 @@ export const toolsConfig = [
         code: 'pdf-watermark',
         name: 'PDF添加水印',
         icon: 'mdi-watermark',
-        description: '为PDF文件添加水印 暂未完成受密码保护的PDF添加水印',
+        description: '为PDF文件添加水印',
         enabled: true,
         category: 'PDF工具',
         tags: ['PDF', '水印', '添加'],

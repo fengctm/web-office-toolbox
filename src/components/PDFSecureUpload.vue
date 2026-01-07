@@ -1,112 +1,79 @@
 <template>
   <div class="pdf-secure-selector">
-    <transition name="view-switch" mode="out-in">
+    <transition name="apple-switch" mode="out-in">
 
-      <!-- 1. 初始上传区域 (Google MD3 Style) -->
+      <!-- 1. 上传区域 -->
       <div v-if="!state.file" :key="'upload'" class="view-container">
         <v-hover v-slot="{ isHovering, props }">
           <v-card
               v-bind="props"
-              class="drop-zone-card"
+              class="drop-zone-card apple-glass"
               :class="{ 'is-hovering': isHovering }"
               @click="triggerFileSelect"
           >
-            <div class="icon-wrapper">
-              <v-icon size="48" color="teal">mdi-file-pdf-box</v-icon>
+            <div class="icon-orb">
+              <v-icon size="42" color="teal">mdi-file-pdf-box</v-icon>
             </div>
-            <div class="text-h6 font-weight-bold mt-4">{{ label }}</div>
-            <p class="text-caption text-grey mt-1">支持加密文档，本地解析</p>
-            <input
-                type="file"
-                ref="fileInput"
-                hidden
-                accept="application/pdf"
-                @change="handleFileChange"
-            >
+            <div class="text-h6 font-weight-bold mt-6 text-center px-4">{{ label }}</div>
+            <p class="text-caption text-medium-emphasis mt-2">支持加密文档 · 100% 本地解析</p>
+            <input type="file" ref="fileInput" hidden accept="application/pdf" @change="handleFileChange">
           </v-card>
         </v-hover>
       </div>
 
-      <!-- 2. 密码解锁区域 (Apple Security Style) -->
+      <!-- 2. 解锁区域 -->
       <div v-else-if="state.isLocked" :key="'unlock'" class="view-container">
-        <v-card class="unlock-glass-card" elevation="12">
+        <v-card
+            class="unlock-glass-card apple-glass"
+            :class="{ 'shake-error': state.isShaking }"
+        >
           <div class="lock-header">
-            <v-avatar color="teal-lighten-5" size="64">
-              <v-icon color="teal" size="32">mdi-lock-outline</v-icon>
-            </v-avatar>
-          </div>
-
-          <div class="doc-info text-center mb-6">
-            <div class="text-subtitle-1 font-weight-black text-truncate px-4">
-              {{ state.file.name }}
+            <div class="lock-icon-wrapper">
+              <v-icon :color="state.error ? 'error' : 'teal'" size="32">
+                {{ state.error ? 'mdi-lock-alert' : 'mdi-lock-outline' }}
+              </v-icon>
             </div>
-            <v-chip size="x-small" variant="tonal" color="teal" class="mt-1">
-              受保护的文档
-            </v-chip>
           </div>
 
+          <div class="doc-info text-center mb-8">
+            <div class="text-h6 font-weight-bold text-truncate px-6">{{ state.file.name }}</div>
+            <div class="text-caption text-teal font-weight-bold text-uppercase tracking-widest mt-1">
+              Encrypted Document
+            </div>
+          </div>
+
+          <!-- 修复宽度：添加 class="apple-input" 并在 CSS 中强制 width: 100% -->
           <v-text-field
               v-model="state.password"
-              label="输入文档密码"
-              type="password"
-              variant="solo-filled"
+              :label="state.error || '输入文档密码'"
+              :type="state.showPassword ? 'text' : 'password'"
+              variant="solo"
               flat
-              rounded="lg"
-              bg-color="grey-lighten-4"
-              color="teal"
-              autofocus
-              class="mb-4"
-              :error-messages="state.error"
+              class="apple-input mb-4"
+              :append-inner-icon="state.showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+              @click:append-inner="state.showPassword = !state.showPassword"
               @keyup.enter="validatePassword"
               @input="state.error = ''"
+              hide-details
+              autofocus
           ></v-text-field>
 
-          <div class="d-flex gap-3">
-            <v-btn
-                variant="text"
-                rounded="pill"
-                class="flex-1"
-                @click="reset"
-            >
-              取消
-            </v-btn>
-            <v-btn
-                color="teal"
-                variant="flat"
-                rounded="pill"
-                class="flex-1"
-                :loading="state.loading"
-                @click="validatePassword"
-            >
-              验证
-            </v-btn>
+          <div class="d-flex gap-4 mt-6">
+            <v-btn variant="text" class="apple-btn-secondary" @click="reset">取消</v-btn>
+            <v-btn color="teal" class="apple-btn-primary" :loading="state.loading" @click="validatePassword">验证</v-btn>
           </div>
         </v-card>
       </div>
 
-      <!-- 3. 解析中/就绪状态 -->
+      <!-- 3. 就绪区域 -->
       <div v-else :key="'ready'" class="view-container">
-        <v-card variant="flat" border class="status-card rounded-xl pa-6 text-center">
-          <v-progress-circular
-              v-if="state.loading"
-              indeterminate
-              color="teal"
-              class="mb-2"
-          ></v-progress-circular>
-          <v-icon v-else color="success" size="48" class="mb-2">mdi-check-circle</v-icon>
-
-          <div class="text-subtitle-1 font-weight-bold">{{ state.file.name }}</div>
-          <div class="text-caption text-grey">已成功解密并准备就绪</div>
-
-          <v-btn
-              variant="text"
-              color="error"
-              size="small"
-              class="mt-4"
-              @click="reset"
-          >
-            重置文件
-          </v-btn>
+        <v-card class="status-card apple-glass">
+          <div class="success-check mb-4">
+            <v-icon color="success" size="64">mdi-check-circle</v-icon>
+          </div>
+          <div class="text-h6 font-weight-bold px-6 text-truncate w-100 text-center">{{ state.file.name }}</div>
+          <div class="text-body-2 text-medium-emphasis mb-8">解密成功，已准备就绪</div>
+          <v-btn variant="tonal" color="error" rounded="xl" @click="reset">移除文件</v-btn>
         </v-card>
       </div>
 
@@ -115,44 +82,38 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import { PDFHelper } from '@/utils-scripts/PdfHelper'
+import {reactive, ref} from 'vue'
+import {PDFHelper} from '@/utils-scripts/PdfHelper'
 
 const props = defineProps({
-  label: { type: String, default: '选择或拖拽 PDF' }
+  label: {type: String, default: '选择或拖拽 PDF'}
 })
 
 const emit = defineEmits(['success', 'reset'])
-
 const fileInput = ref(null)
+
 const state = reactive({
   file: null,
   isLocked: false,
   password: '',
   loading: false,
-  error: ''
+  error: '',
+  isShaking: false,
+  showPassword: false
 })
 
 const triggerFileSelect = () => fileInput.value.click()
 
-/**
- * 阶段 1：文件选择与初步加密检测
- */
 const handleFileChange = async (e) => {
   const file = e.target.files[0]
   if (!file) return
-
   state.file = file
   state.loading = true
-
   try {
-    // 检查 PDF 是否加密
-    const { isEncrypted } = await PDFHelper.getPdfjsInstance(file)
-
+    const {isEncrypted} = await PDFHelper.getPdfjsInstance(file)
     if (isEncrypted) {
       state.isLocked = true
     } else {
-      // 未加密，直接交付
       finishSelection('')
     }
   } catch (err) {
@@ -163,49 +124,48 @@ const handleFileChange = async (e) => {
   }
 }
 
-/**
- * 阶段 2：验证用户输入的密码
- */
 const validatePassword = async () => {
-  if (!state.password) return
-
+  if (!state.password) {
+    triggerShake()
+    return
+  }
   state.loading = true
-  state.error = ''
-
   try {
-    // 使用工具类验证密码
     const isValid = await PDFHelper.verifyPassword(state.file, state.password)
-
     if (isValid) {
       finishSelection(state.password)
     } else {
-      state.error = '密码错误，请重新输入'
-      // Apple 风格的输入提示：通常这里可以加一个抖动动画
+      state.error = '密码错误'
+      triggerShake()
     }
   } catch (err) {
-    state.error = '验证过程中出错'
+    state.error = '验证出错'
+    triggerShake()
   } finally {
     state.loading = false
   }
 }
 
-/**
- * 阶段 3：成功后的终点
- */
+const triggerShake = () => {
+  state.isShaking = true
+  setTimeout(() => {
+    state.isShaking = false
+  }, 500)
+}
+
+const clearError = () => {
+  state.error = ''
+}
+
 const finishSelection = (finalPassword) => {
   state.isLocked = false
-  // 关键：将验证过的 file 对象和正确的 password 传给父组件
-  emit('success', {
-    file: state.file,
-    password: finalPassword
-  })
+  emit('success', {file: state.file, password: finalPassword})
 }
 
 const reset = () => {
   state.file = null
   state.isLocked = false
   state.password = ''
-  state.loading = false
   state.error = ''
   emit('reset')
   if (fileInput.value) fileInput.value.value = ''
@@ -213,100 +173,234 @@ const reset = () => {
 </script>
 
 <style scoped lang="scss">
+/* --- 1. 核心布局层 --- */
 .pdf-secure-selector {
   width: 100%;
-  max-width: 460px;
+  max-width: 420px;
   margin: 0 auto;
 }
 
 .view-container {
-  min-height: 320px;
+  width: 100%;
+  min-height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 1. 上传卡片 (MD3) */
-.drop-zone-card {
+.apple-glass {
   width: 100%;
-  height: 280px;
-  border: 2px dashed #B2DFDB !important;
-  border-radius: 32px !important;
-  background: #FAFAFA !important;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-
-  &:hover {
-    border-color: #009688 !important;
-    background: #E0F2F1 !important;
-    transform: translateY(-4px);
-  }
-
-  .icon-wrapper {
-    width: 80px;
-    height: 80px;
-    background: white;
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  }
-}
-
-/* 2. 解锁卡片 (Apple Glass) */
-.unlock-glass-card {
-  width: 100%;
+  border-radius: 36px !important;
+  transition: all 0.4s cubic-bezier(0.15, 0.83, 0.66, 1);
   padding: 32px;
-  border-radius: 32px !important;
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  text-align: center;
-
-  .lock-header {
-    margin-bottom: 24px;
-    display: flex;
-    justify-content: center;
-  }
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important; /* 默认稍淡一点的阴影 */
+  overflow: hidden;
+  position: relative;
 }
 
-/* 3. 状态卡片 */
-.status-card {
+/* --- 2. 交互与动画 --- */
+
+/* 修复：输入框宽度问题 */
+.apple-input {
   width: 100%;
-  background: white !important;
-  border: 1px solid #E0E0E0 !important;
 }
 
-/* 动效 */
-.view-switch-enter-active, .view-switch-leave-active {
-  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-}
-.view-switch-enter-from {
-  opacity: 0;
-  transform: translateY(20px) scale(0.95);
-}
-.view-switch-leave-to {
-  opacity: 0;
-  transform: translateY(-20px) scale(0.95);
+/* 修复：悬停效果 - 移除背景突变，改为边框高亮 + 上浮 */
+.drop-zone-card.is-hovering {
+  transform: translateY(-6px);
+  border-color: #009688 !important; /* 主题色 Teal */
+  box-shadow: 0 30px 60px rgba(0, 150, 136, 0.15) !important;
+  /* 不再强制修改 background */
 }
 
-/* 深色模式适配 */
-:root[data-theme="dark"] {
-  .drop-zone-card {
-    background: #1E1E1E !important;
-    border-color: #333 !important;
-    &:hover { border-color: #4DD0E1 !important; background: #263238 !important; }
-    .icon-wrapper { background: #2D2D2D; }
+/* 修复：悬停时的图标俏动动画 */
+.drop-zone-card.is-hovering .icon-orb {
+  transform: scale(1.15) rotate(-5deg);
+  box-shadow: 0 15px 35px rgba(0, 150, 136, 0.25);
+}
+
+/* --- 3. 主题样式 (浅色 vs 深色) --- */
+
+/* === 默认：浅色模式 === */
+.apple-glass {
+  background: rgba(255, 255, 255, 0.9) !important; /* 更白，更像 Apple 风格 */
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #212121;
+}
+
+.icon-orb {
+  width: 90px;
+  height: 90px;
+  background: #ffffff;
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(0, 150, 136, 0.1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性过渡 */
+}
+
+.lock-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  background: rgba(0, 150, 136, 0.1);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.apple-input :deep(.v-field) {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-radius: 16px !important;
+  color: #212121;
+}
+
+.apple-input :deep(.v-field__input) {
+  color: #212121 !important;
+}
+
+.apple-btn-secondary {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* === 深色模式适配 (Media Query) === */
+@media (prefers-color-scheme: dark) {
+  .apple-glass {
+    background: rgba(30, 30, 30, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff;
   }
-  .unlock-glass-card {
-    background: rgba(30, 30, 30, 0.7) !important;
-    border-color: rgba(255, 255, 255, 0.1);
+
+  /* 修复：深色模式下图标背景透明，带边框，不刺眼 */
+  .icon-orb {
+    background: transparent;
+    border: 2px solid rgba(0, 150, 136, 0.5); /* Teal 边框 */
+    box-shadow: none;
   }
-  .status-card { background: #1E1E1E !important; border-color: #333 !important; }
+
+  /* 悬停时图标稍微亮一点 */
+  .drop-zone-card.is-hovering .icon-orb {
+    background: rgba(0, 150, 136, 0.05);
+    border-color: #009688;
+  }
+
+  .lock-icon-wrapper {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .apple-input :deep(.v-field) {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .apple-input :deep(.v-field__input) {
+    color: #fff !important;
+  }
+
+  .apple-input :deep(.v-label) {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .apple-btn-secondary {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+}
+
+/* === 深色模式适配 (Vuetify 类) === */
+:deep(.v-theme--dark) {
+  .apple-glass {
+    background: rgba(30, 30, 30, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+
+  .icon-orb {
+    background: transparent;
+    border: 2px solid rgba(0, 150, 136, 0.5);
+    box-shadow: none;
+  }
+
+  .drop-zone-card.is-hovering .icon-orb {
+    background: rgba(0, 150, 136, 0.05);
+    border-color: #009688;
+  }
+
+  .lock-icon-wrapper {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .apple-input :deep(.v-field) {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .apple-input :deep(.v-field__input) {
+    color: #fff !important;
+  }
+
+  .apple-input :deep(.v-label) {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .apple-btn-secondary {
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+}
+
+/* --- 4. 按钮样式 --- */
+.apple-btn-primary {
+  flex: 1;
+  height: 52px !important;
+  border-radius: 18px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+.apple-btn-secondary {
+  flex: 1;
+  height: 52px !important;
+  border-radius: 18px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+/* --- 5. 过渡动画 --- */
+.apple-switch-enter-active, .apple-switch-leave-active {
+  transition: all 0.5s cubic-bezier(0.15, 0.83, 0.66, 1);
+}
+
+.apple-switch-enter-from {
+  opacity: 0;
+  transform: scale(0.95) translateY(20px);
+  filter: blur(10px);
+}
+
+.apple-switch-leave-to {
+  opacity: 0;
+  transform: scale(1.05) translateY(-20px);
+  filter: blur(10px);
+}
+
+/* --- 6. 错误抖动 --- */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-10px);
+  }
+  40%, 80% {
+    transform: translateX(10px);
+  }
+}
+
+.shake-error {
+  animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
 }
 </style>

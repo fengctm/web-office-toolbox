@@ -2,13 +2,13 @@
   <v-app>
     <!-- 应用栏 -->
     <v-app-bar
-        flat
         border
-        color="teal-darken-2"
         class="app-bar"
+        color="teal-darken-2"
+        flat
     >
       <v-app-bar-title class="font-weight-bold">
-        <v-icon icon="mdi-toolbox" class="mr-2"></v-icon>
+        <v-icon class="mr-2" icon="mdi-toolbox"></v-icon>
         Web Office Toolbox
       </v-app-bar-title>
 
@@ -16,10 +16,10 @@
 
       <!-- 主题切换 -->
       <v-btn
+          class="mr-2"
           icon
           variant="text"
           @click="toggleTheme"
-          class="mr-2"
       >
         <v-icon>
           {{ isDark ? 'mdi-weather-night' : 'mdi-weather-sunny' }}
@@ -28,10 +28,10 @@
 
       <!-- GitHub 链接 -->
       <v-btn
-          icon
-          variant="text"
           href="https://github.com"
+          icon
           target="_blank"
+          variant="text"
       >
         <v-icon>mdi-github</v-icon>
       </v-btn>
@@ -39,9 +39,9 @@
 
     <!-- 主要内容区域 -->
     <v-main>
-      <v-container fluid class="main-container">
+      <v-container class="main-container" fluid>
         <router-view v-slot="{ Component, route }">
-          <transition name="page-fade" mode="out-in">
+          <transition mode="out-in" name="page-fade">
             <component :is="Component" :key="route.path"/>
           </transition>
         </router-view>
@@ -52,7 +52,7 @@
     <v-footer border class="footer">
       <v-container fluid>
         <v-row align="center" justify="center">
-          <v-col cols="12" class="text-center text-caption text-grey">
+          <v-col class="text-center text-caption text-grey" cols="12">
             <span class="mr-2">© 2024 Web Office Toolbox</span>
             <span class="mx-2">•</span>
             <span class="mr-2">纯前端工具箱</span>
@@ -68,8 +68,8 @@
         v-model="notification.show"
         :color="notification.color"
         :timeout="3000"
-        location="top right"
         class="mt-12"
+        location="top right"
     >
       {{ notification.message }}
     </v-snackbar>
@@ -95,14 +95,14 @@ const toggleTheme = () => {
   isDark.value = !isDark.value
   theme.global.name.value = isDark.value ? 'dark' : 'light'
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
-  
+
   // 更新HTML的data-theme属性，使CSS深色模式生效
   if (isDark.value) {
     document.documentElement.setAttribute('data-theme', 'dark')
   } else {
     document.documentElement.removeAttribute('data-theme')
   }
-  
+
   showNotification(`已切换到${isDark.value ? '深色' : '浅色'}模式`, 'info')
 }
 
@@ -127,7 +127,7 @@ const initTheme = () => {
     isDark.value = prefersDark
     theme.global.name.value = prefersDark ? 'dark' : 'light'
   }
-  
+
   // 初始化时也设置data-theme属性
   if (isDark.value) {
     document.documentElement.setAttribute('data-theme', 'dark')

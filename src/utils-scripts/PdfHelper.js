@@ -1,4 +1,4 @@
-import { PDFDocument } from 'pdf-lib'
+import {PDFDocument} from 'pdf-lib'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // 配置 Worker (建议在项目入口处也配置一次)
@@ -38,10 +38,10 @@ export class PDFHelper {
                 stopAtErrors: false
             })
             const pdf = await loadingTask.promise
-            return { pdf, isEncrypted: false }
+            return {pdf, isEncrypted: false}
         } catch (err) {
             if (err.name === 'PasswordException') {
-                return { pdf: null, isEncrypted: true, message: err.message }
+                return {pdf: null, isEncrypted: true, message: err.message}
             }
             throw err
         }
@@ -53,7 +53,7 @@ export class PDFHelper {
      */
     static async verifyPassword(file, password) {
         try {
-            const { isEncrypted } = await this.getPdfjsInstance(file, password)
+            const {isEncrypted} = await this.getPdfjsInstance(file, password)
             // 如果没有报错且返回 isEncrypted 为 false，说明密码正确解开了文档
             return !isEncrypted
         } catch (e) {
@@ -66,8 +66,8 @@ export class PDFHelper {
      * 包括：页数、元数据、是否加密、各页尺寸
      */
     static async getInfo(file, password = '') {
-        const { pdf, isEncrypted } = await this.getPdfjsInstance(file, password)
-        if (isEncrypted) return { isEncrypted: true, pageCount: 0 }
+        const {pdf, isEncrypted} = await this.getPdfjsInstance(file, password)
+        if (isEncrypted) return {isEncrypted: true, pageCount: 0}
 
         const meta = await pdf.getMetadata()
         const numPages = pdf.numPages
@@ -75,8 +75,8 @@ export class PDFHelper {
 
         for (let i = 1; i <= numPages; i++) {
             const page = await pdf.getPage(i)
-            const { width, height, rotation } = page.getViewport({ scale: 1 })
-            pages.push({ index: i, width, height, rotation })
+            const {width, height, rotation} = page.getViewport({scale: 1})
+            pages.push({index: i, width, height, rotation})
         }
 
         return {
@@ -94,22 +94,22 @@ export class PDFHelper {
      * @param {number} scale 缩放比例，默认 1.5
      */
     static async renderToImages(file, password = '', scale = 1.5) {
-        const { pdf } = await this.getPdfjsInstance(file, password)
+        const {pdf} = await this.getPdfjsInstance(file, password)
         const images = []
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i)
-            const viewport = page.getViewport({ scale })
+            const viewport = page.getViewport({scale})
 
             const canvas = document.createElement('canvas')
             const context = canvas.getContext('2d')
             canvas.width = viewport.width
             canvas.height = viewport.height
 
-            await page.render({ canvasContext: context, viewport }).promise
+            await page.render({canvasContext: context, viewport}).promise
 
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9))
-            images.push(new File([blob], `page-${i}.jpg`, { type: 'image/jpeg' }))
+            images.push(new File([blob], `page-${i}.jpg`, {type: 'image/jpeg'}))
         }
 
         return images
@@ -130,7 +130,7 @@ export class PDFHelper {
 
         // 保存 (默认会去除加密，除非你手动设置新的加密)
         const pdfBytes = await pdfDoc.save()
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+        const blob = new Blob([pdfBytes], {type: 'application/pdf'})
 
         return {
             blob,
@@ -145,14 +145,14 @@ export class PDFHelper {
      */
     static async removePages(file, password = '', pageIndexes = []) {
         const data = file instanceof ArrayBuffer ? file : await file.arrayBuffer()
-        const pdfDoc = await PDFDocument.load(data, { password })
+        const pdfDoc = await PDFDocument.load(data, {password})
 
         // 降序删除，防止索引偏移
         const sortedIndices = [...pageIndexes].sort((a, b) => b - a)
         sortedIndices.forEach(index => pdfDoc.removePage(index))
 
         const pdfBytes = await pdfDoc.save()
-        return new Blob([pdfBytes], { type: 'application/pdf' })
+        return new Blob([pdfBytes], {type: 'application/pdf'})
     }
 
     /**
@@ -175,6 +175,6 @@ export class PDFHelper {
         }
 
         const pdfBytes = await pdfDoc.save()
-        return new Blob([pdfBytes], { type: 'application/pdf' })
+        return new Blob([pdfBytes], {type: 'application/pdf'})
     }
 }

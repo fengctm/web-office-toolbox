@@ -1,10 +1,10 @@
 <template>
   <div v-if="showTips" class="tips-section mt-4">
     <v-alert
-      v-if="!pdfFile && !pdfLoaded"
-      type="info"
-      variant="outlined"
-      icon="mdi-upload"
+        v-if="!pdfFile && !pdfLoaded"
+        type="info"
+        variant="outlined"
+        icon="mdi-upload"
     >
       <strong>操作步骤：</strong><br>
       1. 点击上方"选择PDF文件"按钮上传PDF<br>
@@ -14,11 +14,11 @@
     </v-alert>
 
     <v-alert
-      v-if="pdfLoaded && !exporting"
-      type="success"
-      variant="tonal"
-      icon="mdi-check-circle"
-      class="mt-3"
+        v-if="pdfLoaded && !exporting"
+        type="success"
+        variant="tonal"
+        icon="mdi-check-circle"
+        class="mt-3"
     >
       <strong>准备就绪！</strong><br>
       PDF文件已加载完成，共 {{ totalPages }} 页。您可以预览页面或配置导出选项。
@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import {computed} from 'vue'
 
 const props = defineProps({
   pdfFile: {

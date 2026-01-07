@@ -1,10 +1,28 @@
 # Web Office Toolbox - 纯前端工具箱
 
+## 🤖 AI必读
+
+**⚠️ AI对项目施工时，尽量避免使用命令行启动服务器**
+
+**原因如下：**
+
+- 部分AI使用的命令行工具，外界无法接触
+- 可能导致重复启动项目多次
+- 占用过多端口资源
+- 增加系统负担和端口冲突风险
+
+**建议方案：**
+
+- 使用可视化界面启动开发服务器
+- 通过 IDE（如 WebStorm）内置功能运行项目
+- 使用图形化工具管理开发环境
+
 ## 🎯 项目概述
 
 这是一个**纯前端的、模块化的、可扩展的** Web 工具箱平台，所有功能在浏览器中本地运行，无需后端依赖。
 
 ### ✅ 已完成的功能
+
 - ✅ 纯前端架构 - 无需后端服务器
 - ✅ 模块化工具系统 - 即插即用
 - ✅ Material Design 界面 - 基于 Vuetify 3
@@ -17,10 +35,12 @@
 ## 🚀 快速开始
 
 ### 环境要求
+
 - Node.js 16+
 - npm 或 pnpm
 
 ### 安装与运行
+
 ```bash
 # 1. 安装依赖（已完成）
 npm install
@@ -33,6 +53,7 @@ npm run dev
 ```
 
 ### 生产构建
+
 ```bash
 npm run build
 # 输出到 dist/ 目录
@@ -67,6 +88,7 @@ web-office-toolbox/
 ## 🛠️ 添加新工具（3步）
 
 ### 步骤 1：创建工具
+
 ```bash
 # 创建工具目录
 mkdir src/tools/my-tool
@@ -76,8 +98,11 @@ touch src/tools/my-tool/index.vue
 ```
 
 ### 步骤 2：实现组件
+
 在 `src/tools/my-tool/index.vue` 中：
+
 ```vue
+
 <template>
   <v-card class="my-tool" elevation="2">
     <v-card-item>
@@ -96,20 +121,32 @@ touch src/tools/my-tool/index.vue
 </template>
 
 <script setup>
-// 工具逻辑
+  // 工具逻辑
 </script>
 ```
 
 ### 步骤 3：注册工具
+
 在 `src/config/tools-config.js` 中添加：
+
 ```javascript
 {
-  code: 'my-tool',
-  name: '我的工具',
-  icon: 'mdi-toolbox',
-  description: '工具描述',
-  enabled: true,
-  component: () => import('../tools/my-tool/index.vue')
+    code: 'my-tool',
+        name
+:
+    '我的工具',
+        icon
+:
+    'mdi-toolbox',
+        description
+:
+    '工具描述',
+        enabled
+:
+    true,
+        component
+:
+    () => import('../tools/my-tool/index.vue')
 }
 ```
 
@@ -123,15 +160,18 @@ touch src/tools/my-tool/index.vue
 ## 🎨 设计系统
 
 ### 核心设计理念
+
 本项目采用 **混合设计系统**，结合了两种设计风格的优势：
 
 #### 📱 **动画风格：Apple 风格**
+
 - **流畅性**：使用 `cubic-bezier(0.16, 1, 0.3, 1)` 等 Apple 标准缓动曲线
 - **物理感**：模拟真实物理运动，如弹簧效果、惯性滑动
 - **优雅性**：细腻的过渡动画，避免生硬的突变
 - **一致性**：所有动画遵循 Apple 动画设计规范
 
 #### 🎨 **布局风格：Google Material Design**
+
 - **结构化**：清晰的卡片式布局和层级关系
 - **功能性**：强调实用性和信息密度
 - **响应式**：灵活的网格系统和自适应布局
@@ -140,21 +180,57 @@ touch src/tools/my-tool/index.vue
 ### 动画设计规范
 
 #### ✅ **Apple 风格动画示例**
+
 ```css
 /* 标准缓动曲线 */
-transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+transition: all
+
+0.4
+s
+
+cubic-bezier
+(
+0.16
+,
+1
+,
+0.3
+,
+1
+)
+;
 
 /* 弹簧效果 */
 @keyframes appleEasing {
-  0% { opacity: 0; transform: translateY(20px) scale(0.8); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 /* 毛玻璃效果 */
-backdrop-filter: blur(20px) saturate(180%);
+backdrop-filter:
+
+blur
+(
+20
+px
+
+)
+saturate
+(
+180
+%
+)
+;
 ```
 
 #### ✅ **应用场景**
+
 - **滚动按钮**：平滑的出现/消失动画
 - **Loading 遮罩**：渐入渐出 + 缩放效果
 - **图片预览**：无缝的尺寸切换
@@ -163,24 +239,28 @@ backdrop-filter: blur(20px) saturate(180%);
 ### 布局设计规范
 
 #### ✅ **Material Design 组件**
+
 - **卡片**：`v-card` 组件，带阴影和圆角
 - **按钮**：`v-btn`，支持多种变体和颜色
 - **网格**：`v-row`/`v-col`，响应式栅格系统
 - **表单**：`v-text-field`，标准化输入控件
 
 #### ✅ **布局原则**
+
 - **间距**：使用 8px 网格系统（8, 16, 24, 32...）
 - **层级**：通过阴影和深度表示层级关系
 - **颜色**：Teal 主色调，支持深色模式
 - **字体**：系统字体，确保可读性
 
 ### 颜色配置
+
 - **主色调**：Teal #009688
 - **辅助色**：Teal Dark #00796b
 - **背景**：浅色/深色模式
 - **文本**：高对比度可读
 
 ### 动画效果
+
 - **页面切换**：Slide + Fade
 - **卡片悬停**：上浮 + 阴影 + 图标脉冲
 - **按钮交互**：Ripple + 位移
@@ -195,6 +275,7 @@ backdrop-filter: blur(20px) saturate(180%);
 ## 🎯 使用场景
 
 ### ✅ 适合场景
+
 - 个人工具集合
 - 内部办公工具
 - 离线工具箱
@@ -202,6 +283,7 @@ backdrop-filter: blur(20px) saturate(180%);
 - 原型开发
 
 ### ❌ 不适合场景
+
 - 需要后端存储
 - 多用户协作系统
 - 需要数据库
@@ -210,7 +292,9 @@ backdrop-filter: blur(20px) saturate(180%);
 ## 🚀 已实现的示例工具
 
 ### 示例计数器 (example-counter)
+
 一个完整的计数器工具，展示了：
+
 - ✅ 状态管理
 - ✅ 本地存储
 - ✅ 历史记录
@@ -221,6 +305,7 @@ backdrop-filter: blur(20px) saturate(180%);
 ## 🔧 开发工具
 
 ### 可用命令
+
 ```bash
 npm run dev      # 启动开发服务器
 npm run build    # 生产构建
@@ -228,6 +313,7 @@ npm run preview  # 预览构建结果
 ```
 
 ### 技术栈
+
 - **前端框架**：Vue 3 + Composition API
 - **UI 组件库**：Vuetify 3 (Material Design)
 - **构建工具**：Vite
@@ -236,11 +322,11 @@ npm run preview  # 预览构建结果
 
 ## 📱 响应式设计
 
-| 设备 | 宽度 | 布局 | 卡片大小 |
-|------|------|------|----------|
-| 手机 | < 768px | 单列 | 紧凑 |
-| 平板 | 768-1200px | 双列 | 中等 |
-| 桌面 | > 1200px | 三列 | 舒适 |
+| 设备 | 宽度         | 布局 | 卡片大小 |
+|----|------------|----|------|
+| 手机 | < 768px    | 单列 | 紧凑   |
+| 平板 | 768-1200px | 双列 | 中等   |
+| 桌面 | > 1200px   | 三列 | 舒适   |
 
 ## 🎯 项目状态
 
@@ -252,12 +338,14 @@ npm run preview  # 预览构建结果
 ## 🤝 贡献指南
 
 ### 开发流程
+
 1. Fork 项目
 2. 创建功能分支
 3. 提交代码
 4. 创建 Pull Request
 
 ### 提交规范
+
 - `feat:` 新功能
 - `fix:` 修复 bug
 - `docs:` 文档更新
@@ -271,6 +359,7 @@ MIT License
 ---
 
 **开始使用：**
+
 ```bash
 npm run dev
 ```

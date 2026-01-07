@@ -10,17 +10,17 @@
     <!-- 预览网格 -->
     <v-row>
       <v-col
-        v-for="page in Math.min(totalPages, 12)"
-        :key="page"
-        cols="12"
-        sm="6"
-        md="4"
-        lg="3"
+          v-for="page in Math.min(totalPages, 12)"
+          :key="page"
+          cols="12"
+          sm="6"
+          md="4"
+          lg="3"
       >
         <v-card
-          class="page-preview-card"
-          hover
-          @click="openPreview(page)"
+            class="page-preview-card"
+            hover
+            @click="openPreview(page)"
         >
           <!-- 页码标签 -->
           <v-toolbar density="compact" color="teal-darken-3" class="page-toolbar">
@@ -28,10 +28,10 @@
               第 {{ page }} 页
             </v-toolbar-title>
             <v-btn
-              icon="mdi-magnify-plus"
-              size="small"
-              variant="text"
-              @click.stop="openPreview(page)"
+                icon="mdi-magnify-plus"
+                size="small"
+                variant="text"
+                @click.stop="openPreview(page)"
             ></v-btn>
           </v-toolbar>
 
@@ -40,18 +40,18 @@
             <!-- 显示真实预览图片 -->
             <div v-if="previewImages[page]" class="preview-image-container">
               <img
-                :src="previewImages[page]"
-                :alt="`第${page}页预览`"
-                class="preview-image"
-                @click.stop="openPreview(page)"
+                  :src="previewImages[page]"
+                  :alt="`第${page}页预览`"
+                  class="preview-image"
+                  @click.stop="openPreview(page)"
               />
             </div>
             <!-- 加载中状态 -->
             <div v-else-if="loading" class="loading-placeholder">
               <v-progress-circular
-                indeterminate
-                size="30"
-                color="teal"
+                  indeterminate
+                  size="30"
+                  color="teal"
               ></v-progress-circular>
               <div class="text-caption mt-2 text-grey">正在生成预览...</div>
             </div>
@@ -65,11 +65,11 @@
           <!-- 悬停操作 -->
           <v-card-actions class="justify-center">
             <v-btn
-              size="small"
-              color="teal"
-              variant="text"
-              prepend-icon="mdi-eye"
-              @click.stop="openPreview(page)"
+                size="small"
+                color="teal"
+                variant="text"
+                prepend-icon="mdi-eye"
+                @click.stop="openPreview(page)"
             >
               查看
             </v-btn>
@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import {onMounted, ref, watch} from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 
 const props = defineProps({
@@ -138,7 +138,7 @@ const generatePreviews = async () => {
     // 配置pdfjs worker
     if (typeof window !== 'undefined') {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
     }
 
     // 读取文件
@@ -187,7 +187,7 @@ const generatePreviews = async () => {
 
       try {
         const page = await pdf.getPage(i)
-        const viewport = page.getViewport({ scale: 0.3 }) // 小缩略图
+        const viewport = page.getViewport({scale: 0.3}) // 小缩略图
 
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
@@ -242,7 +242,7 @@ watch(() => [props.pdfLoaded, props.pdfFile, props.totalPages], ([loaded, file, 
       generatePreviews()
     }, 100)
   }
-}, { immediate: false })
+}, {immediate: false})
 
 // 组件挂载时检查
 onMounted(() => {

@@ -1,35 +1,39 @@
 <template>
   <v-card class="md-to-word-app" elevation="0">
     <!-- 1. 顶部工具栏 (Apple 玻璃质感) -->
-    <v-toolbar color="rgba(255,255,255,0.8)" flat class="app-bar-blur">
-      <v-icon color="teal" class="ml-4">mdi-language-markdown</v-icon>
+    <v-toolbar
+        :color="$vuetify.theme.current.dark ? 'rgba(30,30,30,0.8)' : 'rgba(255,255,255,0.8)'"
+        class="app-bar-blur"
+        flat
+    >
+      <v-icon class="ml-4" color="teal">mdi-language-markdown</v-icon>
       <v-toolbar-title class="text-subtitle-1 font-weight-bold">Markdown 文档排版</v-toolbar-title>
       <v-spacer></v-spacer>
 
-      <v-btn variant="text" size="small" color="teal" @click="handleLoadDemo" class="mr-2">
+      <v-btn class="mr-2" color="teal" size="small" variant="text" @click="handleLoadDemo">
         加载示例
       </v-btn>
     </v-toolbar>
 
     <v-divider></v-divider>
 
-    <v-row no-gutters class="app-content">
+    <v-row class="app-content" no-gutters>
       <!-- 2. 左侧：编辑器 -->
-      <v-col cols="12" md="6" class="editor-section">
+      <v-col class="editor-section" cols="12" md="6">
         <div class="section-header d-flex align-center px-4 py-2 bg-grey-lighten-4">
           <span class="text-overline teal--text font-weight-bold">Markdown 编辑器</span>
           <v-spacer></v-spacer>
           <!-- 修正后的清空按钮位置 -->
-          <v-tooltip text="清空内容" location="top">
+          <v-tooltip location="top" text="清空内容">
             <template v-slot:activator="{ props }">
               <v-btn
-                  v-bind="props"
+                  :disabled="!markdownText"
+                  color="grey-darken-1"
                   icon="mdi-delete-sweep-outline"
                   size="x-small"
+                  v-bind="props"
                   variant="text"
-                  color="grey-darken-1"
                   @click="handleClear"
-                  :disabled="!markdownText"
               ></v-btn>
             </template>
           </v-tooltip>
@@ -37,31 +41,31 @@
 
         <v-textarea
             v-model="markdownText"
+            :bg-color="$vuetify.theme.current.dark ? 'grey-darken-4' : 'white'"
+            class="md-editor-textarea"
+            color="teal"
+            hide-details
+            no-resize
             placeholder="# 在此输入标题..."
             variant="flat"
-            class="md-editor-textarea"
-            no-resize
-            hide-details
-            bg-color="white"
-            color="teal"
             @input="handleMdInput"
         ></v-textarea>
       </v-col>
 
       <!-- 3. 右侧：Word 风格预览区 -->
-      <v-col cols="12" md="6" class="preview-section">
+      <v-col class="preview-section" cols="12" md="6">
         <div class="section-header d-flex align-center px-4 py-2 border-bottom">
           <span class="text-overline">文档预览 (Word 格式)</span>
           <v-spacer></v-spacer>
 
           <!-- 唯一的主操作按钮 -->
           <v-btn
-              prepend-icon="mdi-content-copy"
+              :disabled="!renderedHtml"
               color="teal-darken-1"
+              elevation="1"
+              prepend-icon="mdi-content-copy"
               size="small"
               variant="flat"
-              elevation="1"
-              :disabled="!renderedHtml"
               @click="handleCopyRichText"
           >
             复制为富文本
@@ -70,15 +74,19 @@
 
         <!-- 模拟 A4 纸张预览 -->
         <div class="paper-container">
-          <div class="word-paper" ref="renderBox">
+          <div ref="renderBox" class="word-paper">
             <!-- 最终渲染的 HTML 内容 -->
             <div class="rendered-html-content" v-html="renderedHtml"></div>
 
             <!-- 空状态提示 -->
             <transition name="fade">
               <div v-if="!markdownText" class="empty-doc-hint">
-                <v-icon size="64" color="grey-lighten-3">mdi-text-box-search-outline</v-icon>
-                <p class="text-grey-lighten-1 mt-2">输入 Markdown 实时预览</p>
+                <v-icon :color="$vuetify.theme.current.dark ? 'grey-darken-2' : 'grey-lighten-3'" size="64">
+                  mdi-text-box-search-outline
+                </v-icon>
+                <p :class="`${$vuetify.theme.current.dark ? 'text-grey-lighten-1' : 'text-grey-lighten-1'} mt-2`">
+                  输入 Markdown 实时预览
+                </p>
               </div>
             </transition>
           </div>
@@ -89,12 +97,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { marked } from 'marked'
+import {computed, ref} from 'vue'
+import {useTheme} from 'vuetify'
+import {marked} from 'marked'
 
-// --- 状态变量 ---
+// --- 主题和状态变量 ---
+const theme = useTheme()
 const markdownText = ref('')
 const renderedHtml = ref('')
+
+// --- 计算属性 ---
+const isDark = computed(() => theme.global.current.value.dark)
 
 // --- 逻辑函数 ---
 
@@ -140,8 +153,8 @@ const handleCopyRichText = async () => {
     if (navigator.clipboard && window.ClipboardItem) {
       const data = [
         new ClipboardItem({
-          'text/html': new Blob([htmlContent], { type: 'text/html' }),
-          'text/plain': new Blob([markdownText.value], { type: 'text/plain' })
+          'text/html': new Blob([htmlContent], {type: 'text/html'}),
+          'text/plain': new Blob([markdownText.value], {type: 'text/plain'})
         })
       ]
       await navigator.clipboard.write(data)
@@ -159,7 +172,7 @@ const handleCopyRichText = async () => {
 
 const showNotification = (message, type = 'info') => {
   const event = new CustomEvent('show-notification', {
-    detail: { message, type }
+    detail: {message, type}
   })
   window.dispatchEvent(event)
 }
@@ -180,7 +193,7 @@ const handleLoadDemo = () => {
 2. **高兼容**：支持表格、引用、加粗。
 3. **Apple 风格**：丝滑的视觉体验。
 
-> 请点击右上方“复制为富文本”按钮进行测试。
+> 请点击右上方"复制为富文本"按钮进行测试。
 
 ---
 *生成时间：${new Date().toLocaleDateString()}*`
@@ -188,20 +201,20 @@ const handleLoadDemo = () => {
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .md-to-word-app {
   border-radius: 16px;
   overflow: hidden;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
+  background-color: rgb(var(--v-theme-background));
 }
 
 .app-bar-blur {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.1);
 }
 
 .app-content {
@@ -213,7 +226,7 @@ const handleLoadDemo = () => {
 .editor-section {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  border-right: 1px solid rgba(var(--v-border-color), 0.1);
 }
 
 .md-editor-textarea {
@@ -224,11 +237,16 @@ const handleLoadDemo = () => {
   :deep(.v-field__input) {
     padding: 20px !important;
     line-height: 1.6;
+    color: rgb(var(--v-theme-on-background));
+  }
+
+  :deep(.v-field__outline) {
+    color: rgba(var(--v-border-color), 0.2);
   }
 }
 
 .preview-section {
-  background-color: #f5f7f9;
+  background-color: rgb(var(--v-theme-surface));
   display: flex;
   flex-direction: column;
 }
@@ -240,12 +258,22 @@ const handleLoadDemo = () => {
   display: flex;
   justify-content: center;
 
-  &::-webkit-scrollbar { width: 6px; }
-  &::-webkit-scrollbar-thumb { background: #d1d1d1; border-radius: 10px; }
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-border-color), 0.5);
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(var(--v-border-color), 0.1);
+  }
 }
 
 .word-paper {
-  background-color: white;
+  background-color: rgb(var(--v-theme-surface));
   width: 100%;
   min-height: 842px; // 模拟 A4 高度比例
   max-width: 700px;
@@ -253,19 +281,83 @@ const handleLoadDemo = () => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   border-radius: 2px;
   position: relative;
+  border: 1px solid rgba(var(--v-border-color), 0.1);
 
   .rendered-html-content {
     font-family: "Calibri", "Microsoft YaHei", sans-serif;
-    color: #333;
+    color: rgb(var(--v-theme-on-surface));
     line-height: 1.6;
 
-    :deep(h1) { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; font-size: 28px; }
-    :deep(h2) { margin-top: 25px; margin-bottom: 15px; font-size: 22px; border-left: 4px solid teal; padding-left: 10px; }
-    :deep(p) { margin-bottom: 14px; text-align: justify; }
-    :deep(blockquote) { background: #f9f9f9; padding: 15px; border-left: 5px solid #ccc; margin: 20px 0; font-style: italic; }
-    :deep(table) { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    :deep(th), :deep(td) { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    :deep(th) { background-color: #f2f2f2; }
+    :deep(h1) {
+      border-bottom: 2px solid rgb(var(--v-theme-on-surface));
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      font-size: 28px;
+      color: rgb(var(--v-theme-on-surface));
+    }
+
+    :deep(h2) {
+      margin-top: 25px;
+      margin-bottom: 15px;
+      font-size: 22px;
+      border-left: 4px solid rgb(var(--v-theme-teal));
+      padding-left: 10px;
+      color: rgb(var(--v-theme-on-surface));
+    }
+
+    :deep(p) {
+      margin-bottom: 14px;
+      text-align: justify;
+      color: rgb(var(--v-theme-on-surface));
+    }
+
+    :deep(blockquote) {
+      background: rgba(var(--v-theme-grey-lighten-2), 0.3);
+      padding: 15px;
+      border-left: 5px solid rgb(var(--v-theme-grey));
+      margin: 20px 0;
+      font-style: italic;
+      color: rgb(var(--v-theme-on-surface));
+    }
+
+    :deep(table) {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    :deep(th), :deep(td) {
+      border: 1px solid rgba(var(--v-border-color), 0.3);
+      padding: 8px;
+      text-align: left;
+    }
+
+    :deep(th) {
+      background-color: rgba(var(--v-theme-grey-lighten-2), 0.3);
+      color: rgb(var(--v-theme-on-surface));
+    }
+
+    :deep(td) {
+      color: rgb(var(--v-theme-on-surface));
+    }
+
+    :deep(code) {
+      background-color: rgba(var(--v-theme-grey-lighten-2), 0.3);
+      color: rgb(var(--v-theme-on-surface));
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    :deep(pre) {
+      background-color: rgba(var(--v-theme-grey-lighten-2), 0.3);
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+
+    :deep(a) {
+      color: rgb(var(--v-theme-teal));
+    }
   }
 }
 
@@ -278,24 +370,29 @@ const handleLoadDemo = () => {
 }
 
 .border-bottom {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.1);
 }
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-
-/* 深色模式适配 */
-:root[data-theme="dark"] {
-  .md-to-word-app { background-color: #1a1a1a; }
-  .app-bar-blur { background-color: rgba(26, 26, 26, 0.8); border-color: rgba(255, 255, 255, 0.1); }
-  .editor-section { border-color: rgba(255, 255, 255, 0.1); }
-  .preview-section { background-color: #121212; }
-  .word-paper { box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
 }
 
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+/* 移动端响应式 */
 @media (max-width: 960px) {
-  .app-content { flex-direction: column; overflow-y: auto; }
-  .editor-section { border-right: none; height: 350px; }
-  .word-paper { padding: 40px 30px; }
+  .app-content {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .editor-section {
+    border-right: none;
+    height: 350px;
+  }
+  .word-paper {
+    padding: 40px 30px;
+  }
 }
 </style>

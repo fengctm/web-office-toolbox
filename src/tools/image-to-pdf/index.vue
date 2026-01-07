@@ -2,11 +2,11 @@
   <div class="image-to-pdf-wrapper">
     <!-- 本地计算提示 -->
     <v-alert
-      type="info"
-      variant="tonal"
-      color="info"
-      class="mb-4"
-      icon="mdi-laptop"
+        type="info"
+        variant="tonal"
+        color="info"
+        class="mb-4"
+        icon="mdi-laptop"
     >
       <div class="text-body-2">
         <strong>💡 本地计算说明：</strong><br>
@@ -17,7 +17,7 @@
       </div>
     </v-alert>
 
-    <MainContainer />
+    <MainContainer/>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-  <MainContainer />
+  <MainContainer/>
 </template>
 
 <script setup>

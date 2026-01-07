@@ -1,19 +1,14 @@
 import {createVuetify} from 'vuetify'
 
-
+// 导入 Vuetify 样式
 import 'vuetify/styles'
+
+// 图标集
 import {aliases, mdi} from 'vuetify/iconsets/mdi'
-import '@mdi/font/css/materialdesignicons.css'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
-
-
 import {mdi as mdiSvg} from 'vuetify/iconsets/mdi-svg'
-
+import '@mdi/font/css/materialdesignicons.css'
 
 export const vuetify = createVuetify({
-    components,
-    directives,
     icons: {
         defaultSet: 'mdi',
         aliases: {

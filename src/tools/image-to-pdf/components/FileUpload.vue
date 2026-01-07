@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 const props = defineProps({
   imageList: {
@@ -185,6 +185,7 @@ defineExpose({
   /* 3. 在深色模式下，叠加一层黑色遮罩层来压暗整体亮度 */
   /* 只有在 v-theme="dark" 时生效 */
 }
+
 .v-theme--dark .upload-zone:hover {
   background-color: rgba(0, 0, 0, 0.2); /* 直接叠加黑色遮罩 */
   /* 或者混合使用：background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)); */
@@ -217,9 +218,18 @@ defineExpose({
 }
 
 @keyframes pulse {
-  0% { opacity: 0.4; transform: scale(0.95); }
-  50% { opacity: 0.8; transform: scale(1); }
-  100% { opacity: 0.4; transform: scale(0.95); }
+  0% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
 }
 
 /* --- 已添加信息区域 --- */

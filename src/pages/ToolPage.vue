@@ -4,10 +4,10 @@
       <!-- 顶部导航栏 -->
       <v-app-bar flat border>
         <v-btn
-          icon
-          variant="text"
-          @click="goBack"
-          class="mr-2"
+            icon
+            variant="text"
+            @click="goBack"
+            class="mr-2"
         >
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
@@ -20,9 +20,9 @@
         <v-spacer></v-spacer>
 
         <v-btn
-          icon
-          variant="text"
-          @click="refresh"
+            icon
+            variant="text"
+            @click="refresh"
         >
           <v-icon>mdi-refresh</v-icon>
         </v-btn>
@@ -39,18 +39,18 @@
               </v-card-text>
               <v-card-actions>
                 <v-chip
-                  color="teal"
-                  size="small"
-                  variant="outlined"
-                  class="mr-2"
+                    color="teal"
+                    size="small"
+                    variant="outlined"
+                    class="mr-2"
                 >
                   <v-icon start icon="mdi-code-tags"></v-icon>
                   {{ tool.code }}
                 </v-chip>
                 <v-chip
-                  color="blue"
-                  size="small"
-                  variant="outlined"
+                    color="blue"
+                    size="small"
+                    variant="outlined"
                 >
                   <v-icon start icon="mdi-shield-check"></v-icon>
                   本地运行
@@ -64,16 +64,16 @@
         <v-row>
           <v-col cols="12">
             <component
-              :is="toolComponent"
-              v-if="toolComponent"
-              @update:loading="updateLoading"
+                :is="toolComponent"
+                v-if="toolComponent"
+                @update:loading="updateLoading"
             />
             <v-card v-else elevation="2" class="pa-8 text-center">
               <v-progress-circular
-                indeterminate
-                color="teal"
-                size="64"
-                class="mb-4"
+                  indeterminate
+                  color="teal"
+                  size="64"
+                  class="mb-4"
               />
               <div class="text-grey">正在加载工具组件...</div>
             </v-card>
@@ -85,19 +85,19 @@
       <v-container v-else class="fill-height justify-center">
         <v-card elevation="2" class="pa-8 text-center" max-width="400">
           <v-icon
-            size="64"
-            color="error"
-            icon="mdi-alert-circle-outline"
-            class="mb-4"
+              size="64"
+              color="error"
+              icon="mdi-alert-circle-outline"
+              class="mb-4"
           />
           <h3 class="text-h6 mb-2">工具未找到</h3>
           <p class="text-grey mb-4">
             该工具可能已被禁用或不存在
           </p>
           <v-btn
-            color="teal"
-            variant="tonal"
-            @click="goBack"
+              color="teal"
+              variant="tonal"
+              @click="goBack"
           >
             返回首页
           </v-btn>
@@ -106,15 +106,15 @@
 
       <!-- 全局加载遮罩 -->
       <v-overlay
-        v-model="loading"
-        class="align-center justify-center"
+          v-model="loading"
+          class="align-center justify-center"
       >
         <v-card elevation="4" class="pa-6">
           <v-progress-circular
-            indeterminate
-            color="teal"
-            size="48"
-            class="mr-4"
+              indeterminate
+              color="teal"
+              size="48"
+              class="mr-4"
           />
           <span class="text-body-1">处理中...</span>
         </v-card>
@@ -122,10 +122,10 @@
 
       <!-- 全局提示 -->
       <v-snackbar
-        v-model="snackbar.show"
-        :color="snackbar.color"
-        :timeout="3000"
-        location="top right"
+          v-model="snackbar.show"
+          :color="snackbar.color"
+          :timeout="3000"
+          location="top right"
       >
         {{ snackbar.message }}
       </v-snackbar>
@@ -134,9 +134,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, shallowRef } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { toolRegistry } from '../config/tools-config.js'
+import {onMounted, ref, shallowRef} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {toolRegistry} from '../config/tools-config.js'
 import PageTransition from '../components/PageTransition.vue'
 
 const route = useRoute()
@@ -254,7 +254,11 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

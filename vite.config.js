@@ -10,7 +10,9 @@ export default defineConfig({
                 propsDestructure: true
             }
         }),
-        vuetify({autoImport: true})
+        vuetify({
+            autoImport: true  // 启用自动导入
+        })
     ],
     server: {
         port: 5173,
@@ -24,7 +26,8 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    vue: ['vue', 'vue-router']
+                    vue: ['vue', 'vue-router'],
+                    vuetify: ['vuetify']
                 }
             }
         }

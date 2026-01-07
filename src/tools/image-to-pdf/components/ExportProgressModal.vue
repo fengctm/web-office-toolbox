@@ -40,22 +40,22 @@
 
         <!-- 状态提示 -->
         <v-alert
-          v-if="progress < 100"
-          type="info"
-          variant="tonal"
-          icon="mdi-clock-outline"
-          class="mt-3 text-caption"
+            v-if="progress < 100"
+            type="info"
+            variant="tonal"
+            icon="mdi-clock-outline"
+            class="mt-3 text-caption"
         >
           正在处理第 {{ currentPage }} 页，请勿关闭窗口...
           <div class="mt-2 text-on-surface-variant">Worker 线程运行中，UI保持响应</div>
         </v-alert>
 
         <v-alert
-          v-else
-          type="success"
-          variant="tonal"
-          icon="mdi-check-circle-outline"
-          class="mt-3 text-caption"
+            v-else
+            type="success"
+            variant="tonal"
+            icon="mdi-check-circle-outline"
+            class="mt-3 text-caption"
         >
           处理完成！正在准备下载...
         </v-alert>
@@ -69,11 +69,11 @@
 
       <v-card-actions class="justify-center bg-surface-variant">
         <v-btn
-          color="error"
-          variant="tonal"
-          @click="cancel"
-          :disabled="progress >= 100"
-          prepend-icon="mdi-close"
+            color="error"
+            variant="tonal"
+            @click="cancel"
+            :disabled="progress >= 100"
+            prepend-icon="mdi-close"
         >
           取消导出
         </v-btn>
@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import {computed, ref, watch} from 'vue'
 
 const props = defineProps({
   modelValue: {

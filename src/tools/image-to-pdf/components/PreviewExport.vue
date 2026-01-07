@@ -339,12 +339,12 @@ watch(() => props.imageList, (newList) => {
   if (newList.length > 0) {
     // 开始加载状态
     isImageLoading.value = true
-    
+
     // 清除之前的定时器
     if (loadingTimeout.value) {
       clearTimeout(loadingTimeout.value)
     }
-    
+
     // 设置超时保护（5秒后自动关闭loading）
     loadingTimeout.value = setTimeout(() => {
       isImageLoading.value = false
@@ -356,7 +356,7 @@ watch(() => props.imageList, (newList) => {
       clearTimeout(loadingTimeout.value)
     }
   }
-}, { deep: true, immediate: true })
+}, {deep: true, immediate: true})
 
 // 监听 PDFPreview 的 render-complete 事件
 const handleRenderComplete = (pageCount) => {

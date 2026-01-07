@@ -1,9 +1,9 @@
 <template>
   <v-dialog
-    :model-value="modelValue"
-    @update:model-value="updateModelValue"
-    max-width="400"
-    persistent
+      :model-value="modelValue"
+      @update:model-value="updateModelValue"
+      max-width="400"
+      persistent
   >
     <v-card>
       <v-toolbar color="teal-darken-2">
@@ -17,11 +17,11 @@
         <!-- 真实进度条 -->
         <div class="mb-4">
           <v-progress-linear
-            :model-value="progress"
-            color="teal"
-            height="25"
-            striped
-            rounded
+              :model-value="progress"
+              color="teal"
+              height="25"
+              striped
+              rounded
           >
             <template v-slot:default="{ value }">
               <strong>{{ Math.ceil(value) }}%</strong>
@@ -47,21 +47,21 @@
 
         <!-- 状态提示 -->
         <v-alert
-          v-if="progress < 100"
-          type="info"
-          variant="tonal"
-          icon="mdi-clock-outline"
-          class="mt-3 text-caption"
+            v-if="progress < 100"
+            type="info"
+            variant="tonal"
+            icon="mdi-clock-outline"
+            class="mt-3 text-caption"
         >
           正在处理第 {{ currentPage }} 页，请勿关闭窗口...
         </v-alert>
 
         <v-alert
-          v-else
-          type="success"
-          variant="tonal"
-          icon="mdi-check-circle-outline"
-          class="mt-3 text-caption"
+            v-else
+            type="success"
+            variant="tonal"
+            icon="mdi-check-circle-outline"
+            class="mt-3 text-caption"
         >
           处理完成！正在打包下载...
         </v-alert>
@@ -69,10 +69,10 @@
 
       <v-card-actions class="justify-center">
         <v-btn
-          color="error"
-          variant="tonal"
-          @click="cancel"
-          :disabled="progress >= 100"
+            color="error"
+            variant="tonal"
+            @click="cancel"
+            :disabled="progress >= 100"
         >
           取消导出
         </v-btn>
@@ -82,7 +82,6 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 
 const props = defineProps({
   modelValue: {

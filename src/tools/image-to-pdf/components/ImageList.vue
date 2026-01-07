@@ -45,7 +45,8 @@
       >
         <!-- 图片区域 -->
         <div class="image-area" :class="{ 'mobile-image': isMobile }">
-          <img :src="image.preview" alt="" draggable="false" loading="lazy" style="object-fit: contain; background: #f5f5f5;"/>
+          <img :src="image.preview" alt="" draggable="false" loading="lazy"
+               style="object-fit: contain; background: #f5f5f5;"/>
           <div class="overlay">
             <div class="card-actions">
               <v-btn
@@ -141,7 +142,7 @@
 </template>
 
 <script setup>
-import {nextTick, onMounted, onUnmounted, ref, computed} from 'vue'
+import {computed, nextTick, onMounted, onUnmounted, ref} from 'vue'
 import {useDisplay} from 'vuetify'
 
 const props = defineProps({
@@ -294,11 +295,11 @@ onUnmounted(() => {
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .card:hover {
-  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
@@ -345,7 +346,7 @@ onUnmounted(() => {
 .overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0.1) 100%);
   opacity: 0;
   transition: opacity 0.2s ease;
   padding: 8px;
@@ -495,7 +496,7 @@ onUnmounted(() => {
 
 .sortable-drag {
   opacity: 1;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
   cursor: grabbing;
   background-color: rgb(var(--v-theme-surface)) !important;
 }

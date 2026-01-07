@@ -7,6 +7,7 @@ Web Office Toolbox 采用模块化设计，每个工具都是独立的 Vue 组�
 ## 🏗️ 工具结构
 
 ### 标准目录结构
+
 ```
 src/tools/
 ├── your-tool/              # 工具目录
@@ -18,12 +19,15 @@ src/tools/
 ```
 
 ### 最小化要求
+
 只需要一个 `index.vue` 文件即可创建一个工具。
 
 ### 📁 复杂代码分离（推荐）
+
 当工具的JavaScript代码过多时，建议将复杂逻辑分离到独立的JS文件中：
 
 **目录结构：**
+
 ```
 src/tools/
 ├── your-tool/
@@ -34,6 +38,7 @@ src/tools/
 ```
 
 **示例：**
+
 ```javascript
 // src/tools/your-tool/utils.js
 export const validateInput = (input) => {
@@ -62,6 +67,7 @@ const handleProcess = async () => {
 ```
 
 **优势：**
+
 - ✅ 代码更清晰，易于维护
 - ✅ 便于单元测试
 - ✅ 组件文件更简洁
@@ -70,12 +76,14 @@ const handleProcess = async () => {
 ## 🚀 快速开始（3步）
 
 ### 步骤 1：创建工具目录
+
 ```bash
 mkdir src/tools/my-tool
 touch src/tools/my-tool/index.vue
 ```
 
 ### 步骤 2：实现工具组件
+
 ```vue
 <template>
   <v-card class="my-tool" elevation="2">
@@ -109,7 +117,9 @@ touch src/tools/my-tool/index.vue
 ```
 
 ### 步骤 3：注册工具
+
 在 `src/config/tools-config.js` 中添加：
+
 ```javascript
 {
   code: 'my-tool',
@@ -126,6 +136,7 @@ touch src/tools/my-tool/index.vue
 ## 📝 工具组件规范
 
 ### 组件结构
+
 ```vue
 <template>
   <v-card class="tool-container" elevation="2">
@@ -223,6 +234,7 @@ loadState()
 ```
 
 ### 事件通信
+
 ```javascript
 // 通知父组件加载状态
 const emit = defineEmits(['update:loading'])
@@ -237,6 +249,7 @@ const handleProcess = async () => {
 ## 🎨 UI 设计规范
 
 ### 颜色系统
+
 - **主色调**：Teal (#009688)
 - **成功**：Success (#4caf50)
 - **错误**：Error (#f44336)
@@ -244,6 +257,7 @@ const handleProcess = async () => {
 - **信息**：Info (#2196f3)
 
 ### 组件使用
+
 ```vue
 <!-- 按钮 -->
 <v-btn color="teal" variant="tonal">操作</v-btn>
@@ -266,6 +280,7 @@ const handleProcess = async () => {
 ```
 
 ### 动画效果
+
 ```css
 /* 入场动画 */
 .tool-container {
@@ -287,6 +302,7 @@ const handleProcess = async () => {
 ## 🔧 功能模式
 
 ### 1. 文件处理模式
+
 ```javascript
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
@@ -312,6 +328,7 @@ const downloadFile = (content, filename) => {
 ```
 
 ### 2. 实时处理模式
+
 ```javascript
 const input = ref('')
 const result = computed(() => {
@@ -322,6 +339,7 @@ const result = computed(() => {
 ```
 
 ### 3. 批量处理模式
+
 ```javascript
 const files = ref([])
 const results = ref([])
@@ -337,6 +355,7 @@ const processBatch = async () => {
 ## 📦 常用工具库
 
 ### 浏览器 API
+
 ```javascript
 // 本地存储
 localStorage.setItem('key', JSON.stringify(data))
@@ -350,6 +369,7 @@ URL.createObjectURL(blob)
 ```
 
 ### 处理函数
+
 ```javascript
 // 防抖
 const debounce = (fn, delay) => {
@@ -376,6 +396,7 @@ const throttle = (fn, delay) => {
 ## 🎯 最佳实践
 
 ### ✅ 应该做的
+
 1. **状态管理**：使用 `ref` 和 `computed` 管理状态
 2. **错误处理**：使用 try-catch 处理异常
 3. **用户反馈**：使用 snackbar 提供操作反馈
@@ -384,6 +405,7 @@ const throttle = (fn, delay) => {
 6. **无障碍**：提供适当的 ARIA 标签
 
 ### ❌ 避免做的
+
 1. **不要直接修改 props**
 2. **不要在模板中写复杂逻辑**
 3. **不要忽略错误处理**
@@ -393,6 +415,7 @@ const throttle = (fn, delay) => {
 ## 🔍 调试技巧
 
 ### 1. 使用 Vue DevTools
+
 ```javascript
 // 在组件中添加调试信息
 console.log('Component mounted')
@@ -400,6 +423,7 @@ console.log('State:', { input: input.value, result: result.value })
 ```
 
 ### 2. 性能监控
+
 ```javascript
 const start = performance.now()
 // 执行操作
@@ -408,6 +432,7 @@ console.log(`操作耗时: ${end - start}ms`)
 ```
 
 ### 3. 错误边界
+
 ```vue
 <template>
   <div v-if="error" class="error-boundary">
@@ -434,6 +459,7 @@ try {
 项目包含一个完整的示例计数器工具，位于 `src/tools/example-counter/index.vue`。
 
 ### 示例功能
+
 - ✅ 状态管理
 - ✅ 本地存储
 - ✅ 历史记录
@@ -444,6 +470,7 @@ try {
 ## 🚀 发布新工具
 
 ### 检查清单
+
 - [ ] 功能完整且稳定
 - [ ] 错误处理完善
 - [ ] 移动端适配
@@ -454,6 +481,7 @@ try {
 - [ ] 组件模块化（复杂工具）
 
 ### 工具配置示例
+
 ```javascript
 {
   code: 'your-tool',
@@ -472,6 +500,7 @@ try {
 当工具的Vue组件代码过多（通常超过200行）时，应该采用组件模块化的方式：
 
 **优势：**
+
 - ✅ **代码清晰**：每个组件职责单一，易于理解和维护
 - ✅ **易于测试**：独立组件便于单元测试
 - ✅ **可复用性**：子组件可以在不同工具间共享
@@ -501,6 +530,7 @@ src/tools/
 ### 组件拆分原则
 
 #### 1. 按功能区域拆分
+
 - **文件上传**：FileUpload.vue
 - **数据展示**：PreviewGrid.vue, DataList.vue
 - **交互模态框**：PreviewModal.vue, EditModal.vue
@@ -508,11 +538,13 @@ src/tools/
 - **提示信息**：TipsSection.vue, NotificationSnackbar.vue
 
 #### 2. 按交互复杂度拆分
+
 - **简单组件**：按钮、标签、简单表单
 - **复杂组件**：数据表格、图表、文件上传器
 - **容器组件**：负责状态管理和组件组合
 
 #### 3. 按数据流向拆分
+
 - **展示组件**：只接收props，不管理状态
 - **交互组件**：通过事件与父组件通信
 - **容器组件**：管理全局状态，协调子组件
@@ -520,6 +552,7 @@ src/tools/
 ### 组件通信模式
 
 #### 父组件 → 子组件（Props）
+
 ```vue
 <!-- MainContainer.vue -->
 <template>
@@ -531,6 +564,7 @@ src/tools/
 ```
 
 #### 子组件 → 父组件（Emits）
+
 ```vue
 <!-- FileUpload.vue -->
 <script setup>
@@ -543,6 +577,7 @@ const handleUpload = (file) => {
 ```
 
 #### 兄弟组件通信（通过父组件）
+
 ```vue
 <!-- MainContainer.vue -->
 <template>
@@ -562,6 +597,7 @@ const handleFileUploaded = (file) => {
 ### 状态管理最佳实践
 
 #### 1. 集中式状态管理
+
 ```vue
 <!-- MainContainer.vue -->
 <script setup>
@@ -575,6 +611,7 @@ const exporting = ref(false)
 ```
 
 #### 2. 状态传递
+
 ```vue
 <!-- 传递给子组件 -->
 <PreviewGrid
@@ -585,6 +622,7 @@ const exporting = ref(false)
 ```
 
 #### 3. 事件更新状态
+
 ```vue
 <!-- 子组件触发事件 -->
 <script setup>
@@ -600,6 +638,7 @@ const processPDF = async () => {
 ### 组件拆分示例
 
 #### 原始大型组件
+
 ```vue
 <!-- 不推荐：一个文件包含所有逻辑 -->
 <template>
@@ -634,6 +673,7 @@ const dialog = ref(false)
 ```
 
 #### 模块化拆分后
+
 ```vue
 <!-- 推荐：主组件组合子组件 -->
 <template>
@@ -667,6 +707,7 @@ const handleExport = (config) => { /* 导出逻辑 */ }
 ### 组件设计规范
 
 #### 1. 单一职责原则
+
 ```javascript
 // ✅ 好：每个组件只做一件事
 FileUpload.vue        // 只负责文件上传
@@ -678,6 +719,7 @@ CombinedTool.vue      // 包含上传、预览、导出、设置...
 ```
 
 #### 2. 明确的接口定义
+
 ```vue
 <script setup>
 // Props 定义
@@ -698,6 +740,7 @@ const emit = defineEmits(['open-preview', 'export-images'])
 ```
 
 #### 3. 样式隔离
+
 ```vue
 <style scoped>
 /* 组件私有样式 */
@@ -712,6 +755,7 @@ const emit = defineEmits(['open-preview', 'export-images'])
 ### 实际案例：PDF转图片工具
 
 #### 组件拆分结构
+
 ```
 pdf-to-image/
 ├── index.vue                    # 入口（仅导入MainContainer）
@@ -727,6 +771,7 @@ pdf-to-image/
 ```
 
 #### 组件职责划分
+
 - **FileUpload**: 处理文件选择、验证、解析
 - **PreviewGrid**: 显示页面缩略图、触发预览
 - **PreviewModal**: 大图查看、页面导航
@@ -739,6 +784,7 @@ pdf-to-image/
 ### 性能优化建议
 
 #### 1. 按需加载
+
 ```javascript
 // 动态导入大组件
 const PreviewModal = defineAsyncComponent(() => 
@@ -747,6 +793,7 @@ const PreviewModal = defineAsyncComponent(() =>
 ```
 
 #### 2. 虚拟滚动
+
 ```vue
 <!-- 大量数据时使用虚拟滚动 -->
 <v-virtual-scroll
@@ -761,6 +808,7 @@ const PreviewModal = defineAsyncComponent(() =>
 ```
 
 #### 3. 防抖节流
+
 ```javascript
 // 文件上传防抖
 const debouncedUpload = debounce(handleFileUpload, 300)
@@ -772,6 +820,7 @@ const throttledSearch = throttle(searchPages, 500)
 ### 测试策略
 
 #### 1. 组件单元测试
+
 ```javascript
 // FileUpload.test.js
 import { mount } from '@vue/test-utils'
@@ -785,6 +834,7 @@ test('文件验证', async () => {
 ```
 
 #### 2. 集成测试
+
 ```javascript
 // MainContainer.test.js
 import { mount } from '@vue/test-utils'
@@ -800,16 +850,19 @@ test('完整工作流程', async () => {
 ### 开发工作流
 
 #### 1. 设计阶段
+
 - 确定组件边界
 - 定义Props和Emits接口
 - 规划状态管理方案
 
 #### 2. 实现阶段
+
 - 从简单组件开始
 - 逐步构建复杂组件
 - 最后组合成主容器
 
 #### 3. 优化阶段
+
 - 检查性能瓶颈
 - 优化组件通信
 - 添加错误处理
@@ -817,6 +870,7 @@ test('完整工作流程', async () => {
 ### 常见反模式
 
 #### ❌ 反模式1：过度嵌套
+
 ```vue
 <!-- 嵌套太深，难以维护 -->
 <Parent>
@@ -829,6 +883,7 @@ test('完整工作流程', async () => {
 ```
 
 #### ❌ 反模式2：Props钻取
+
 ```vue
 <!-- Props层层传递 -->
 <A :data="data">
@@ -841,6 +896,7 @@ test('完整工作流程', async () => {
 ```
 
 #### ✅ 解决方案：Provide/Inject
+
 ```vue
 <!-- 父组件提供 -->
 <script setup>
@@ -860,6 +916,7 @@ const data = inject('pdfData')
 ## 💡 灵感来源
 
 ### 常见工具类型
+
 - **文本处理**：格式转换、编码解码、正则测试
 - **文件处理**：格式转换、压缩、合并、拆分
 - **图片处理**：压缩、格式转换、尺寸调整
@@ -868,6 +925,7 @@ const data = inject('pdfData')
 - **办公工具**：PDF处理、Excel操作、文档转换
 
 ### 参考资源
+
 - [Vuetify 3 组件文档](https://vuetifyjs.com/)
 - [Vue 3 Composition API](https://vuejs.org/)
 - [MDN Web Docs](https://developer.mozilla.org/)
