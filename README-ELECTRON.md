@@ -23,7 +23,7 @@
 
 ```bash
 # 安装所有依赖（包括 Electron）
-npm install
+pnpm install
 ```
 
 ### 2. 运行模式
@@ -31,32 +31,32 @@ npm install
 #### Web 模式（传统方式）
 ```bash
 # 启动开发服务器
-npm run dev
+pnpm dev
 
 # 访问 http://localhost:5173
 ```
 
 ```bash
 # 构建生产版本
-npm run build
+pnpm build
 
 # 预览生产版本
-npm run preview
+pnpm preview
 ```
 
 #### Electron 模式（桌面应用）
 ```bash
 # 开发模式（自动启动 Vite + Electron）
-npm run electron:dev
+pnpm electron:dev
 
 # 构建安装包
-npm run electron:build
+pnpm electron:build
 
 # 仅打包（不安装）
-npm run electron:pack
+pnpm electron:pack
 
 # 一键构建所有
-npm run build:all
+pnpm build:all
 ```
 
 ## 📁 项目结构（双模式）
@@ -211,10 +211,10 @@ export default {
 rm -rf dist/ dist-electron/ node_modules/.vite/
 
 # 2. 重新安装
-npm install
+pnpm install
 
 # 3. 重新构建
-npm run electron:build
+pnpm electron:build
 ```
 
 ### 开发模式无法启动
@@ -223,7 +223,7 @@ npm run electron:build
 lsof -i :5173
 
 # 手动启动 Vite
-npm run dev
+pnpm dev
 
 # 然后在另一个终端
 electron .
@@ -235,7 +235,7 @@ electron .
 npm install --global windows-build-tools
 
 # 或者使用管理员权限运行
-npm run electron:build
+pnpm electron:build
 ```
 
 ## 📞 获取帮助
@@ -259,4 +259,4 @@ npm run electron:build
 2. 功能完善后构建 Electron 应用
 3. 根据用户反馈选择部署方式
 
-开始使用：`npm run electron:dev` 🚀
+开始使用：`pnpm electron:dev` 🚀

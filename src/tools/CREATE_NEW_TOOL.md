@@ -341,7 +341,7 @@ const clearAll = () => {
 
 ```bash
 # 启动开发服务器
-npm run dev
+pnpm dev
 
 # 访问 http://localhost:5173 查看效果
 ```

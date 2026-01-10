@@ -91,6 +91,36 @@ export const toolsConfig = [
         category: '文件传输',
         tags: ['局域网', '传输', '文件'],
         component: () => import('../tools/lan-transfer/index.vue')
+    },
+    {
+        code: 'image-split',
+        name: '图片分割',
+        icon: 'mdi-image-filter-hdr',
+        description: '将图片按指定规则分割成多个小图',
+        enabled: true,
+        category: '图片处理',
+        tags: ['图片', '分割', '切割'],
+        component: () => import('../tools/image-split/index.vue')
+    },
+    {
+        code: 'score-calculator',
+        name: '分数计算',
+        icon: 'mdi-calculator',
+        description: '支持分数运算、转换和化简',
+        enabled: true,
+        category: '数学计算',
+        tags: ['分数', '计算', '数学'],
+        component: () => import('../tools/score-calculator/index.vue')
+    },
+    {
+        code: 'ai-prompt-generator',
+        name: 'AI提示词生成器',
+        icon: 'mdi-robot',
+        description: '帮助生成高质量的AI提示词',
+        enabled: true,
+        category: 'AI工具',
+        tags: ['AI', '提示词', '生成'],
+        component: () => import('../tools/ai-prompt-generator/index.vue')
     }
 ]
 

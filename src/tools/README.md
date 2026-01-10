@@ -945,7 +945,7 @@ touch src/tools/my-first-tool/index.vue
 
 # 在 tools-config.js 中添加配置
 # 然后启动开发服务器
-npm run dev
+pnpm dev
 ```
 
 **记住：保持简单，专注功能，用户体验第一！**

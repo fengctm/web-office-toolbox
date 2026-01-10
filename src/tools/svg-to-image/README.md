@@ -105,14 +105,47 @@ canvas.toBlob((blob) => {
 - 流畅的过渡动画
 - 深色模式适配
 
-## 📦 组件结构
+## 📦 组件结构（拆分后）
 
 ```
 svg-to-image/
-├── index.vue              # 主组件
-├── README.md              # 本文档
-└── assets/                # 静态资源（可选）
+├── index.vue                          # 主组件（整合所有子组件）
+├── composables/
+│   └── useSvgConverter.js            # SVG 转换逻辑 composable
+├── components/
+│   ├── InputSection.vue              # 输入区域组件
+│   ├── PreviewSection.vue            # 预览区域组件
+│   └── FullscreenPreview.vue         # 全屏预览组件
+└── README.md                          # 本文档
 ```
+
+### 架构优势
+
+- **关注点分离**: 逻辑、UI、状态管理分离
+- **可维护性**: 每个组件职责单一，易于修改
+- **可复用性**: 组件可在其他工具中复用
+- **可测试性**: 独立组件便于单元测试
+- **开发效率**: 并行开发，减少冲突
+
+### 数据流向
+
+```
+用户操作 → InputSection → index.vue → useSvgConverter
+                                      ↓
+PreviewSection ← index.vue → FullscreenPreview
+                                      ↓
+NotificationSnackbar（通用组件）
+```
+
+### 组件职责
+
+| 组件 | 职责 | 状态 | 事件 |
+|------|------|------|------|
+| `useSvgConverter` | 核心转换逻辑 | svgCode, exportFormat, isFullscreen | - |
+| `InputSection` | 输入表单和设置 | 受控组件 | update:svgCode, clear, download |
+| `PreviewSection` | 实时预览展示 | 只读 | fullscreen |
+| `FullscreenPreview` | 全屏查看模式 | 受控 | close |
+| `NotificationSnackbar` | 全局通知 | 受控 | update:modelValue
 
 ## 🔍 使用示例
 
@@ -206,7 +239,7 @@ svg-to-image/
 
 ### 在 Web Office Toolbox 中使用
 
-1. 启动应用: `npm run dev`
+1. 启动应用: `pnpm dev`
 2. 访问首页
 3. 找到 "SVG转图片" 工具
 4. 粘贴 SVG 代码

@@ -37,16 +37,16 @@
 ### 环境要求
 
 - Node.js 16+
-- npm 或 pnpm
+- pnpm
 
 ### 安装与运行
 
 ```bash
 # 1. 安装依赖（已完成）
-npm install
+pnpm install
 
 # 2. 启动开发服务器
-npm run dev
+pnpm dev
 
 # 3. 访问应用
 # http://localhost:5173
@@ -55,7 +55,7 @@ npm run dev
 ### 生产构建
 
 ```bash
-npm run build
+pnpm build
 # 输出到 dist/ 目录
 ```
 
@@ -307,9 +307,9 @@ saturate
 ### 可用命令
 
 ```bash
-npm run dev      # 启动开发服务器
-npm run build    # 生产构建
-npm run preview  # 预览构建结果
+pnpm dev      # 启动开发服务器
+pnpm build    # 生产构建
+pnpm preview  # 预览构建结果
 ```
 
 ### 技术栈
@@ -361,7 +361,7 @@ MIT License
 **开始使用：**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 访问 http://localhost:5173 查看运行效果！
