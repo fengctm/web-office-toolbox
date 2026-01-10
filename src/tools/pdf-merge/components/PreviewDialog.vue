@@ -3,7 +3,7 @@
     <v-card class="pa-0 overflow-hidden">
       <v-toolbar class="apple-glass-toolbar" flat>
         <v-btn icon="mdi-arrow-left" variant="text" @click="$emit('update:modelValue', false)">关闭</v-btn>
-        <v-toolbar-title class="ml-4">合并预览</v-toolbar-title>
+        <v-toolbar-title class="ml-4">PDF智能组装台 - 预览</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn color="teal" variant="tonal" @click="$emit('merge')">立即合并下载</v-btn>
       </v-toolbar>

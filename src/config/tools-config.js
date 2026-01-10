@@ -53,7 +53,7 @@ export const toolsConfig = [
     },
     {
         code: 'pdf-merge',
-        name: 'PDF插入和拼接',
+        name: 'PDF智能组装台',
         icon: 'mdi-call-merge',
         description: '在PDF中插入页面或合并多个PDF文件',
         enabled: true,

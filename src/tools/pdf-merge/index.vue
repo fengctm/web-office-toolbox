@@ -1,10 +1,10 @@
 <template>
   <v-card class="pdf-merge-tool" elevation="2">
     <!-- 1. 顶部工具栏 -->
-    <v-toolbar class="app-bar-blur" flat density="comfortable">
+    <v-toolbar class="app-bar-blur" density="comfortable" flat>
       <v-icon class="ml-2 mr-2 icon-bounce" color="teal">mdi-call-merge</v-icon>
       <v-toolbar-title class="text-subtitle-1 font-weight-bold toolbar-title">
-        PDF 智能组装台
+        PDF智能组装台
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
@@ -47,18 +47,18 @@
       <draggable
           v-else
           v-model="pdfList"
-          item-key="id"
-          handle=".drag-handle"
           animation="300"
           class="sortable-list"
-          @start="drag = true"
+          handle=".drag-handle"
+          item-key="id"
           @end="drag = false"
+          @start="drag = true"
       >
         <template #item="{ element, index }">
           <FileListItem
-              :item="element"
               :index="index"
               :is-dragging="drag"
+              :item="element"
               @remove="handleRemoveFile(index)"
           />
         </template>
@@ -81,8 +81,8 @@
     <!-- 3. 上传对话框 -->
     <UploadDialog
         v-model="showUploadDialog"
-        @success="handleUploadSuccess"
         @reset="handleUploadReset"
+        @success="handleUploadSuccess"
     />
 
     <!-- 4. 预览对话框 -->
@@ -101,17 +101,17 @@
     <!-- 通用通知组件 -->
     <NotificationSnackbar
         v-model="snackbar.show"
-        :message="snackbar.message"
         :color="snackbar.color"
+        :message="snackbar.message"
         :timeout="snackbar.timeout"
     />
   </v-card>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 import draggable from 'vuedraggable'
-import { usePdfMerger } from './composables/usePdfMerger.js'
+import {usePdfMerger} from './composables/usePdfMerger.js'
 import FileListItem from './components/FileListItem.vue'
 import EmptyState from './components/EmptyState.vue'
 import UploadDialog from './components/UploadDialog.vue'
@@ -216,6 +216,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   flex-direction: column;
   background-color: rgb(var(--v-theme-background));
   transition: background-color 0.3s $apple-ease;
+  position: relative;
 }
 
 // --- 1. 顶部工具栏 ---
@@ -226,30 +227,53 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   transition: all 0.3s $apple-ease;
 
-  .toolbar-title { color: #1d1d1f; }
+  .toolbar-title {
+    color: #1d1d1f;
+  }
 }
 
 .v-theme--dark {
   .app-bar-blur {
     background-color: rgba(30, 30, 30, 0.75);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    .toolbar-title { color: rgba(255, 255, 255, 0.9); }
+
+    .toolbar-title {
+      color: rgba(255, 255, 255, 0.9);
+    }
   }
-  .divider-opacity { border-color: rgba(255,255,255,0.12) !important; }
+
+  .divider-opacity {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
 }
 
-.icon-bounce { transition: transform 0.4s $apple-ease; }
-.icon-bounce:hover { transform: rotate(-10deg) scale(1.1); }
-.btn-micro-interaction { transition: transform 0.2s $apple-ease; }
-.btn-micro-interaction:active { transform: scale(0.9); }
+.icon-bounce {
+  transition: transform 0.4s $apple-ease;
+}
+
+.icon-bounce:hover {
+  transform: rotate(-10deg) scale(1.1);
+}
+
+.btn-micro-interaction {
+  transition: transform 0.2s $apple-ease;
+}
+
+.btn-micro-interaction:active {
+  transform: scale(0.9);
+}
 
 // --- 2. 列表区域 ---
 .file-list-container {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  overflow-x: hidden;
+  padding: 0;
   position: relative;
   background-color: rgb(var(--v-theme-surface));
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .sortable-list {
@@ -266,5 +290,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   transform: translateX(-50%);
   box-shadow: 0 6px 20px rgba(20, 184, 166, 0.4);
   border-radius: 12px !important;
+  z-index: 10; // 确保在最上层
+  min-width: 140px; // 确保最小宽度
 }
 </style>

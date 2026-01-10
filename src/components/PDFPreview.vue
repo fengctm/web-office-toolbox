@@ -1,31 +1,31 @@
 <template>
-  <div class="chrome-pdf-container" :class="{ 'is-mobile': isMobile }">
+  <div :class="{ 'is-mobile': isMobile }" class="chrome-pdf-container">
 
     <!-- 1. 顶部工具栏 -->
     <div class="pdf-header">
       <v-btn
-          icon="mdi-view-headline"
-          variant="text"
           color="white"
           density="comfortable"
+          icon="mdi-view-headline"
+          variant="text"
           @click="showSidebar = !showSidebar"
       ></v-btn>
 
-      <div class="file-name text-truncate ml-2" v-if="!isMobile">{{ fileName }}</div>
+      <div v-if="!isMobile" class="file-name text-truncate ml-2">{{ fileName }}</div>
 
       <v-spacer></v-spacer>
 
-      <v-chip size="x-small" variant="outlined" color="grey-lighten-1" class="mr-2" v-if="!isMobile">
-        模式: {{ pageSize === 'A4' ? 'A4 纸张' : '原始尺寸' }}
+      <v-chip v-if="!isMobile" class="mr-2" color="grey-lighten-1" size="x-small" variant="outlined">
+        {{ isProcessing ? '渲染中...' : (pages.length === 0 ? '无数据' : `${pages.length} 页`) }}
       </v-chip>
 
       <!-- 缩放控制组 -->
       <div class="zoom-controls d-flex align-center bg-black-o-2 rounded-pill px-2 mx-2">
-        <v-btn icon="mdi-minus" size="x-small" variant="text" color="white" @click="changeZoom(-0.1)"
-               :disabled="zoom <= 0.5"></v-btn>
+        <v-btn :disabled="zoom <= 0.5" color="white" icon="mdi-minus" size="x-small" variant="text"
+               @click="changeZoom(-0.1)"></v-btn>
         <span class="zoom-text mx-2">{{ Math.round(zoom * 100) }}%</span>
-        <v-btn icon="mdi-plus" size="x-small" variant="text" color="white" @click="changeZoom(0.1)"
-               :disabled="zoom >= 2.0"></v-btn>
+        <v-btn :disabled="zoom >= 2.0" color="white" icon="mdi-plus" size="x-small" variant="text"
+               @click="changeZoom(0.1)"></v-btn>
       </div>
 
       <v-spacer v-if="!isMobile"></v-spacer>
@@ -34,7 +34,7 @@
         {{ currentPage }} / {{ pages.length }}
       </div>
 
-      <v-btn icon="mdi-printer" variant="text" color="white" @click="handlePrint" v-if="!isMobile"></v-btn>
+      <v-btn v-if="!isMobile" color="white" icon="mdi-printer" variant="text" @click="handlePrint"></v-btn>
     </div>
 
     <div class="pdf-body">
@@ -47,19 +47,29 @@
       <transition name="slide">
         <aside v-show="showSidebar" class="pdf-sidebar">
           <div class="thumb-list">
+            <!-- 加载状态占位 -->
+            <div v-if="isProcessing" class="d-flex justify-center pa-4 text-grey-lighten-2 caption">
+              <v-progress-circular color="grey" indeterminate size="24"></v-progress-circular>
+              <span class="ml-2">解析文档中...</span>
+            </div>
+
             <div
                 v-for="(page, index) in pages"
                 :key="page.id"
-                class="thumb-item"
                 :class="{ 'active': currentPage === index + 1 }"
+                class="thumb-item"
                 @click="handleThumbClick(index)"
             >
-              <div class="thumb-paper" :style="getPaperStyle(page, 100)">
+              <div :style="getPaperStyle(page, 100)" class="thumb-paper">
                 <div class="image-box">
+                  <!-- PDF 渲染出来的图片或原图片 -->
                   <img :src="page.url" class="fit-img" @load="e => onImageLoad(e, index)"/>
+                  <!-- 骨架屏占位，如果 URL 为空时显示 -->
+                  <v-skeleton-loader v-if="!page.url" class="w-100 h-100 absolute top-0 left-0"
+                                     type="image"></v-skeleton-loader>
                 </div>
                 <!-- 缩略图也显示微缩水印 -->
-                <div class="watermark-overlay mini" :style="watermarkStyle"></div>
+                <div :style="watermarkStyle" class="watermark-overlay mini"></div>
               </div>
               <div class="thumb-num">{{ index + 1 }}</div>
             </div>
@@ -68,26 +78,29 @@
       </transition>
 
       <!-- 4. 右侧主预览区 -->
-      <main class="pdf-main" ref="scrollContainer" @scroll="onScroll">
-        <div class="pdf-content-wrapper" :style="contentWrapperStyle">
+      <main ref="scrollContainer" class="pdf-main" @scroll="onScroll">
+        <div :style="contentWrapperStyle" class="pdf-content-wrapper">
           <div
               v-for="(page, index) in pages"
               :key="'page-' + page.id"
               :ref="el => pageRefs[index] = el"
-              class="pdf-page-container"
               :style="getPageContainerStyle(page)"
+              class="pdf-page-container"
           >
             <!-- 纸张 -->
-            <div class="pdf-sheet" :style="getPaperStyle(page, BASE_WIDTH_PX * zoom)">
+            <div :style="getPaperStyle(page, BASE_WIDTH_PX * zoom)" class="pdf-sheet">
               <div class="image-box">
+                <!-- PDF 渲染出来的图片或原图片 -->
                 <img :src="page.url" class="fit-img"/>
+                <v-skeleton-loader v-if="!page.url" class="w-100 h-100 absolute top-0 left-0"
+                                   type="image"></v-skeleton-loader>
               </div>
 
               <!-- 【核心新增】水印覆盖层 -->
               <div
-                  v-if="watermarkConfig.text"
-                  class="watermark-overlay"
+                  v-if="watermarkConfig.text && page.url"
                   :style="watermarkStyle"
+                  class="watermark-overlay"
               ></div>
             </div>
           </div>
@@ -99,16 +112,19 @@
 </template>
 
 <script setup>
-import {computed, onMounted, onUnmounted, reactive, ref} from 'vue'
+import {computed, onMounted, onUnmounted, reactive, ref, watchEffect} from 'vue'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// 配置 PDFJS Worker (使用您提供的版本对应的 CDN)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
 
 const props = defineProps({
   files: {type: Array, default: () => []},
   margins: {
     type: Object,
-    default: () => ({top: 20, right: 20, bottom: 20, left: 20})
+    default: () => null  // null 表示根据文件类型自动选择
   },
   pageSize: {type: String, default: "A4"},
-  // 【新增】水印配置
   watermarkConfig: {
     type: Object,
     default: () => ({
@@ -122,13 +138,18 @@ const props = defineProps({
       offsetY: 0,
       font: 'sans-serif'
     })
+  },
+  // 新增：支持密码参数，格式可以是字符串或对象 { file: File, password: string }
+  password: {
+    type: [String, Object],
+    default: ''
   }
 })
 
 // 常量与状态
 const BASE_WIDTH_PX = 800;
 const A4_WIDTH_MM = 210;
-const A4_RATIO = 0.707;
+const A4_RATIO = 0.707; // 210 / 297
 
 const showSidebar = ref(window.innerWidth > 600)
 const isMobile = ref(window.innerWidth <= 600)
@@ -137,28 +158,137 @@ const pageRefs = ref([])
 const currentPage = ref(1)
 const zoom = ref(1.0)
 const imageRatios = reactive({})
+const isProcessing = ref(false) // 新增：处理状态
 
-const fileName = computed(() => props.files.length > 0 ? '文档预览' : '未选择文件')
-
-// 解析文件
-const pages = computed(() => {
-  return props.files.map((file, index) => ({
-    id: `${file.name}-${file.size}-${file.lastModified}`,
-    url: URL.createObjectURL(file)
-  }))
+const fileName = computed(() => {
+  if (!props.files || props.files.length === 0) return '未选择文件'
+  return props.files[0].name || (props.files[0].file ? props.files[0].file.name : '文档预览')
 })
+
+// 页面数据结构: { id: string, url: string, fileIndex: number }
+const pages = ref([])
+
+// 【核心逻辑】处理文件并生成图片
+watchEffect(async () => {
+  const files = props.files || []
+
+  // 1. 清理旧资源
+  if (pages.value.length > 0) {
+    pages.value.forEach(p => {
+      // 只释放 Blob URL，DataURL 是字符串无需释放
+      if (p.url && p.url.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(p.url)
+        } catch (e) {
+        }
+      }
+    })
+    pages.value = []
+  }
+
+  if (files.length === 0) return
+
+  isProcessing.value = true
+
+  // 2. 遍历文件
+  let pageIndexCounter = 0
+
+  for (let fIndex = 0; fIndex < files.length; fIndex++) {
+    const fileObj = files[fIndex]
+
+    // 标准化 File 对象和提取密码
+    let actualFile = fileObj
+    let filePassword = ''
+
+    // 情况 1: 文件对象格式 { file: File, password: string }
+    if (fileObj && typeof fileObj === 'object' && !(fileObj instanceof Blob)) {
+      actualFile = fileObj.file || fileObj
+      if (fileObj.password) {
+        filePassword = fileObj.password
+      }
+    }
+
+    // 情况 2: 通过 props.password 参数传递密码
+    if (props.password) {
+      if (typeof props.password === 'string') {
+        filePassword = props.password
+      } else if (typeof props.password === 'object' && props.password[fileObj.name]) {
+        filePassword = props.password[fileObj.name]
+      }
+    }
+
+    if (!actualFile || !(actualFile instanceof Blob)) continue
+
+    try {
+      // 判断是否为 PDF
+      if (actualFile.type === 'application/pdf' || (actualFile.name && actualFile.name.toLowerCase().endsWith('.pdf'))) {
+        // --- A. 处理 PDF ---
+        const arrayBuffer = await actualFile.arrayBuffer()
+        const loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+          password: filePassword || undefined  // 传递密码
+        })
+        const pdf = await loadingTask.promise
+
+        // 遍历 PDF 的每一页
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const pageId = `pdf-${fIndex}-p${pageNum}`
+          pages.value.push({
+            id: pageId,
+            url: '', // 先占位，等渲染完成后填充
+            fileIndex: fIndex
+          })
+
+          // 渲染逻辑（不阻塞主线程）
+          renderPdfPageToImg(pdf, pageNum).then(dataUrl => {
+            const targetPage = pages.value.find(p => p.id === pageId)
+            if (targetPage) targetPage.url = dataUrl
+          })
+        }
+      } else {
+        // --- B. 处理普通图片 (JPG/PNG等) ---
+        const url = URL.createObjectURL(actualFile)
+        pages.value.push({
+          id: `img-${fIndex}`,
+          url: url,
+          fileIndex: fIndex
+        })
+      }
+    } catch (err) {
+      console.error('File processing error:', err)
+    }
+  }
+
+  // 简单的延迟防止闪烁
+  setTimeout(() => {
+    isProcessing.value = false
+  }, 500)
+})
+
+// 辅助函数：将 PDF 某一页渲染为 Base64 图片
+const renderPdfPageToImg = async (pdf, pageNum) => {
+  const page = await pdf.getPage(pageNum)
+  // scale 1.5 或 2.0 保证清晰度
+  const viewport = page.getViewport({scale: 1.5})
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  canvas.width = viewport.width
+  canvas.height = viewport.height
+
+  await page.render({canvasContext: ctx, viewport}).promise
+
+  // 转为 JPEG 格式以节省内存（如果需要透明背景则用 PNG）
+  return canvas.toDataURL('image/jpeg', 0.9)
+}
 
 // 【核心逻辑】生成动态水印样式
 const watermarkStyle = computed(() => {
   const conf = props.watermarkConfig;
   if (!conf.text) return {};
 
-  // 1. 创建一个动态 SVG
-  // 我们创建一个 gap x gap 大小的方格，文字居中旋转
   const size = conf.gap || 100;
   const half = size / 2;
-
-  // 对文字进行转义防止特殊字符破坏 SVG
   const escapedText = conf.text.replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -188,7 +318,6 @@ const watermarkStyle = computed(() => {
     backgroundImage: `url("data:image/svg+xml;base64,${encodedSvg}")`,
     backgroundRepeat: 'repeat',
     backgroundPosition: `${conf.offsetX}px ${conf.offsetY}px`,
-    // 缩略图模式下需要缩小背景尺寸
     backgroundSize: isMobile.value ? `${size * 0.5}px` : 'auto'
   };
 });
@@ -201,26 +330,35 @@ const onImageLoad = (event, index) => {
 
 const getPaperStyle = (page, baseWidth) => {
   const index = pages.value.indexOf(page)
+  // PDF 渲染后通常是 A4 比例，或者我们可以根据实际图片比例
   const ratio = imageRatios[index] || A4_RATIO
   const mmToPx = baseWidth / A4_WIDTH_MM;
 
+  // 动态确定页边距：PDF 为 0，图片为 20
+  let margins = props.margins
+  if (!margins) {
+    // 根据页面 ID 判断类型
+    const isPDF = page.id && page.id.startsWith('pdf-')
+    margins = isPDF ? {top: 0, right: 0, bottom: 0, left: 0} : {top: 20, right: 20, bottom: 20, left: 20}
+  }
+
   const style = {
-    paddingTop: `${props.margins.top * mmToPx}px`,
-    paddingRight: `${props.margins.right * mmToPx}px`,
-    paddingBottom: `${props.margins.bottom * mmToPx}px`,
-    paddingLeft: `${props.margins.left * mmToPx}px`,
+    paddingTop: `${margins.top * mmToPx}px`,
+    paddingRight: `${margins.right * mmToPx}px`,
+    paddingBottom: `${margins.bottom * mmToPx}px`,
+    paddingLeft: `${margins.left * mmToPx}px`,
     backgroundColor: 'white',
     boxShadow: '0 0 15px rgba(0,0,0,0.3)',
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
-    position: 'relative', // 必须为 relative 以支撑遮罩层
+    position: 'relative',
     overflow: 'hidden',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
   }
 
   if (props.pageSize === 'A4') {
-    style.aspectRatio = '0.707';
+    style.aspectRatio = '0.707'; // 强制 A4 比例
     style.width = `${baseWidth}px`;
   } else {
     style.width = `${baseWidth}px`;
@@ -251,7 +389,15 @@ const handleResize = () => {
 onMounted(() => window.addEventListener('resize', handleResize))
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  pages.value.forEach(p => URL.revokeObjectURL(p.url))
+  // 清理所有 Blob URL
+  pages.value.forEach(p => {
+    if (p.url && p.url.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(p.url)
+      } catch (e) {
+      }
+    }
+  })
 })
 
 const changeZoom = (delta) => {
@@ -287,7 +433,8 @@ const onScroll = (e) => {
 const handlePrint = () => window.print()
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
+/* 保持原有样式不变，增加骨架屏定位相关 */
 .chrome-pdf-container {
   display: flex;
   flex-direction: column;
@@ -326,50 +473,6 @@ const handlePrint = () => window.print()
   background-color: #1e1e1e !important;
 }
 
-/* 关键：深色模式下，PDF 纸张如果依然是预览图片，建议不要强制改背景色为深色 */
-:root[data-theme="dark"] .pdf-sheet {
-  background-color: #ffffff !important; /* 保持白色以匹配 PDF 图片底色 */
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6) !important;
-}
-
-:root[data-theme="dark"] .thumb-num {
-  color: #9e9e9e !important;
-}
-
-:root[data-theme="dark"] .zoom-controls {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-:root[data-theme="dark"] .page-indicator {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-}
-
-:root[data-theme="dark"] .file-name {
-  color: #e0e0e0 !important;
-}
-
-:root[data-theme="dark"] .v-chip {
-  color: #bdc1c6 !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* 深色模式下的滚动条 */
-:root[data-theme="dark"] .pdf-main::-webkit-scrollbar-thumb {
-  background: #666 !important;
-  border: 3px solid #1e1e1e !important;
-}
-
-:root[data-theme="dark"] .thumb-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* 深色模式下的遮罩层 */
-:root[data-theme="dark"] .pdf-scrim {
-  background: rgba(0, 0, 0, 0.7) !important;
-}
-
-
 /* 水印覆盖层核心样式 */
 .watermark-overlay {
   position: absolute !important;
@@ -379,7 +482,6 @@ const handlePrint = () => window.print()
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  /* 移除全局可能存在的 mix-blend-mode */
   mix-blend-mode: normal !important;
 
   &.mini {
@@ -399,11 +501,6 @@ const handlePrint = () => window.print()
 
   .zoom-controls {
     background: rgba(255, 255, 255, 0.1);
-    transition: background 0.3s;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
 
     .zoom-text {
       font-size: 12px;
@@ -568,6 +665,11 @@ const handlePrint = () => window.print()
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* 骨架屏绝对定位 */
+.absolute {
+  position: absolute !important;
 }
 
 @media print {
