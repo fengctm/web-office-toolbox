@@ -55,10 +55,10 @@ export const toolsConfig = [
         code: 'pdf-merge',
         name: 'PDF智能组装台',
         icon: 'mdi-call-merge',
-        description: '在PDF中插入页面或合并多个PDF文件',
+        description: '支持多PDF文件拖拽排序、密码PDF解析，实时预览并合并下载，所有处理纯前端本地完成',
         enabled: true,
         category: 'PDF工具',
-        tags: ['PDF', '插入', '拼接', '合并'],
+        tags: ['PDF', '插入', '拼接', '合并', '密码'],
         component: () => import('../tools/pdf-merge/index.vue')
     },
     // 其他工具

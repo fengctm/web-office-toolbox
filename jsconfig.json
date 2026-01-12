@@ -9,10 +9,19 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
-    "types": ["vite/client", "vue"],
-    "lib": ["ES2020", "DOM", "DOM.Iterable"]
+    "types": [
+      "vite/client",
+      "vue"
+    ],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
   "include": [
     "src/**/*",

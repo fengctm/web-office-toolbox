@@ -1,7 +1,7 @@
 <template>
   <v-card class="pdf-compress-app" elevation="0">
     <!-- 1. Apple 风格全局加载遮罩 -->
-    <LoadingOverlay :visible="state.processing" :status="state.processStatus" />
+    <LoadingOverlay :visible="state.processing" :status="state.processStatus"/>
 
     <!-- 2. 顶部工具栏 -->
     <v-toolbar class="app-bar-blur" flat>
@@ -63,9 +63,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useTheme } from 'vuetify'
-import { usePdfCompressor } from './composables/usePdfCompressor.js'
+import {computed} from 'vue'
+import {useTheme} from 'vuetify'
+import {usePdfCompressor} from './composables/usePdfCompressor.js'
 import LoadingOverlay from './components/LoadingOverlay.vue'
 import FileUploadSection from './components/FileUploadSection.vue'
 import DocumentInfoCard from './components/DocumentInfoCard.vue'
@@ -88,7 +88,7 @@ const {
 const handleCompress = async () => {
   try {
     const blob = await compressPdf()
-    
+
     // 下载
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
@@ -155,7 +155,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .divider-opacity {
-    border-color: rgba(255,255,255,0.12) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
   }
 }
 
@@ -169,7 +169,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 // 4. Apple 风格微交互动画
 .icon-bounce {
   transition: transform 0.4s $apple-ease;
-  
+
   &:hover {
     transform: rotate(-15deg) scale(1.1);
   }
@@ -177,7 +177,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .btn-micro-interaction {
   transition: transform 0.2s $apple-ease;
-  
+
   &:active {
     transform: scale(0.9);
   }
@@ -201,9 +201,18 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 // 7. 兼容旧版深色模式选择器
 :root[data-theme="dark"] {
-  .pdf-compress-app { background-color: #1a1a1a; }
-  .app-bar-blur { background-color: rgba(30, 30, 30, 0.8); border-color: rgba(255, 255, 255, 0.1); }
-  .app-body { background-color: #121212; }
+  .pdf-compress-app {
+    background-color: #1a1a1a;
+  }
+
+  .app-bar-blur {
+    background-color: rgba(30, 30, 30, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .app-body {
+    background-color: #121212;
+  }
 }
 
 @media (max-width: 600px) {

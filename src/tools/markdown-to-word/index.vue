@@ -1,7 +1,7 @@
 <template>
   <v-card class="md-to-word-app" elevation="0">
     <!-- 1. 顶部工具栏 -->
-    <ToolbarSection @load-demo="handleLoadDemo" />
+    <ToolbarSection @load-demo="handleLoadDemo"/>
 
     <v-divider class="divider-opacity"></v-divider>
 
@@ -40,8 +40,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { useMarkdownConverter } from './composables/useMarkdownConverter.js'
+import {onMounted, ref, watch} from 'vue'
+import {useMarkdownConverter} from './composables/useMarkdownConverter.js'
 import ToolbarSection from './components/ToolbarSection.vue'
 import EditorSection from './components/EditorSection.vue'
 import PreviewSection from './components/PreviewSection.vue'
@@ -134,7 +134,7 @@ $apple-ease-out: cubic-bezier(0.42, 0, 0.58, 1);
   opacity: 0.5;
 
   .v-theme--dark & {
-    border-color: rgba(255,255,255,0.12) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
   }
 }
 
@@ -150,13 +150,25 @@ $apple-ease-out: cubic-bezier(0.42, 0, 0.58, 1);
 }
 
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 // --- 响应式 ---
@@ -164,7 +176,7 @@ $apple-ease-out: cubic-bezier(0.42, 0, 0.58, 1);
   .app-content {
     flex-direction: column;
   }
-  
+
   .section-animate-left {
     height: 400px;
     border-right: none;

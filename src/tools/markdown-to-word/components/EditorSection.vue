@@ -69,7 +69,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   border-right: 1px solid transparent;
 
   .v-theme--dark & {
-    border-right-color: rgba(255,255,255,0.12);
+    border-right-color: rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -118,6 +118,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
     .v-theme--light & {
       color: #333;
     }
+
     .v-theme--dark & {
       color: #d4d4d4;
     }
@@ -126,7 +127,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .btn-micro-interaction {
   transition: transform 0.2s $apple-ease, opacity 0.2s;
-  
+
   &:active {
     transform: scale(0.9);
     opacity: 0.7;

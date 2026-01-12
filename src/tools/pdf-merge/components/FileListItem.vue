@@ -74,7 +74,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
   &:hover {
     border-color: rgb(var(--v-theme-primary));
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
   }
 

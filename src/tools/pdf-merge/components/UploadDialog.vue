@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 import PDFSecureUpload from '@/components/PDFSecureUpload.vue'
 
 const props = defineProps({
@@ -77,7 +77,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 .apple-glass-toolbar {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .v-theme--dark .apple-glass-toolbar {

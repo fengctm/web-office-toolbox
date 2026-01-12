@@ -3,140 +3,140 @@
  * 负责 SVG 代码处理、图像转换和文件下载
  */
 
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 export function useSvgConverter() {
-  // 状态变量
-  const svgCode = ref('')
-  const exportFormat = ref('PNG')
-  const isFullscreen = ref(false)
+    // 状态变量
+    const svgCode = ref('')
+    const exportFormat = ref('PNG')
+    const isFullscreen = ref(false)
 
-  /**
-   * 处理 SVG 代码输入 - 自动清理
-   */
-  const handleSvgInput = () => {
-    if (svgCode.value) {
-      svgCode.value = svgCode.value.trim()
-    }
-  }
-
-  /**
-   * 将 SVG 代码转换为图像并下载
-   * @param {Function} showSnackbar - 通知回调
-   */
-  const handleDownloadImage = async (showSnackbar) => {
-    if (!svgCode.value) {
-      showSnackbar('请先输入SVG代码', 'warning')
-      return
+    /**
+     * 处理 SVG 代码输入 - 自动清理
+     */
+    const handleSvgInput = () => {
+        if (svgCode.value) {
+            svgCode.value = svgCode.value.trim()
+        }
     }
 
-    try {
-      // 创建临时容器来解析SVG
-      const parser = new DOMParser()
-      const svgDoc = parser.parseFromString(svgCode.value, 'image/svg+xml')
-      const svgElement = svgDoc.documentElement
+    /**
+     * 将 SVG 代码转换为图像并下载
+     * @param {Function} showSnackbar - 通知回调
+     */
+    const handleDownloadImage = async (showSnackbar) => {
+        if (!svgCode.value) {
+            showSnackbar('请先输入SVG代码', 'warning')
+            return
+        }
 
-      // 检查解析是否成功
-      if (svgElement.nodeName === 'parsererror') {
-        throw new Error('SVG代码格式错误，请检查')
-      }
+        try {
+            // 创建临时容器来解析SVG
+            const parser = new DOMParser()
+            const svgDoc = parser.parseFromString(svgCode.value, 'image/svg+xml')
+            const svgElement = svgDoc.documentElement
 
-      // 获取SVG尺寸，如果没有则使用默认值
-      const width = parseInt(svgElement.getAttribute('width')) || 500
-      const height = parseInt(svgElement.getAttribute('height')) || 500
+            // 检查解析是否成功
+            if (svgElement.nodeName === 'parsererror') {
+                throw new Error('SVG代码格式错误，请检查')
+            }
 
-      // 创建Canvas
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
+            // 获取SVG尺寸，如果没有则使用默认值
+            const width = parseInt(svgElement.getAttribute('width')) || 500
+            const height = parseInt(svgElement.getAttribute('height')) || 500
 
-      // 如果是JPG格式，先填充白色背景
-      if (exportFormat.value === 'JPG') {
-        ctx.fillStyle = '#FFFFFF'
-        ctx.fillRect(0, 0, width, height)
-      }
+            // 创建Canvas
+            const canvas = document.createElement('canvas')
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
 
-      // 将SVG转换为图片
-      const svgString = new XMLSerializer().serializeToString(svgElement)
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' })
-      const url = URL.createObjectURL(svgBlob)
+            // 如果是JPG格式，先填充白色背景
+            if (exportFormat.value === 'JPG') {
+                ctx.fillStyle = '#FFFFFF'
+                ctx.fillRect(0, 0, width, height)
+            }
 
-      const img = new Image()
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, width, height)
-        URL.revokeObjectURL(url)
+            // 将SVG转换为图片
+            const svgString = new XMLSerializer().serializeToString(svgElement)
+            const svgBlob = new Blob([svgString], {type: 'image/svg+xml'})
+            const url = URL.createObjectURL(svgBlob)
 
-        // 转换为指定格式并下载
-        const mimeType = {
-          'PNG': 'image/png',
-          'JPG': 'image/jpeg',
-          'WEBP': 'image/webp'
-        }[exportFormat.value]
+            const img = new Image()
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, width, height)
+                URL.revokeObjectURL(url)
 
-        canvas.toBlob((blob) => {
-          const downloadUrl = URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = downloadUrl
-          link.download = `converted.${exportFormat.value.toLowerCase()}`
-          link.click()
-          URL.revokeObjectURL(downloadUrl)
-          showSnackbar('图片下载成功！', 'success')
-        }, mimeType, 0.95)
-      }
+                // 转换为指定格式并下载
+                const mimeType = {
+                    'PNG': 'image/png',
+                    'JPG': 'image/jpeg',
+                    'WEBP': 'image/webp'
+                }[exportFormat.value]
 
-      img.onerror = () => {
-        URL.revokeObjectURL(url)
-        throw new Error('SVG渲染失败，请检查代码')
-      }
+                canvas.toBlob((blob) => {
+                    const downloadUrl = URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+                    link.href = downloadUrl
+                    link.download = `converted.${exportFormat.value.toLowerCase()}`
+                    link.click()
+                    URL.revokeObjectURL(downloadUrl)
+                    showSnackbar('图片下载成功！', 'success')
+                }, mimeType, 0.95)
+            }
 
-      img.src = url
+            img.onerror = () => {
+                URL.revokeObjectURL(url)
+                throw new Error('SVG渲染失败，请检查代码')
+            }
 
-    } catch (error) {
-      console.error('转换失败:', error)
-      showSnackbar(error.message || '转换失败', 'error')
+            img.src = url
+
+        } catch (error) {
+            console.error('转换失败:', error)
+            showSnackbar(error.message || '转换失败', 'error')
+        }
     }
-  }
 
-  /**
-   * 下载原始 SVG 文件
-   * @param {Function} showSnackbar - 通知回调
-   */
-  const handleDownloadSvg = (showSnackbar) => {
-    if (!svgCode.value) {
-      showSnackbar('请先输入SVG代码', 'warning')
-      return
+    /**
+     * 下载原始 SVG 文件
+     * @param {Function} showSnackbar - 通知回调
+     */
+    const handleDownloadSvg = (showSnackbar) => {
+        if (!svgCode.value) {
+            showSnackbar('请先输入SVG代码', 'warning')
+            return
+        }
+
+        try {
+            const blob = new Blob([svgCode.value], {type: 'image/svg+xml'})
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = 'image.svg'
+            link.click()
+            URL.revokeObjectURL(url)
+            showSnackbar('SVG文件下载成功！', 'success')
+        } catch (error) {
+            console.error('下载失败:', error)
+            showSnackbar('下载失败', 'error')
+        }
     }
 
-    try {
-      const blob = new Blob([svgCode.value], { type: 'image/svg+xml' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'image.svg'
-      link.click()
-      URL.revokeObjectURL(url)
-      showSnackbar('SVG文件下载成功！', 'success')
-    } catch (error) {
-      console.error('下载失败:', error)
-      showSnackbar('下载失败', 'error')
+    /**
+     * 清空输入
+     * @param {Function} showSnackbar - 通知回调
+     */
+    const handleClear = (showSnackbar) => {
+        svgCode.value = ''
+        showSnackbar('已清空输入', 'info')
     }
-  }
 
-  /**
-   * 清空输入
-   * @param {Function} showSnackbar - 通知回调
-   */
-  const handleClear = (showSnackbar) => {
-    svgCode.value = ''
-    showSnackbar('已清空输入', 'info')
-  }
-
-  /**
-   * 显示帮助信息
-   */
-  const handleHelp = () => {
-    const helpText = `
+    /**
+     * 显示帮助信息
+     */
+    const handleHelp = () => {
+        const helpText = `
 使用说明：
 1. 在左侧粘贴SVG代码（以 <svg> 开头）
 2. 右侧实时预览效果
@@ -151,20 +151,20 @@ export function useSvgConverter() {
 - 所有处理在本地完成，保护隐私
     `.trim()
 
-    alert(helpText)
-  }
+        alert(helpText)
+    }
 
-  return {
-    // 状态
-    svgCode,
-    exportFormat,
-    isFullscreen,
-    
-    // 方法
-    handleSvgInput,
-    handleDownloadImage,
-    handleDownloadSvg,
-    handleClear,
-    handleHelp
-  }
+    return {
+        // 状态
+        svgCode,
+        exportFormat,
+        isFullscreen,
+
+        // 方法
+        handleSvgInput,
+        handleDownloadImage,
+        handleDownloadSvg,
+        handleClear,
+        handleHelp
+    }
 }

@@ -139,13 +139,13 @@ NotificationSnackbar（通用组件）
 
 ### 组件职责
 
-| 组件 | 职责 | 状态 | 事件 |
-|------|------|------|------|
-| `useSvgConverter` | 核心转换逻辑 | svgCode, exportFormat, isFullscreen | - |
-| `InputSection` | 输入表单和设置 | 受控组件 | update:svgCode, clear, download |
-| `PreviewSection` | 实时预览展示 | 只读 | fullscreen |
-| `FullscreenPreview` | 全屏查看模式 | 受控 | close |
-| `NotificationSnackbar` | 全局通知 | 受控 | update:modelValue
+| 组件                     | 职责      | 状态                                  | 事件                              |
+|------------------------|---------|-------------------------------------|---------------------------------|
+| `useSvgConverter`      | 核心转换逻辑  | svgCode, exportFormat, isFullscreen | -                               |
+| `InputSection`         | 输入表单和设置 | 受控组件                                | update:svgCode, clear, download |
+| `PreviewSection`       | 实时预览展示  | 只读                                  | fullscreen                      |
+| `FullscreenPreview`    | 全屏查看模式  | 受控                                  | close                           |
+| `NotificationSnackbar` | 全局通知    | 受控                                  | update:modelValue               
 
 ## 🔍 使用示例
 

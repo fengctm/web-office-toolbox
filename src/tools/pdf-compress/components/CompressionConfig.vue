@@ -94,7 +94,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .transition-card {
   transition: transform 0.3s $apple-ease, box-shadow 0.3s $apple-ease;
-  
+
   &:hover {
     transform: translateY(-2px);
   }
@@ -102,12 +102,12 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .btn-compress {
   transition: transform 0.2s $apple-ease, box-shadow 0.2s $apple-ease;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(20, 184, 166, 0.3);
   }
-  
+
   &:active {
     transform: translateY(0);
   }

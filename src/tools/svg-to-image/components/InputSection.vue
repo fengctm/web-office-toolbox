@@ -155,6 +155,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   :deep(.v-field) {
     transition: box-shadow 0.2s $apple-ease;
   }
+
   :deep(.v-field--focused) {
     box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2); // Teal 光晕
   }
@@ -167,8 +168,9 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
       background-color: #1c1c1e !important;
       color: #fff !important;
     }
+
     :deep(.v-field__outline) {
-      color: rgba(255,255,255,0.2);
+      color: rgba(255, 255, 255, 0.2);
     }
   }
 }

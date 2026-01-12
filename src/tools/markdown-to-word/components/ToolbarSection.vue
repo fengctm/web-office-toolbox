@@ -56,7 +56,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .icon-bounce {
   transition: transform 0.4s $apple-ease;
-  
+
   &:hover {
     transform: rotate(-10deg) scale(1.1);
   }
@@ -64,7 +64,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .btn-micro-interaction {
   transition: transform 0.2s $apple-ease, opacity 0.2s;
-  
+
   &:active {
     transform: scale(0.9);
     opacity: 0.7;

@@ -61,7 +61,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 
 .transition-card {
   transition: transform 0.3s $apple-ease, box-shadow 0.3s $apple-ease;
-  
+
   &:hover {
     transform: translateY(-2px);
   }

@@ -41,7 +41,7 @@ defineEmits(['update:modelValue', 'merge'])
 .apple-glass-toolbar {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .v-theme--dark .apple-glass-toolbar {

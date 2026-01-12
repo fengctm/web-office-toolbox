@@ -39,13 +39,15 @@
     "vuetify": "^3.11.0-beta.1"
   },
   "devDependencies": {
+    "@electron/packager": "^19.0.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "concurrently": "^9.0.0",
     "cross-env": "^10.1.0",
     "electron": "^33.0.0",
     "electron-builder": "^24.0.0",
+    "electron-packager": "^17.1.2",
     "sass-embedded": "^1.97.1",
-    "vite": "^7.2.4",
+    "vite": "^7.3.1",
     "vite-plugin-vuetify": "^2.1.2",
     "wait-on": "^7.0.0"
   },
@@ -67,7 +69,6 @@
       "target": [
         "portable"
       ],
-      "icon": "public/favicon.ico",
       "sign": null,
       "signingHashAlgorithms": []
     },

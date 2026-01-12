@@ -13,7 +13,8 @@
           elevation="4"
           @click="$emit('add-first')"
       >
-        <v-icon start>mdi-plus</v-icon> 添加第一个 PDF
+        <v-icon start>mdi-plus</v-icon>
+        添加第一个 PDF
       </v-btn>
     </div>
   </div>

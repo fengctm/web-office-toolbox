@@ -48,8 +48,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useTheme } from 'vuetify'
+import {computed} from 'vue'
+import {useTheme} from 'vuetify'
 
 const props = defineProps({
   markdownText: {
@@ -117,16 +117,16 @@ $apple-ease-out: cubic-bezier(0.42, 0, 0.58, 1);
   max-width: 680px;
   height: fit-content;
   min-height: 800px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s $apple-ease, box-shadow 0.3s $apple-ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   }
 
   .v-theme--dark & {
-    box-shadow: 0 4px 30px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -161,11 +161,20 @@ $apple-ease-out: cubic-bezier(0.42, 0, 0.58, 1);
     color: inherit;
   }
 
-  h1 { border-bottom: 1px solid rgba(var(--v-border-color), 0.3); padding-bottom: 8px; }
+  h1 {
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
+    padding-bottom: 8px;
+  }
 
-  p { margin-bottom: 16px; text-align: justify; }
+  p {
+    margin-bottom: 16px;
+    text-align: justify;
+  }
 
-  ul, ol { margin-bottom: 16px; padding-left: 24px; }
+  ul, ol {
+    margin-bottom: 16px;
+    padding-left: 24px;
+  }
 
   blockquote {
     border-left: 4px solid #4caf50;
@@ -245,7 +254,7 @@ $apple-ease-out: cubic-bezier(0.42, 0, 0.58, 1);
 // 动画
 .btn-micro-interaction {
   transition: transform 0.2s $apple-ease, opacity 0.2s;
-  
+
   &:active {
     transform: scale(0.9);
     opacity: 0.7;

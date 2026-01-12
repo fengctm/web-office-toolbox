@@ -19,6 +19,7 @@ touch src/tools/你的工具代码/index.vue
 创建 `index.vue` 文件，遵循以下结构：
 
 ```vue
+
 <template>
   <v-card class="your-tool" elevation="2">
     <v-card-item>
@@ -34,91 +35,91 @@ touch src/tools/你的工具代码/index.vue
     <v-card-text>
       <!-- 工具的主要功能区域 -->
       <!-- 输入框、按钮、输出区域等 -->
-      
+
       <!-- 状态提示 -->
       <v-alert
-        v-if="message"
-        :type="messageType"
-        :text="message"
-        density="compact"
-        class="mt-3"
+          v-if="message"
+          :type="messageType"
+          :text="message"
+          density="compact"
+          class="mt-3"
       />
     </v-card-text>
   </v-card>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+  import {ref} from 'vue'
 
-// 1. 响应式状态
-const input = ref('')
-const output = ref('')
-const message = ref('')
-const messageType = ref('info')
+  // 1. 响应式状态
+  const input = ref('')
+  const output = ref('')
+  const message = ref('')
+  const messageType = ref('info')
 
-// 2. 显示消息函数
-const showMessage = (text, type = 'info') => {
-  message.value = text
-  messageType.value = type
-  setTimeout(() => {
-    message.value = ''
-  }, 3000)
-}
-
-// 3. 核心功能函数
-const handleAction = () => {
-  if (!input.value) {
-    showMessage('请输入内容', 'warning')
-    return
+  // 2. 显示消息函数
+  const showMessage = (text, type = 'info') => {
+    message.value = text
+    messageType.value = type
+    setTimeout(() => {
+      message.value = ''
+    }, 3000)
   }
-  
-  try {
-    // 实现你的逻辑
-    output.value = process(input.value)
-    showMessage('操作成功', 'success')
-  } catch (error) {
-    showMessage('操作失败: ' + error.message, 'error')
-  }
-}
 
-// 4. 辅助函数
-const clearAll = () => {
-  input.value = ''
-  output.value = ''
-  showMessage('已清空', 'info')
-}
+  // 3. 核心功能函数
+  const handleAction = () => {
+    if (!input.value) {
+      showMessage('请输入内容', 'warning')
+      return
+    }
 
-const copyResult = async () => {
-  if (!output.value) {
-    showMessage('没有可复制的内容', 'warning')
-    return
+    try {
+      // 实现你的逻辑
+      output.value = process(input.value)
+      showMessage('操作成功', 'success')
+    } catch (error) {
+      showMessage('操作失败: ' + error.message, 'error')
+    }
   }
-  
-  try {
-    await navigator.clipboard.writeText(output.value)
-    showMessage('已复制到剪贴板', 'success')
-  } catch (error) {
-    showMessage('复制失败', 'error')
-  }
-}
 
-// 5. 处理函数（占位）
-const process = (value) => {
-  // TODO: 实现实际的处理逻辑
-  return value
-}
+  // 4. 辅助函数
+  const clearAll = () => {
+    input.value = ''
+    output.value = ''
+    showMessage('已清空', 'info')
+  }
+
+  const copyResult = async () => {
+    if (!output.value) {
+      showMessage('没有可复制的内容', 'warning')
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(output.value)
+      showMessage('已复制到剪贴板', 'success')
+    } catch (error) {
+      showMessage('复制失败', 'error')
+    }
+  }
+
+  // 5. 处理函数（占位）
+  const process = (value) => {
+    // TODO: 实现实际的处理逻辑
+    return value
+  }
 </script>
 
 <style scoped>
-.your-tool {
-  border-radius: 12px;
-  overflow: hidden;
-}
+  .your-tool {
+    border-radius: 12px;
+    overflow: hidden;
+  }
 
-/* 响应式调整 */
-@media (max-width: 600px) {
-  /* 移动端优化 */
-}
+  /* 响应式调整 */
+  @media (max-width: 600px) {
+    /* 移动端优化 */
+  }
 </style>
 ```
 
@@ -128,14 +129,28 @@ const process = (value) => {
 
 ```javascript
 {
-  code: '你的工具代码',        // 唯一标识符，小写英文，用连字符连接
-  name: '工具名称',            // 显示名称
-  icon: 'mdi-图标名称',        // Vuetify图标
-  description: '详细描述',     // 工具功能描述
-  enabled: true,              // 是否启用
-  category: '分类名称',       // 可选：分类
-  tags: ['标签1', '标签2'],   // 可选：标签
-  component: () => import('../tools/你的工具代码/index.vue')
+    code: '你的工具代码',        // 唯一标识符，小写英文，用连字符连接
+        name
+:
+    '工具名称',            // 显示名称
+        icon
+:
+    'mdi-图标名称',        // Vuetify图标
+        description
+:
+    '详细描述',     // 工具功能描述
+        enabled
+:
+    true,              // 是否启用
+        category
+:
+    '分类名称',       // 可选：分类
+        tags
+:
+    ['标签1', '标签2'],   // 可选：标签
+        component
+:
+    () => import('../tools/你的工具代码/index.vue')
 }
 ```
 
@@ -188,9 +203,11 @@ const messageType = ref('info')
 
 // 消息显示（3秒自动消失）
 const showMessage = (text, type = 'info') => {
-  message.value = text
-  messageType.value = type
-  setTimeout(() => { message.value = '' }, 3000)
+    message.value = text
+    messageType.value = type
+    setTimeout(() => {
+        message.value = ''
+    }, 3000)
 }
 ```
 
@@ -198,10 +215,10 @@ const showMessage = (text, type = 'info') => {
 
 ```javascript
 try {
-  // 可能出错的代码
-  result = process(input)
+    // 可能出错的代码
+    result = process(input)
 } catch (error) {
-  showMessage('错误: ' + error.message, 'error')
+    showMessage('错误: ' + error.message, 'error')
 }
 ```
 
@@ -225,12 +242,12 @@ showMessage('操作完成', 'info')
 
 ```javascript
 const copyToClipboard = async (text) => {
-  try {
-    await navigator.clipboard.writeText(text)
-    showMessage('已复制到剪贴板', 'success')
-  } catch (error) {
-    showMessage('复制失败', 'error')
-  }
+    try {
+        await navigator.clipboard.writeText(text)
+        showMessage('已复制到剪贴板', 'success')
+    } catch (error) {
+        showMessage('复制失败', 'error')
+    }
 }
 ```
 
@@ -238,9 +255,9 @@ const copyToClipboard = async (text) => {
 
 ```javascript
 const clearAll = () => {
-  input.value = ''
-  output.value = ''
-  showMessage('已清空', 'info')
+    input.value = ''
+    output.value = ''
+    showMessage('已清空', 'info')
 }
 ```
 

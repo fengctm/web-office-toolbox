@@ -42,26 +42,26 @@ src/tools/
 ```javascript
 // src/tools/your-tool/utils.js
 export const validateInput = (input) => {
-  return input && input.length > 0
+    return input && input.length > 0
 }
 
 export const processData = async (data) => {
-  // 复杂的处理逻辑
-  return result
+    // 复杂的处理逻辑
+    return result
 }
 
 // src/tools/your-tool/index.vue
 <script setup>
-import { ref } from 'vue'
-import { validateInput, processData } from './utils.js'
+    import {ref} from 'vue'
+    import {validateInput, processData} from './utils.js'
 
-const input = ref('')
-const result = ref(null)
+    const input = ref('')
+    const result = ref(null)
 
-const handleProcess = async () => {
-  if (validateInput(input.value)) {
+    const handleProcess = async () => {
+    if (validateInput(input.value)) {
     result.value = await processData(input.value)
-  }
+}
 }
 </script>
 ```
@@ -85,6 +85,7 @@ touch src/tools/my-tool/index.vue
 ### 步骤 2：实现工具组件
 
 ```vue
+
 <template>
   <v-card class="my-tool" elevation="2">
     <v-card-item>
@@ -105,14 +106,14 @@ touch src/tools/my-tool/index.vue
 </template>
 
 <script setup>
-// 工具逻辑
+  // 工具逻辑
 </script>
 
 <style scoped>
-/* 工具样式 */
-.my-tool {
-  border-radius: 12px;
-}
+  /* 工具样式 */
+  .my-tool {
+    border-radius: 12px;
+  }
 </style>
 ```
 
@@ -122,12 +123,22 @@ touch src/tools/my-tool/index.vue
 
 ```javascript
 {
-  code: 'my-tool',
-  name: '我的工具',
-  icon: 'mdi-toolbox',
-  description: '工具描述',
-  enabled: true,
-  component: () => import('../tools/my-tool/index.vue')
+    code: 'my-tool',
+        name
+:
+    '我的工具',
+        icon
+:
+    'mdi-toolbox',
+        description
+:
+    '工具描述',
+        enabled
+:
+    true,
+        component
+:
+    () => import('../tools/my-tool/index.vue')
 }
 ```
 
@@ -138,6 +149,7 @@ touch src/tools/my-tool/index.vue
 ### 组件结构
 
 ```vue
+
 <template>
   <v-card class="tool-container" elevation="2">
     <!-- 1. 标题区域 -->
@@ -166,70 +178,70 @@ touch src/tools/my-tool/index.vue
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+  import {ref, computed, watch} from 'vue'
 
-// 1. 响应式状态
-const input = ref('')
-const result = ref(null)
-const loading = ref(false)
+  // 1. 响应式状态
+  const input = ref('')
+  const result = ref(null)
+  const loading = ref(false)
 
-// 2. 计算属性
-const isValid = computed(() => {
-  return input.value && input.value.length > 0
-})
+  // 2. 计算属性
+  const isValid = computed(() => {
+    return input.value && input.value.length > 0
+  })
 
-// 3. 核心功能函数
-const processData = async () => {
-  loading.value = true
-  try {
-    // 处理逻辑
-    result.value = await someProcessing(input.value)
-  } catch (error) {
-    console.error('处理失败:', error)
-  } finally {
-    loading.value = false
+  // 3. 核心功能函数
+  const processData = async () => {
+    loading.value = true
+    try {
+      // 处理逻辑
+      result.value = await someProcessing(input.value)
+    } catch (error) {
+      console.error('处理失败:', error)
+    } finally {
+      loading.value = false
+    }
   }
-}
 
-// 4. 事件处理
-const handleAction = () => {
-  if (isValid.value) {
-    processData()
+  // 4. 事件处理
+  const handleAction = () => {
+    if (isValid.value) {
+      processData()
+    }
   }
-}
 
-// 5. 自动保存/恢复状态
-const saveState = () => {
-  const state = { input: input.value, result: result.value }
-  localStorage.setItem('tool-state', JSON.stringify(state))
-}
-
-const loadState = () => {
-  const saved = localStorage.getItem('tool-state')
-  if (saved) {
-    const state = JSON.parse(saved)
-    input.value = state.input || ''
-    result.value = state.result || null
+  // 5. 自动保存/恢复状态
+  const saveState = () => {
+    const state = {input: input.value, result: result.value}
+    localStorage.setItem('tool-state', JSON.stringify(state))
   }
-}
 
-// 监听变化自动保存
-watch([input, result], saveState, { deep: true })
+  const loadState = () => {
+    const saved = localStorage.getItem('tool-state')
+    if (saved) {
+      const state = JSON.parse(saved)
+      input.value = state.input || ''
+      result.value = state.result || null
+    }
+  }
 
-// 组件挂载时加载状态
-loadState()
+  // 监听变化自动保存
+  watch([input, result], saveState, {deep: true})
+
+  // 组件挂载时加载状态
+  loadState()
 </script>
 
 <style scoped>
-.tool-container {
-  border-radius: 12px;
-  overflow: hidden;
-}
+  .tool-container {
+    border-radius: 12px;
+    overflow: hidden;
+  }
 
-/* 响应式设计 */
-@media (max-width: 600px) {
-  /* 移动端优化 */
-}
+  /* 响应式设计 */
+  @media (max-width: 600px) {
+    /* 移动端优化 */
+  }
 </style>
 ```
 
@@ -240,9 +252,9 @@ loadState()
 const emit = defineEmits(['update:loading'])
 
 const handleProcess = async () => {
-  emit('update:loading', true)
-  // 处理逻辑
-  emit('update:loading', false)
+    emit('update:loading', true)
+    // 处理逻辑
+    emit('update:loading', false)
 }
 ```
 
@@ -264,19 +276,19 @@ const handleProcess = async () => {
 
 <!-- 输入框 -->
 <v-text-field
-  v-model="input"
-  label="输入"
-  variant="outlined"
-  density="comfortable"
+    v-model="input"
+    label="输入"
+    variant="outlined"
+    density="comfortable"
 />
 
 <!-- 卡片 -->
 <v-card elevation="2" class="rounded-lg">
 
-<!-- 提示 -->
-<v-snackbar v-model="show" color="success" timeout="3000">
-  操作成功
-</v-snackbar>
+  <!-- 提示 -->
+  <v-snackbar v-model="show" color="success" timeout="3000">
+    操作成功
+  </v-snackbar>
 ```
 
 ### 动画效果
@@ -284,18 +296,18 @@ const handleProcess = async () => {
 ```css
 /* 入场动画 */
 .tool-container {
-  animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 ```
 
@@ -305,25 +317,25 @@ const handleProcess = async () => {
 
 ```javascript
 const handleFileUpload = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const content = e.target.result
-    // 处理文件内容
-  }
-  reader.readAsText(file)
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        const content = e.target.result
+        // 处理文件内容
+    }
+    reader.readAsText(file)
 }
 
 const downloadFile = (content, filename) => {
-  const blob = new Blob([content], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+    const blob = new Blob([content], {type: 'text/plain'})
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
 }
 ```
 
@@ -332,9 +344,9 @@ const downloadFile = (content, filename) => {
 ```javascript
 const input = ref('')
 const result = computed(() => {
-  if (!input.value) return ''
-  // 实时处理逻辑
-  return process(input.value)
+    if (!input.value) return ''
+    // 实时处理逻辑
+    return process(input.value)
 })
 ```
 
@@ -345,10 +357,10 @@ const files = ref([])
 const results = ref([])
 
 const processBatch = async () => {
-  for (const file of files.value) {
-    const result = await processFile(file)
-    results.value.push(result)
-  }
+    for (const file of files.value) {
+        const result = await processFile(file)
+        results.value.push(result)
+    }
 }
 ```
 
@@ -373,23 +385,23 @@ URL.createObjectURL(blob)
 ```javascript
 // 防抖
 const debounce = (fn, delay) => {
-  let timer
-  return (...args) => {
-    clearTimeout(timer)
-    timer = setTimeout(() => fn(...args), delay)
-  }
+    let timer
+    return (...args) => {
+        clearTimeout(timer)
+        timer = setTimeout(() => fn(...args), delay)
+    }
 }
 
 // 节流
 const throttle = (fn, delay) => {
-  let last = 0
-  return (...args) => {
-    const now = Date.now()
-    if (now - last > delay) {
-      fn(...args)
-      last = now
+    let last = 0
+    return (...args) => {
+        const now = Date.now()
+        if (now - last > delay) {
+            fn(...args)
+            last = now
+        }
     }
-  }
 }
 ```
 
@@ -419,7 +431,7 @@ const throttle = (fn, delay) => {
 ```javascript
 // 在组件中添加调试信息
 console.log('Component mounted')
-console.log('State:', { input: input.value, result: result.value })
+console.log('State:', {input: input.value, result: result.value})
 ```
 
 ### 2. 性能监控
@@ -434,9 +446,10 @@ console.log(`操作耗时: ${end - start}ms`)
 ### 3. 错误边界
 
 ```vue
+
 <template>
   <div v-if="error" class="error-boundary">
-    <v-alert type="error" :title="error.message" />
+    <v-alert type="error" :title="error.message"/>
   </div>
   <div v-else>
     <!-- 正常内容 -->
@@ -444,13 +457,13 @@ console.log(`操作耗时: ${end - start}ms`)
 </template>
 
 <script setup>
-const error = ref(null)
+  const error = ref(null)
 
-try {
-  // 可能出错的代码
-} catch (e) {
-  error.value = e
-}
+  try {
+    // 可能出错的代码
+  } catch (e) {
+    error.value = e
+  }
 </script>
 ```
 
@@ -484,12 +497,22 @@ try {
 
 ```javascript
 {
-  code: 'your-tool',
-  name: '你的工具',
-  icon: 'mdi-tool-icon',
-  description: '详细描述工具功能',
-  enabled: true,
-  component: () => import('../tools/your-tool/index.vue')
+    code: 'your-tool',
+        name
+:
+    '你的工具',
+        icon
+:
+    'mdi-tool-icon',
+        description
+:
+    '详细描述工具功能',
+        enabled
+:
+    true,
+        component
+:
+    () => import('../tools/your-tool/index.vue')
 }
 ```
 
@@ -557,8 +580,8 @@ src/tools/
 <!-- MainContainer.vue -->
 <template>
   <FileUpload
-    @file-uploaded="handleFileUploaded"
-    @error="handleError"
+      @file-uploaded="handleFileUploaded"
+      @error="handleError"
   />
 </template>
 ```
@@ -568,11 +591,11 @@ src/tools/
 ```vue
 <!-- FileUpload.vue -->
 <script setup>
-const emit = defineEmits(['file-uploaded', 'error'])
+  const emit = defineEmits(['file-uploaded', 'error'])
 
-const handleUpload = (file) => {
-  emit('file-uploaded', file)
-}
+  const handleUpload = (file) => {
+    emit('file-uploaded', file)
+  }
 </script>
 ```
 
@@ -581,16 +604,16 @@ const handleUpload = (file) => {
 ```vue
 <!-- MainContainer.vue -->
 <template>
-  <FileUpload @file-uploaded="handleFileUploaded" />
-  <PreviewGrid :file="currentFile" />
+  <FileUpload @file-uploaded="handleFileUploaded"/>
+  <PreviewGrid :file="currentFile"/>
 </template>
 
 <script setup>
-const currentFile = ref(null)
+  const currentFile = ref(null)
 
-const handleFileUploaded = (file) => {
-  currentFile.value = file
-}
+  const handleFileUploaded = (file) => {
+    currentFile.value = file
+  }
 </script>
 ```
 
@@ -601,12 +624,12 @@ const handleFileUploaded = (file) => {
 ```vue
 <!-- MainContainer.vue -->
 <script setup>
-// 所有状态集中在父组件
-const pdfFile = ref(null)
-const totalPages = ref(0)
-const pdfLoaded = ref(false)
-const exporting = ref(false)
-// ...
+  // 所有状态集中在父组件
+  const pdfFile = ref(null)
+  const totalPages = ref(0)
+  const pdfLoaded = ref(false)
+  const exporting = ref(false)
+  // ...
 </script>
 ```
 
@@ -615,9 +638,9 @@ const exporting = ref(false)
 ```vue
 <!-- 传递给子组件 -->
 <PreviewGrid
-  :pdf-loaded="pdfLoaded"
-  :total-pages="totalPages"
-  @open-preview="handleOpenPreview"
+    :pdf-loaded="pdfLoaded"
+    :total-pages="totalPages"
+    @open-preview="handleOpenPreview"
 />
 ```
 
@@ -626,12 +649,12 @@ const exporting = ref(false)
 ```vue
 <!-- 子组件触发事件 -->
 <script setup>
-const emit = defineEmits(['pdf-processed'])
+  const emit = defineEmits(['pdf-processed'])
 
-const processPDF = async () => {
-  // 处理逻辑
-  emit('pdf-processed', totalPages)
-}
+  const processPDF = async () => {
+    // 处理逻辑
+    emit('pdf-processed', totalPages)
+  }
 </script>
 ```
 
@@ -644,18 +667,18 @@ const processPDF = async () => {
 <template>
   <div>
     <!-- 文件上传 -->
-    <v-file-input />
-    
+    <v-file-input/>
+
     <!-- 预览网格 -->
     <v-row>
-      <v-col v-for="page in pages" />
+      <v-col v-for="page in pages"/>
     </v-row>
-    
+
     <!-- 导出面板 -->
     <v-expansion-panels>
       <!-- ... -->
     </v-expansion-panels>
-    
+
     <!-- 模态框 -->
     <v-dialog>
       <!-- ... -->
@@ -664,11 +687,11 @@ const processPDF = async () => {
 </template>
 
 <script setup>
-// 所有状态和逻辑都在这里
-const file = ref(null)
-const pages = ref([])
-const dialog = ref(false)
-// 200+ 行代码...
+  // 所有状态和逻辑都在这里
+  const file = ref(null)
+  const pages = ref([])
+  const dialog = ref(false)
+  // 200+ 行代码...
 </script>
 ```
 
@@ -678,29 +701,35 @@ const dialog = ref(false)
 <!-- 推荐：主组件组合子组件 -->
 <template>
   <v-card>
-    <FileUpload @file-uploaded="handleFileUploaded" />
-    <PreviewGrid :pages="pages" @open-preview="openPreview" />
-    <ExportPanel @export="handleExport" />
-    <PreviewModal v-model="dialog" :page="currentPage" />
+    <FileUpload @file-uploaded="handleFileUploaded"/>
+    <PreviewGrid :pages="pages" @open-preview="openPreview"/>
+    <ExportPanel @export="handleExport"/>
+    <PreviewModal v-model="dialog" :page="currentPage"/>
   </v-card>
 </template>
 
 <script setup>
-import FileUpload from './components/FileUpload.vue'
-import PreviewGrid from './components/PreviewGrid.vue'
-import ExportPanel from './components/ExportPanel.vue'
-import PreviewModal from './components/PreviewModal.vue'
+  import FileUpload from './components/FileUpload.vue'
+  import PreviewGrid from './components/PreviewGrid.vue'
+  import ExportPanel from './components/ExportPanel.vue'
+  import PreviewModal from './components/PreviewModal.vue'
 
-// 简洁的状态管理
-const file = ref(null)
-const pages = ref([])
-const dialog = ref(false)
-const currentPage = ref(1)
+  // 简洁的状态管理
+  const file = ref(null)
+  const pages = ref([])
+  const dialog = ref(false)
+  const currentPage = ref(1)
 
-// 事件处理
-const handleFileUploaded = (f) => { file.value = f }
-const openPreview = (page) => { currentPage.value = page; dialog.value = true }
-const handleExport = (config) => { /* 导出逻辑 */ }
+  // 事件处理
+  const handleFileUploaded = (f) => {
+    file.value = f
+  }
+  const openPreview = (page) => {
+    currentPage.value = page;
+    dialog.value = true
+  }
+  const handleExport = (config) => { /* 导出逻辑 */
+  }
 </script>
 ```
 
@@ -721,34 +750,36 @@ CombinedTool.vue      // 包含上传、预览、导出、设置...
 #### 2. 明确的接口定义
 
 ```vue
-<script setup>
-// Props 定义
-const props = defineProps({
-  pdfLoaded: {
-    type: Boolean,
-    default: false
-  },
-  totalPages: {
-    type: Number,
-    default: 0
-  }
-})
 
-// Emits 定义
-const emit = defineEmits(['open-preview', 'export-images'])
+<script setup>
+  // Props 定义
+  const props = defineProps({
+    pdfLoaded: {
+      type: Boolean,
+      default: false
+    },
+    totalPages: {
+      type: Number,
+      default: 0
+    }
+  })
+
+  // Emits 定义
+  const emit = defineEmits(['open-preview', 'export-images'])
 </script>
 ```
 
 #### 3. 样式隔离
 
 ```vue
-<style scoped>
-/* 组件私有样式 */
-.upload-section {
-  background: rgba(0, 150, 136, 0.03);
-}
 
-/* 避免全局样式污染 */
+<style scoped>
+  /* 组件私有样式 */
+  .upload-section {
+    background: rgba(0, 150, 136, 0.03);
+  }
+
+  /* 避免全局样式污染 */
 </style>
 ```
 
@@ -787,8 +818,8 @@ pdf-to-image/
 
 ```javascript
 // 动态导入大组件
-const PreviewModal = defineAsyncComponent(() => 
-  import('./components/PreviewModal.vue')
+const PreviewModal = defineAsyncComponent(() =>
+    import('./components/PreviewModal.vue')
 )
 ```
 
@@ -797,9 +828,9 @@ const PreviewModal = defineAsyncComponent(() =>
 ```vue
 <!-- 大量数据时使用虚拟滚动 -->
 <v-virtual-scroll
-  :items="pages"
-  height="400"
-  item-height="80"
+    :items="pages"
+    height="400"
+    item-height="80"
 >
   <template #default="{ item }">
     <!-- 预览项 -->
@@ -823,13 +854,13 @@ const throttledSearch = throttle(searchPages, 500)
 
 ```javascript
 // FileUpload.test.js
-import { mount } from '@vue/test-utils'
+import {mount} from '@vue/test-utils'
 import FileUpload from './FileUpload.vue'
 
 test('文件验证', async () => {
-  const wrapper = mount(FileUpload)
-  await wrapper.find('input[type="file"]').trigger('change')
-  expect(wrapper.emitted('error')).toBeTruthy()
+    const wrapper = mount(FileUpload)
+    await wrapper.find('input[type="file"]').trigger('change')
+    expect(wrapper.emitted('error')).toBeTruthy()
 })
 ```
 
@@ -837,13 +868,13 @@ test('文件验证', async () => {
 
 ```javascript
 // MainContainer.test.js
-import { mount } from '@vue/test-utils'
+import {mount} from '@vue/test-utils'
 import MainContainer from './MainContainer.vue'
 
 test('完整工作流程', async () => {
-  const wrapper = mount(MainContainer)
-  // 模拟：上传 → 解析 → 预览 → 导出
-  // 验证：状态变化、事件触发
+    const wrapper = mount(MainContainer)
+    // 模拟：上传 → 解析 → 预览 → 导出
+    // 验证：状态变化、事件触发
 })
 ```
 
@@ -900,12 +931,12 @@ test('完整工作流程', async () => {
 ```vue
 <!-- 父组件提供 -->
 <script setup>
-provide('pdfData', data)
+  provide('pdfData', data)
 </script>
 
 <!-- 深层子组件注入 -->
 <script setup>
-const data = inject('pdfData')
+  const data = inject('pdfData')
 </script>
 ```
 

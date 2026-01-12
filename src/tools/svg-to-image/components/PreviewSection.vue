@@ -67,11 +67,11 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   align-items: center;
   justify-content: center;
   transition: all 0.4s $apple-ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 
   &:hover {
     transform: scale(1.005);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     border-color: rgba(20, 184, 166, 0.3);
   }
 }
@@ -129,6 +129,7 @@ $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s $apple-ease;
 }
+
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
