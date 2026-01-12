@@ -1,15 +1,15 @@
 <template>
-  <v-container fluid class="tool-portal-container pa-4 pa-sm-8 pa-md-12">
+  <v-container class="tool-portal-container pa-4 pa-sm-8 pa-md-12" fluid>
     <!-- 标题区域：Apple 风格的精致排版 -->
     <v-row class="mb-10 header-section">
-      <v-col cols="12" class="text-center">
+      <v-col class="text-center" cols="12">
         <div class="title-wrapper">
           <h1 class="text-h4 text-sm-h2 font-weight-bold gradient-text mb-3">
             Web Office Toolbox
           </h1>
           <div class="subtitle-container">
             <span class="privacy-badge">
-              <v-icon size="14" class="mr-1">mdi-shield-check</v-icon>
+              <v-icon class="mr-1" size="14">mdi-shield-check</v-icon>
               隐私安全
             </span>
             <p class="text-subtitle-1 text-medium-emphasis">
@@ -25,29 +25,29 @@
       <v-col
           v-for="(tool, index) in tools"
           :key="tool.code"
-          cols="12"
-          sm="6"
-          md="4"
-          lg="3"
-          class="tool-card-wrapper"
           :style="{ '--delay': `${index * 0.05}s` }"
+          class="tool-card-wrapper"
+          cols="12"
+          lg="3"
+          md="4"
+          sm="6"
       >
         <ToolCard
             :tool="tool"
-            @click="$emit('tool-click', tool)"
             class="apple-card"
+            @click="$emit('tool-click', tool)"
         />
       </v-col>
     </v-row>
 
     <!-- 空状态：呼吸感设计 -->
-    <v-row v-else justify="center" class="mt-12">
-      <v-col cols="12" md="6" class="text-center empty-state">
+    <v-row v-else class="mt-12" justify="center">
+      <v-col class="text-center empty-state" cols="12" md="6">
         <div class="empty-icon-box">
           <v-icon
-              size="84"
               color="teal-lighten-3"
               icon="mdi-toolbox-outline"
+              size="84"
           />
         </div>
         <h2 class="text-h5 font-weight-bold mt-6 mb-2">暂无可用工具</h2>
@@ -57,14 +57,14 @@
 
     <!-- 底部状态：精致的胶囊标签 -->
     <v-row class="mt-12">
-      <v-col cols="12" class="text-center">
+      <v-col class="text-center" cols="12">
         <v-chip
-            color="teal"
-            variant="tonal"
-            size="large"
             class="footer-counter"
+            color="teal"
+            size="large"
+            variant="tonal"
         >
-          <v-icon start icon="mdi-layers-triple-outline" size="18"></v-icon>
+          <v-icon icon="mdi-layers-triple-outline" size="18" start></v-icon>
           已加载 {{ tools.length }} 款生产力工具
         </v-chip>
       </v-col>
@@ -86,7 +86,7 @@ defineProps({
 defineEmits(['tool-click'])
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 /* Apple 标准缓动曲线 */
 $apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -151,17 +151,23 @@ $apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes floating {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
 }
 
 /* 4. 卡片悬浮交互增强 */
 .apple-card {
   transition: all 0.4s $apple-ease !important;
+
   &:hover {
     transform: translateY(-6px) scale(1.02);
     box-shadow: 0 20px 40px rgba(0, 150, 136, 0.15) !important;
   }
+
   &:active {
     transform: translateY(-2px) scale(0.98);
   }
