@@ -290,12 +290,12 @@ const watermarkStyle = computed(() => {
 
   // 使用统一的水印生成器
   const style = generatePreviewStyle(conf);
-  
+
   // 移动端适配：缩小水印显示
   if (isMobile.value) {
     style.backgroundSize = `${conf.gap * 0.5}px`;
   }
-  
+
   return style;
 });
 

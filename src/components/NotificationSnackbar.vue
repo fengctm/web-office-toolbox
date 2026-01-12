@@ -1,12 +1,12 @@
 <template>
   <v-snackbar
-      :model-value="modelValue"
-      @update:model-value="updateModelValue"
       :color="color"
+      :model-value="modelValue"
       :timeout="timeout"
-      location="top right"
-      elevation="4"
       class="notification-snackbar"
+      elevation="4"
+      location="top right"
+      @update:model-value="updateModelValue"
   >
     <div class="d-flex align-center">
       <v-icon class="mr-2">{{ icon }}</v-icon>
@@ -14,7 +14,7 @@
     </div>
 
     <template v-slot:actions>
-      <v-btn variant="text" icon="mdi-close" @click="close"></v-btn>
+      <v-btn icon="mdi-close" variant="text" @click="close"></v-btn>
     </template>
   </v-snackbar>
 </template>

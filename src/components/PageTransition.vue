@@ -1,10 +1,10 @@
 <template>
   <transition
-      :name="name"
       :mode="mode"
-      @before-enter="beforeEnter"
+      :name="name"
       @enter="enter"
       @leave="leave"
+      @before-enter="beforeEnter"
   >
     <slot></slot>
   </transition>
