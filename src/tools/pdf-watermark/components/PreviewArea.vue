@@ -8,13 +8,9 @@
           pageSize="original"
           :watermarkConfig="watermarkConfig"
       >
-        <!-- 水印覆盖层 -->
+        <!-- 水印覆盖层 - 使用统一的水印生成器 -->
         <template #watermark-layer>
-          <div class="watermark-overlay" :style="watermarkStyle">
-            <div v-for="n in 100" :key="n" class="watermark-item">
-              {{ watermarkConfig.text }}
-            </div>
-          </div>
+          <div class="watermark-overlay" :style="watermarkStyle"></div>
         </template>
       </PDFPreview>
     </div>
@@ -30,6 +26,7 @@
 <script setup>
 import {computed} from 'vue'
 import PDFPreview from '@/components/PDFPreview.vue'
+import {generatePreviewStyle} from '../utils/watermark-generator.js'
 
 const props = defineProps({
   previewFiles: {
@@ -42,17 +39,10 @@ const props = defineProps({
   }
 })
 
-// 水印样式计算
-const watermarkStyle = computed(() => ({
-  '--wm-text': `"${props.watermarkConfig.text}"`,
-  '--wm-color': props.watermarkConfig.color,
-  '--wm-opacity': props.watermarkConfig.opacity,
-  '--wm-size': `${props.watermarkConfig.fontSize}px`,
-  '--wm-rotate': `${props.watermarkConfig.rotation}deg`,
-  '--wm-gap': `${props.watermarkConfig.gap}px`,
-  '--wm-x': `${props.watermarkConfig.offsetX}px`,
-  '--wm-y': `${props.watermarkConfig.offsetY}px`,
-}))
+// 使用统一的水印生成器生成样式
+const watermarkStyle = computed(() => {
+  return generatePreviewStyle(props.watermarkConfig);
+})
 </script>
 
 <style scoped>
@@ -82,24 +72,7 @@ const watermarkStyle = computed(() => ({
   position: absolute;
   inset: 0;
   pointer-events: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  align-content: space-around;
-  overflow: hidden;
   z-index: 100;
-}
-
-.watermark-item {
-  color: var(--wm-color);
-  opacity: var(--wm-opacity);
-  font-size: var(--wm-size);
-  transform: rotate(var(--wm-rotate)) translate(var(--wm-x), var(--wm-y));
-  margin: calc(var(--wm-gap) / 2);
-  white-space: nowrap;
-  user-select: none;
-  font-weight: bold;
-  font-family: Arial, sans-serif;
 }
 
 /* 深色模式适配 */
@@ -123,11 +96,6 @@ const watermarkStyle = computed(() => ({
 /* 深色模式下的预览容器 */
 :root[data-theme="dark"] .preview-area {
   background-color: #121212;
-}
-
-/* 深色模式下的水印文字颜色调整 */
-:root[data-theme="dark"] .watermark-item {
-  color: #ff6b6b !important; /* 深色模式下使用更亮的红色 */
 }
 
 /* 深色模式下的PDF预览背景增强 */

@@ -1,321 +1,356 @@
 <template>
-  <v-card class="ai-prompt-tool-card" elevation="2">
-    <!-- 头部设计：Material 结构 -->
-    <v-card-item class="pb-2">
-      <template v-slot:prepend>
-        <div class="icon-wrapper">
-          <v-icon color="teal" size="28">mdi-auto-fix</v-icon>
-        </div>
-      </template>
-      <v-card-title class="text-h6 font-weight-bold">
-        AI 提示词构造器
-      </v-card-title>
-      <v-card-subtitle>基于 CO-STAR 框架生成精准指令</v-card-subtitle>
-    </v-card-item>
+  <v-card class="ai-generator-pro" elevation="4">
+    <div class="tool-container" :class="{ 'is-dark': isDark }">
 
-    <v-divider class="mx-4 opacity-50"></v-divider>
+      <!-- 左侧：表单配置区 (Material 结构) -->
+      <section class="config-section">
+        <v-card-item class="px-0">
+          <template v-slot:prepend>
+            <div class="brand-icon">
+              <v-icon color="teal">mdi-brain-sparkle</v-icon>
+            </div>
+          </template>
+          <v-card-title class="text-h6 font-weight-bold">CO-STAR 智库</v-card-title>
+          <v-card-subtitle>构建大师级 AI 提示词</v-card-subtitle>
+        </v-card-item>
 
-    <v-card-text class="pa-4">
-      <v-row>
-        <!-- 左侧：输入区 (Apple 风格的表单平滑过渡) -->
-        <v-col cols="12" md="7" class="input-section">
-          <div class="section-label mb-4">
-            <v-chip size="small" color="teal" variant="flat" class="mr-2">1</v-chip>
-            配置核心要素
+        <div class="scroll-area pa-1">
+          <div class="input-group">
+            <div class="group-label"><v-chip size="x-small" color="teal" class="mr-1">R</v-chip> 角色设定</div>
+            <v-text-field
+                v-model="form.role"
+                placeholder="如：资深 Python 开发者"
+                variant="outlined"
+                density="comfortable"
+                color="teal"
+                class="apple-input"
+                hide-details
+            ></v-text-field>
+          </div>
+
+          <div class="input-group">
+            <div class="group-label"><v-chip size="x-small" color="teal" class="mr-1">O</v-chip> 核心任务</div>
+            <v-textarea
+                v-model="form.objective"
+                placeholder="你想让 AI 帮你完成什么？"
+                variant="outlined"
+                rows="3"
+                color="teal"
+                class="apple-input"
+                hide-details
+            ></v-textarea>
           </div>
 
           <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                  v-model="form.role"
-                  label="扮演角色 (Role)"
-                  placeholder="例如：高级前端专家"
-                  variant="outlined"
-                  color="teal"
-                  density="comfortable"
-                  class="apple-input"
-              ></v-text-field>
+            <v-col cols="6">
+              <div class="input-group">
+                <div class="group-label">风格 (Style)</div>
+                <v-select
+                    v-model="form.style"
+                    :items="styles"
+                    variant="outlined"
+                    density="comfortable"
+                    color="teal"
+                    hide-details
+                ></v-select>
+              </div>
             </v-col>
-            <v-col cols="12" sm="6">
-              <v-select
-                  v-model="form.style"
-                  :items="styleOptions"
-                  label="写作风格 (Style)"
-                  variant="outlined"
-                  color="teal"
-                  density="comfortable"
-                  class="apple-input"
-              ></v-select>
-            </v-col>
-            <v-col cols="12">
-              <v-textarea
-                  v-model="form.context"
-                  label="背景上下文 (Context)"
-                  placeholder="提供任务的背景信息..."
-                  variant="outlined"
-                  color="teal"
-                  rows="2"
-                  auto-grow
-                  class="apple-input"
-              ></v-textarea>
-            </v-col>
-            <v-col cols="12">
-              <v-textarea
-                  v-model="form.objective"
-                  label="核心任务 (Objective)"
-                  placeholder="你想让 AI 具体做什么？"
-                  variant="outlined"
-                  color="teal"
-                  rows="3"
-                  hide-details
-                  class="apple-input"
-              ></v-textarea>
+            <v-col cols="6">
+              <div class="input-group">
+                <div class="group-label">语调 (Tone)</div>
+                <v-select
+                    v-model="form.tone"
+                    :items="tones"
+                    variant="outlined"
+                    density="comfortable"
+                    color="teal"
+                    hide-details
+                ></v-select>
+              </div>
             </v-col>
           </v-row>
 
-          <!-- 高级选项：折叠面板 (Apple 动画) -->
-          <v-expansion-panels variant="accordion" class="mt-4 advanced-panels">
+          <!-- 高级折叠面板 -->
+          <v-expansion-panels variant="accordion" class="mt-4 apple-panels">
             <v-expansion-panel elevation="0">
-              <v-expansion-panel-title class="text-subtitle-2 px-0">
-                高级参数 (受众、语调、格式)
+              <v-expansion-panel-title class="text-teal font-weight-bold px-0">
+                补充上下文 & 格式 (Context / Response)
               </v-expansion-panel-title>
-              <v-expansion-panel-text>
-                <v-row dense class="pt-2">
-                  <v-col cols="12" sm="6">
-                    <v-text-field v-model="form.audience" label="目标受众" variant="underlined" color="teal" density="compact"></v-text-field>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-text-field v-model="form.tone" label="语调语气" variant="underlined" color="teal" density="compact"></v-text-field>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-text-field v-model="form.response" label="输出格式 (JSON, Markdown, 表格...)" variant="underlined" color="teal" density="compact"></v-text-field>
-                  </v-col>
-                </v-row>
+              <v-expansion-panel-text class="px-0">
+                <v-textarea v-model="form.context" label="背景信息" variant="underlined" color="teal" rows="2" class="mb-2"></v-textarea>
+                <v-text-field v-model="form.response" label="输出格式 (如 JSON)" variant="underlined" color="teal"></v-text-field>
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
-        </v-col>
+        </div>
+      </section>
 
-        <!-- 右侧：预览区 (Material 卡片层级) -->
-        <v-col cols="12" md="5">
-          <div class="section-label mb-4 d-flex align-center">
-            <v-chip size="small" color="teal" variant="flat" class="mr-2">2</v-chip>
-            预览与导出
+      <!-- 右侧：实时预览区 (Apple 动效核心) -->
+      <section class="preview-section">
+        <div class="preview-card shadow-2xl">
+          <div class="preview-header">
+            <span class="status-dot"></span>
+            <span class="text-overline">Live Prompt Preview</span>
+            <v-spacer />
+            <v-btn icon="mdi-content-copy" size="small" variant="text" color="teal" @click="copyPrompt"></v-btn>
           </div>
 
-          <v-card variant="tonal" color="teal" class="preview-box d-flex flex-column" height="100%">
-            <div class="pa-3 d-flex justify-space-between align-center">
-              <span class="text-caption font-weight-bold">PROMPT PREVIEW</span>
-              <v-btn
-                  icon="mdi-content-copy"
-                  variant="text"
-                  size="small"
-                  @click="copyPrompt"
-                  :color="copied ? 'success' : 'teal'"
-              ></v-btn>
-            </div>
-            <v-divider></v-divider>
-            <v-card-text class="flex-grow-1 overflow-y-auto prompt-content">
-              <div v-if="!hasContent" class="text-center py-10 text-grey-darken-1">
-                <v-icon size="40" class="mb-2 opacity-20">mdi-text-box-search-outline</v-icon>
-                <p class="text-caption">填写左侧表单自动生成</p>
+          <div class="preview-body">
+            <transition-group name="staggered-fade">
+              <div v-for="(item, key) in promptParts" :key="key" class="prompt-segment" >
+                <div class="segment-title">{{ item.label }}</div>
+                <div class="segment-content">{{ item.value }}</div>
               </div>
-              <Transition name="apple-fade">
-                <div v-if="hasContent" class="generated-text">
-                  {{ fullPrompt }}
-                </div>
-              </Transition>
-            </v-card-text>
-            <v-card-actions class="pa-3">
-              <v-btn
-                  block
-                  color="teal"
-                  variant="flat"
-                  class="apple-btn"
-                  @click="resetForm"
-              >
-                清空重置
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-card-text>
+            </transition-group>
 
-    <!-- 底部状态栏 -->
-    <v-divider></v-divider>
-    <div class="px-4 py-2 d-flex justify-space-between align-center text-caption text-grey">
-      <span>Framework: CO-STAR v1.0</span>
-      <span>Status: Ready</span>
+            <div v-if="!hasContent" class="empty-preview">
+              <v-icon size="64" class="mb-4 opacity-20">mdi-text-box-search-outline</v-icon>
+              <p>在左侧输入，见证奇迹发生</p>
+            </div>
+          </div>
+
+          <div class="preview-footer">
+            <v-btn
+                block
+                color="teal"
+                size="x-large"
+                class="copy-btn"
+                :disabled="!hasContent"
+                @click="copyPrompt"
+            >
+              一键复制全套指令
+            </v-btn>
+          </div>
+        </div>
+      </section>
+
     </div>
 
-    <!-- 提示通知 -->
-    <v-snackbar v-model="copied" timeout="2000" color="success" rounded="pill">
-      已成功复制到剪贴板
+    <!-- 极简通知 -->
+    <v-snackbar v-model="copied" color="teal-darken-3" rounded="pill" elevation="12">
+      <div class="text-center w-100 font-weight-bold">
+        <v-icon class="mr-2">mdi-check-all</v-icon> 提示词已准备就绪！
+      </div>
     </v-snackbar>
   </v-card>
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 
-// 响应式表单数据
+const isDark = ref(false);
+const copied = ref(false);
+
 const form = reactive({
   role: '',
-  context: '',
   objective: '',
-  style: '专业且严谨',
-  audience: '',
-  tone: '',
+  style: '专业严谨',
+  tone: '客观中立',
+  context: '',
   response: ''
 });
 
-const styleOptions = [
-  '专业且严谨', '创意且幽默', '简洁直白', '学术性', '亲和有力', '代码专家风格'
-];
+const styles = ['专业严谨', '创意发散', '极简主义', '教学启发'];
+const tones = ['客观中立', '热情友好', '犀利幽默', '权威正式'];
 
-const copied = ref(false);
+const promptParts = computed(() => [
+  { label: 'ROLE', value: form.role },
+  { label: 'OBJECTIVE', value: form.objective },
+  { label: 'STYLE', value: form.style },
+  { label: 'TONE', value: form.tone },
+  { label: 'CONTEXT', value: form.context },
+  { label: 'RESPONSE', value: form.response }
+]);
 
-// 逻辑判断是否有内容
-const hasContent = computed(() => {
-  return form.role || form.context || form.objective;
-});
+const hasContent = computed(() => form.role || form.objective);
 
-// 计算最终生成的 Prompt (CO-STAR 结构)
-const fullPrompt = computed(() => {
-  let p = [];
-  if (form.role) p.push(`# Role\n${form.role}`);
-  if (form.context) p.push(`# Context\n${form.context}`);
-  if (form.objective) p.push(`# Objective\n${form.objective}`);
-  if (form.style) p.push(`# Style\n${form.style}`);
-  if (form.audience) p.push(`# Audience\n${form.audience}`);
-  if (form.tone) p.push(`# Tone\n${form.tone}`);
-  if (form.response) p.push(`# Response Format\n${form.response}`);
+const copyPrompt = () => {
+  const fullText = promptParts.value
+      .filter(p => p.value)
+      .map(p => `# ${p.label}\n${p.value}`)
+      .join('\n\n');
 
-  return p.join('\n\n');
-});
-
-// 方法：复制
-const copyPrompt = async () => {
-  if (!fullPrompt.value) return;
-  try {
-    await navigator.clipboard.writeText(fullPrompt.value);
-    copied.value = true;
-  } catch (err) {
-    console.error('Failed to copy!', err);
-  }
-};
-
-// 方法：重置
-const resetForm = () => {
-  form.role = '';
-  form.context = '';
-  form.objective = '';
-  form.style = '专业且严谨';
-  form.audience = '';
-  form.tone = '';
-  form.response = '';
+  navigator.clipboard.writeText(fullText);
+  copied.value = true;
 };
 </script>
 
-<style scoped>
-/* 1. Apple 风格核心变量 & 动画 */
-:deep(.v-card) {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !0important;
+<style scoped lang="scss">
+$apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+.ai-generator-pro {
+  border-radius: 28px !important;
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), 0.1);
 }
 
-.apple-fade-enter-active {
-  animation: appleEasing 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes appleEasing {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* 2. 布局样式增强 */
-.ai-prompt-tool-card {
-  border-radius: 16px !important;
+.tool-container {
+  display: grid;
+  grid-template-columns: 400px 1fr;
   background: var(--v-theme-surface);
-  border: 1px solid rgba(var(--v-border-color), 0.08);
+  min-height: 650px;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-.icon-wrapper {
-  background: rgba(0, 150, 136, 0.1);
-  padding: 8px;
-  border-radius: 12px;
+// 左侧配置区
+.config-section {
+  padding: 32px;
+  border-right: 1px solid rgba(var(--v-border-color), 0.08);
+  display: flex;
+  flex-direction: column;
+
+  .brand-icon {
+    background: rgba(0, 150, 136, 0.1);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.input-group {
+  margin-bottom: 20px;
+  .group-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #009688;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+}
+
+// Apple 风格输入框增强
+:deep(.v-field) {
+  border-radius: 12px !important;
+  transition: all 0.3s $apple-ease !important;
+  background: rgba(var(--v-theme-on-surface), 0.02) !important;
+
+  &:hover {
+    background: rgba(var(--v-theme-on-surface), 0.05) !important;
+  }
+
+  &.v-field--focused {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 150, 136, 0.1);
+  }
+}
+
+// 右侧预览区
+.preview-section {
+  background: linear-gradient(135deg, rgba(0,150,136,0.05) 0%, rgba(0,150,136,0.1) 100%);
+  padding: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.section-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: #00796b;
-}
+.preview-card {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  border-radius: 24px;
+  height: 550px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.12);
+  overflow: hidden;
+  transition: all 0.5s $apple-ease;
 
-/* 3. 输入组件 Apple 化 */
-:deep(.v-field) {
-  border-radius: 10px !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s !important;
-}
-
-:deep(.v-field--focused) {
-  transform: scale(1.01);
-}
-
-.apple-input :deep(.v-field__outline) {
-  --v-field-border-opacity: 0.15;
-}
-
-/* 4. 预览框样式 */
-.preview-box {
-  border-radius: 12px;
-  border: 1px dashed rgba(0, 150, 136, 0.3);
-  min-height: 300px;
-  background-color: rgba(0, 150, 136, 0.02) !important;
-}
-
-.prompt-content {
-  font-family: 'SF Mono', 'Roboto Mono', monospace;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.generated-text {
-  color: rgba(var(--v-theme-on-surface), 0.87);
-}
-
-/* 5. 按钮 Apple 交互 */
-.apple-btn {
-  border-radius: 10px !important;
-  text-transform: none !important;
-  font-weight: 600 !important;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.apple-btn:active {
-  transform: scale(0.96);
-}
-
-/* 6. 深色模式适配微调 */
-:deep(.v-theme--dark) .preview-box {
-  background-color: rgba(0, 150, 136, 0.05) !important;
-}
-
-.advanced-panels :deep(.v-expansion-panel-title) {
-  min-height: 48px !important;
-  color: #009688;
-}
-
-/* 响应式调整 */
-@media (max-width: 600px) {
-  .ai-prompt-tool-card {
-    border-radius: 0 !important; /* 移动端全屏感 */
+  .v-theme--dark & {
+    background: #1a1a1a;
   }
+}
+
+.preview-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: #4caf50;
+    border-radius: 50%;
+    margin-right: 10px;
+    box-shadow: 0 0 10px #4caf50;
+    animation: blink 2s infinite;
+  }
+}
+
+.preview-body {
+  flex-grow: 1;
+  padding: 24px;
+  overflow-y: auto;
+  font-family: 'Inter', system-ui, sans-serif;
+
+  .prompt-segment {
+    margin-bottom: 20px;
+    animation: slideIn 0.5s $apple-ease forwards;
+
+    .segment-title {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #009688;
+      margin-bottom: 4px;
+    }
+    .segment-content {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: rgba(var(--v-theme-on-surface), 0.8);
+    }
+  }
+}
+
+.preview-footer {
+  padding: 20px;
+  background: rgba(var(--v-theme-surface), 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.copy-btn {
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0.5px;
+  transition: all 0.3s $apple-ease !important;
+  box-shadow: 0 10px 20px rgba(0, 150, 136, 0.2) !important;
+
+  &:active { transform: scale(0.96); }
+}
+
+// 丝滑动画
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(15px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+// 列表过渡动画
+.staggered-fade-enter-active {
+  transition: all 0.5s $apple-ease;
+}
+.staggered-fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.empty-preview {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(var(--v-theme-on-surface), 0.3);
 }
 </style>

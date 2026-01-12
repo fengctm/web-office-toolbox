@@ -1,4 +1,5 @@
 import {degrees, PDFDocument, rgb, StandardFonts} from 'pdf-lib'
+import {generateWatermarkCanvas, drawWatermarkBackground, hexToRgba} from './watermark-generator.js'
 
 /**
  * 导出带水印的PDF
@@ -35,11 +36,13 @@ export const exportWatermarkedPDF = async (pdfFile, watermarkConfig, password = 
 
 /**
  * 添加英文水印（使用标准字体）
+ * 使用统一的水印布局计算
  */
 async function addEnglishWatermark(pdfDoc, config) {
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     const pages = pdfDoc.getPages()
 
+    // 颜色转换
     const hexToRgb = (hex) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
         return result ? {
@@ -50,113 +53,71 @@ async function addEnglishWatermark(pdfDoc, config) {
     }
     const c = hexToRgb(config.color)
 
+    // 为每一页添加水印
     pages.forEach(page => {
         const {width, height} = page.getSize()
-        for (let x = -width; x < width * 2; x += config.gap) {
-            for (let y = -height; y < height * 2; y += config.gap) {
-                page.drawText(config.text, {
-                    x: x + config.offsetX,
-                    y: y + config.offsetY,
-                    size: config.fontSize,
-                    font: font,
-                    color: rgb(c.r, c.g, c.b),
-                    opacity: config.opacity,
-                    rotate: degrees(config.rotation),
-                })
-            }
-        }
+
+        // 使用统一的布局计算
+        const watermarks = calculateWatermarkPositions(config, width, height)
+
+        watermarks.forEach(wm => {
+            page.drawText(config.text, {
+                x: wm.x,
+                y: wm.y,
+                size: config.fontSize,
+                font: font,
+                color: rgb(c.r, c.g, c.b),
+                opacity: config.opacity,
+                // 注意：这里取反角度是为了与 SVG/Canvas 预览保持一致
+                // SVG: rotate(rotation) - 正角度=顺时针
+                // Canvas: rotate(-rotation) - 正角度=逆时针（代码中已取反）
+                // PDF: degrees(-rotation) - 正角度=逆时针
+                // 这样三者都能正确显示相同的旋转方向
+                rotate: degrees(-config.rotation),
+            })
+        })
     })
 }
 
 /**
  * 添加中文水印（使用Canvas渲染为图片）
+ * 使用统一的水印生成器
  */
 async function addChineseWatermarkAsImage(pdfDoc, config) {
     const pages = pdfDoc.getPages()
-
-    // 解析颜色
-    const hexToRgb = (hex) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : {r: 255, g: 0, b: 0}
-    }
-    const color = hexToRgb(config.color)
 
     // 为每一页创建水印图片
     for (const page of pages) {
         const {width, height} = page.getSize()
 
-        // 创建Canvas来渲染水印
+        // 1. 创建高分辨率 Canvas（PDF 页面尺寸 × 2）
+        const scale = 2
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
-
-        // 设置Canvas尺寸（使用较高的分辨率）
-        const scale = 2
         canvas.width = width * scale
         canvas.height = height * scale
 
-        // 设置背景为透明
+        // 清空画布（透明背景）
         ctx.fillStyle = 'rgba(0, 0, 0, 0)'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-        // 完全匹配预览图的SVG背景实现逻辑
-        const gap = config.gap * scale
-        const offsetX = config.offsetX * scale
-        const offsetY = config.offsetY * scale
+        // 2. 使用统一的水印生成器创建单元格
+        const unitCanvas = await generateWatermarkCanvas(config, scale)
 
-        // 创建单个SVG单元格（与预览图完全一致）
-        const unitCanvas = document.createElement('canvas')
-        const unitCtx = unitCanvas.getContext('2d')
-        unitCanvas.width = gap
-        unitCanvas.height = gap
+        // 3. 使用统一的绘制函数
+        drawWatermarkBackground(canvas, unitCanvas, {
+            ...config,
+            gap: config.gap * scale,
+            offsetX: config.offsetX * scale,
+            offsetY: config.offsetY * scale
+        })
 
-        // 设置背景为透明
-        unitCtx.fillStyle = 'rgba(0, 0, 0, 0)'
-        unitCtx.fillRect(0, 0, gap, gap)
-
-        // 关键：字体大小不乘以scale，与预览图保持一致
-        const fontSize = config.fontSize
-        unitCtx.font = `bold ${fontSize}px "Microsoft YaHei", "SimHei", "Noto Sans CJK SC", sans-serif`
-        unitCtx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${config.opacity})`
-        unitCtx.textAlign = 'center'
-        unitCtx.textBaseline = 'middle'
-
-        // 计算旋转中心
-        const half = gap / 2
-        const rotationRad = (config.rotation * Math.PI) / 180
-
-        // 保存状态
-        unitCtx.save()
-        unitCtx.translate(half, half)
-        unitCtx.rotate(rotationRad)
-        unitCtx.fillText(config.text, 0, 0)
-        unitCtx.restore()
-
-        // 计算需要多少个单元格来覆盖整个页面
-        const cols = Math.ceil(canvas.width / gap) + 2
-        const rows = Math.ceil(canvas.height / gap) + 2
-
-        // 绘制重复的背景
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const x = col * gap + offsetX
-                const y = row * gap + offsetY
-
-                if (x < canvas.width && y < canvas.height) {
-                    ctx.drawImage(unitCanvas, x, y)
-                }
-            }
-        }
-
-        // 转换为PNG图片
+        // 4. 转换为 PNG 并嵌入 PDF
         const pngDataUrl = canvas.toDataURL('image/png')
         const pngBytes = await fetch(pngDataUrl).then(res => res.arrayBuffer())
         const pngImage = await pdfDoc.embedPng(pngBytes)
 
-        // 将图片添加到PDF页面
+        // 5. 将图片添加到 PDF 页面
         page.drawImage(pngImage, {
             x: 0,
             y: 0,
@@ -165,4 +126,32 @@ async function addChineseWatermarkAsImage(pdfDoc, config) {
             opacity: 1
         })
     }
+}
+
+/**
+ * 计算水印位置（用于英文水印）
+ * 使用与统一生成器相同的逻辑
+ */
+function calculateWatermarkPositions(config, containerWidth, containerHeight) {
+    const { gap, offsetX, offsetY } = config;
+
+    const watermarks = [];
+
+    // 计算需要覆盖的范围（超出容器边缘）
+    const startX = -gap;
+    const endX = containerWidth + gap;
+    const startY = -gap;
+    const endY = containerHeight + gap;
+
+    // 遍历网格
+    for (let x = startX; x <= endX; x += gap) {
+        for (let y = startY; y <= endY; y += gap) {
+            watermarks.push({
+                x: x + offsetX,
+                y: y + offsetY
+            });
+        }
+    }
+
+    return watermarks;
 }

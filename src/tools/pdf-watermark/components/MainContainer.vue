@@ -55,8 +55,8 @@
         <div v-if="!pdfState.file" class="fill-height d-flex flex-column align-center justify-center">
           <FileUpload
               label="选择或拖拽 PDF 文件"
-              @success="handleFileSelected"
               @reset="reset"
+              @success="handleFileSelected"
           />
         </div>
 

@@ -1,137 +1,221 @@
 <template>
   <v-card
-      class="tool-card mx-auto"
-      hover
-      elevation="2"
+      ref="cardRef"
+      class="tool-card"
       @click="$emit('click')"
+      @mouseenter="isHovering = true"
+      @mouseleave="isHovering = false"
+      @mousemove="handleMouseMove"
   >
-    <!-- 工具图标 -->
-    <v-card-item class="text-center">
-      <v-icon
-          size="48"
-          color="teal"
-          class="tool-icon mb-2"
-      >
-        {{ tool.icon }}
-      </v-icon>
-      <v-card-title class="tool-title">{{ tool.name }}</v-card-title>
+    <!-- 核心光效层：跟随鼠标移动 -->
+    <div
+        :style="spotlightStyle"
+        class="mouse-spotlight"
+    ></div>
+
+    <!-- 边框掠光：让边缘在光照下更闪耀 -->
+    <div :style="spotlightStyle" class="border-glow"></div>
+
+    <v-card-item class="content-top">
+      <div class="icon-wrapper">
+        <v-icon class="tool-icon" color="teal" size="42">
+          {{ tool.icon }}
+        </v-icon>
+      </div>
+      <v-card-title class="tool-title text-h6">{{ tool.name }}</v-card-title>
     </v-card-item>
 
-    <!-- 工具描述 -->
-    <v-card-text class="text-center text-grey-darken-1">
+    <v-card-text class="tool-description text-body-2">
       {{ tool.description }}
     </v-card-text>
 
-    <!-- 底部操作区 -->
-    <v-card-actions class="justify-center">
+    <v-spacer></v-spacer>
+
+    <v-card-actions class="pa-4 pt-0">
       <v-btn
+          block
+          class="use-btn apple-btn"
           color="teal"
           variant="tonal"
-          rounded="lg"
-          class="use-btn"
           @click.stop="$emit('click')"
       >
-        使用工具
-        <v-icon end icon="mdi-arrow-right"></v-icon>
+        <span>开启工具</span>
+        <v-icon class="arrow-icon" end icon="mdi-arrow-right"></v-icon>
       </v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup>
-defineProps({
-  tool: {
-    type: Object,
-    required: true,
-    validator: (tool) => {
-      return tool.code && tool.name && tool.icon && tool.description
-    }
-  }
-})
+import {computed, ref} from 'vue';
 
-defineEmits(['click'])
+const props = defineProps({
+  tool: {type: Object, required: true}
+});
+defineEmits(['click']);
+
+// --- 光效逻辑 ---
+const cardRef = ref(null);
+const isHovering = ref(false);
+const mousePos = ref({x: 0, y: 0});
+
+const handleMouseMove = (e) => {
+  if (!cardRef.value) return;
+  // 获取卡片相对于视口的位置
+  const rect = cardRef.value.$el.getBoundingClientRect();
+  // 计算鼠标在卡片内部的坐标
+  mousePos.value = {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+};
+
+// 将坐标转化为 CSS 变量
+const spotlightStyle = computed(() => ({
+  '--x': `${mousePos.value.x}px`,
+  '--y': `${mousePos.value.y}px`,
+  '--opacity': isHovering.value ? 1 : 0
+}));
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+$apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
 .tool-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
+  border-radius: 24px !important;
+  background: var(--v-theme-surface);
   height: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 280px; /* 确保最小高度一致 */
+  transition: transform 0.5s $apple-ease, box-shadow 0.5s $apple-ease !important;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(var(--v-border-color), 0.08);
+  cursor: pointer;
+  z-index: 1;
+
+  &:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+
+    .tool-icon {
+      transform: scale(1.1) translateY(-4px);
+    }
+  }
+
+  &:active {
+    transform: translateY(-4px) scale(0.98);
+  }
 }
 
-.tool-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 150, 136, 0.25) !important;
+/* 核心跟随光效：使用径向渐变 */
+.mouse-spotlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  opacity: var(--opacity);
+  transition: opacity 0.5s $apple-ease;
+  // 关键：渐变中心随变量移动
+  background: radial-gradient(
+          600px circle at var(--x) var(--y),
+          rgba(0, 150, 136, 0.08),
+          transparent 40%
+  );
 }
 
-/* 确保卡片内容区域也能撑满高度 */
-.tool-card .v-card-item {
-  flex-shrink: 0;
+/* 掠光边框效果 */
+.border-glow {
+  position: absolute;
+  inset: -1px; // 稍微超出边界以照亮边框
+  padding: 1px; // 内部填充
+  background: radial-gradient(
+          300px circle at var(--x) var(--y),
+          rgba(0, 150, 136, 0.3),
+          transparent 60%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+  linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box,
+  linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: var(--opacity);
+  transition: opacity 0.5s $apple-ease;
 }
 
-.tool-card .v-card-text {
-  flex-grow: 1;
+/* 内容排版 */
+.content-top {
+  position: relative;
+  z-index: 2;
+}
+
+.icon-wrapper {
+  padding: 24px 0 16px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 16px !important;
-}
-
-.tool-card .v-card-actions {
-  flex-shrink: 0;
-  padding: 16px !important;
-}
-
-.tool-card:hover .tool-icon {
-  animation: pulse 0.6s ease-in-out;
 }
 
 .tool-icon {
-  transition: all 0.3s ease;
+  transition: all 0.5s $apple-ease;
 }
 
 .tool-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: #009688;
-  margin-bottom: 4px;
+  text-align: center;
+  font-weight: 800 !important;
+  color: #00796b;
 }
 
-.use-btn {
-  opacity: 0;
-  transform: translateY(4px);
-  transition: all 0.3s ease;
+.tool-description {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  padding: 0 20px 16px;
+  min-height: 64px;
 }
 
-.tool-card:hover .use-btn {
-  opacity: 1;
-  transform: translateY(0);
+.apple-btn {
+  border-radius: 16px !important;
+  font-weight: 700 !important;
+  transition: all 0.3s $apple-ease !important;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
+/* 深色模式增强 */
+:deep(.v-theme--dark) {
+  .tool-card {
+    background: #1a1a1a;
+
+    &:hover {
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+    }
   }
-  50% {
-    transform: scale(1.15);
+
+  .mouse-spotlight {
+    background: radial-gradient(
+            600px circle at var(--x) var(--y),
+            rgba(0, 150, 136, 0.15),
+            transparent 40%
+    );
+  }
+
+  .tool-title {
+    color: #4db6ac;
   }
 }
 
-/* 深色模式适配 */
-:deep(.v-theme--dark) .tool-card {
-  background-color: #1e1e1e;
-}
+/* 移动端处理：完全禁用跟随光效以节省性能 */
+@media (max-width: 960px) {
+  .mouse-spotlight, .border-glow {
+    display: none;
+  }
 
-:deep(.v-theme--dark) .tool-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 150, 136, 0.4) !important;
-}
-
-:deep(.v-theme--dark) .tool-title {
-  color: #26a69a;
+  .tool-card:hover {
+    transform: none;
+  }
 }
 </style>

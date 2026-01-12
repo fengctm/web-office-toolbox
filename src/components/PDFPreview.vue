@@ -114,6 +114,7 @@
 <script setup>
 import {computed, onMounted, onUnmounted, reactive, ref, watchEffect} from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
+import {generatePreviewStyle} from '@/tools/pdf-watermark/utils/watermark-generator.js'
 
 // 配置 PDFJS Worker (使用您提供的版本对应的 CDN)
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
@@ -282,44 +283,20 @@ const renderPdfPageToImg = async (pdf, pageNum) => {
   return canvas.toDataURL('image/jpeg', 0.9)
 }
 
-// 【核心逻辑】生成动态水印样式
+// 【核心逻辑】生成动态水印样式 - 使用统一的水印生成器
 const watermarkStyle = computed(() => {
   const conf = props.watermarkConfig;
   if (!conf.text) return {};
 
-  const size = conf.gap || 100;
-  const half = size / 2;
-  const escapedText = conf.text.replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-      <text
-        x="${half}"
-        y="${half}"
-        fill="${conf.color}"
-        font-size="${conf.fontSize}"
-        font-family="${conf.font}"
-        fill-opacity="${conf.opacity}"
-        text-anchor="middle"
-        dominant-baseline="middle"
-        transform="rotate(${conf.rotation} ${half} ${half})"
-      >
-        ${escapedText}
-      </text>
-    </svg>
-  `.trim();
-
-  const encodedSvg = btoa(unescape(encodeURIComponent(svg)));
-
-  return {
-    backgroundImage: `url("data:image/svg+xml;base64,${encodedSvg}")`,
-    backgroundRepeat: 'repeat',
-    backgroundPosition: `${conf.offsetX}px ${conf.offsetY}px`,
-    backgroundSize: isMobile.value ? `${size * 0.5}px` : 'auto'
-  };
+  // 使用统一的水印生成器
+  const style = generatePreviewStyle(conf);
+  
+  // 移动端适配：缩小水印显示
+  if (isMobile.value) {
+    style.backgroundSize = `${conf.gap * 0.5}px`;
+  }
+  
+  return style;
 });
 
 // 获取图片加载后的比例
