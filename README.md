@@ -1,22 +1,5 @@
 # Web Office Toolbox - 纯前端工具箱
 
-## 🤖 AI必读
-
-**⚠️ AI对项目施工时，尽量避免使用命令行启动服务器**
-
-**原因如下：**
-
-- 部分AI使用的命令行工具，外界无法接触
-- 可能导致重复启动项目多次
-- 占用过多端口资源
-- 增加系统负担和端口冲突风险
-
-**建议方案：**
-
-- 使用可视化界面启动开发服务器
-- 通过 IDE（如 WebStorm）内置功能运行项目
-- 使用图形化工具管理开发环境
-
 ## 🎯 项目概述
 
 这是一个**纯前端的、模块化的、可扩展的** Web 工具箱平台，所有功能在浏览器中本地运行，无需后端依赖。
@@ -102,7 +85,6 @@ touch src/tools/my-tool/index.vue
 在 `src/tools/my-tool/index.vue` 中：
 
 ```vue
-
 <template>
   <v-card class="my-tool" elevation="2">
     <v-card-item>
@@ -132,21 +114,11 @@ touch src/tools/my-tool/index.vue
 ```javascript
 {
     code: 'my-tool',
-        name
-:
-    '我的工具',
-        icon
-:
-    'mdi-toolbox',
-        description
-:
-    '工具描述',
-        enabled
-:
-    true,
-        component
-:
-    () => import('../tools/my-tool/index.vue')
+    name: '我的工具',
+    icon: 'mdi-toolbox',
+    description: '工具描述',
+    enabled: true,
+    component: () => import('../tools/my-tool/index.vue')
 }
 ```
 
@@ -183,22 +155,7 @@ touch src/tools/my-tool/index.vue
 
 ```css
 /* 标准缓动曲线 */
-transition: all
-
-0.4
-s
-
-cubic-bezier
-(
-0.16
-,
-1
-,
-0.3
-,
-1
-)
-;
+transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
 /* 弹簧效果 */
 @keyframes appleEasing {
@@ -213,20 +170,7 @@ cubic-bezier
 }
 
 /* 毛玻璃效果 */
-backdrop-filter:
-
-blur
-(
-20
-px
-
-)
-saturate
-(
-180
-%
-)
-;
+backdrop-filter: blur(20px) saturate(180%);
 ```
 
 #### ✅ **应用场景**
@@ -330,9 +274,9 @@ pnpm preview  # 预览构建结果
 
 ## 🎯 项目状态
 
-**✅ 架构完成** - 核心系统已实现  
-**✅ 文档完善** - 开发指南详细  
-**✅ 示例工具** - 计数器示例可用  
+**✅ 架构完成** - 核心系统已实现
+**✅ 文档完善** - 开发指南详细
+**✅ 示例工具** - 计数器示例可用
 **🚀 待扩展** - 等待更多工具添加
 
 ## 🤝 贡献指南

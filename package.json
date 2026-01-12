@@ -5,32 +5,22 @@
   "type": "module",
   "description": "Web Office Toolbox - 纯前端工具箱，支持PDF处理、图片转换等功能",
   "author": "Your Name <your.email@example.com>",
-  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
-    "electron:build": "vite build && vite build --config electron/vite.config.js && electron-builder",
-    "electron:pack": "vite build && vite build --config electron/vite.config.js && electron-builder --dir",
-    "build:all": "pnpm build && pnpm electron:build"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@mdi/js": "^7.4.47",
     "axios": "^1.13.2",
-    "cors": "^2.8.5",
-    "express": "^5.2.1",
     "file-saver": "^2.0.5",
-    "fs-extra": "^11.3.3",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "marked": "^17.0.1",
-    "multer": "^2.0.2",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "peerjs": "^1.5.5",
-    "sharp": "^0.34.5",
     "sortablejs": "^1.15.6",
     "vue": "^3.5.24",
     "vue-router": "^4.6.4",
@@ -39,55 +29,9 @@
     "vuetify": "^3.11.0-beta.1"
   },
   "devDependencies": {
-    "@electron/packager": "^19.0.1",
     "@vitejs/plugin-vue": "^6.0.1",
-    "concurrently": "^9.0.0",
-    "cross-env": "^10.1.0",
-    "electron": "^33.0.0",
-    "electron-builder": "^24.0.0",
-    "electron-packager": "^17.1.2",
     "sass-embedded": "^1.97.1",
     "vite": "^7.3.1",
-    "vite-plugin-vuetify": "^2.1.2",
-    "wait-on": "^7.0.0"
-  },
-  "build": {
-    "appId": "com.webofficetoolbox.app",
-    "productName": "Web Office Toolbox",
-    "directories": {
-      "output": "dist-build"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "electron/**/*"
-    ],
-    "extraMetadata": {
-      "main": "dist-electron/main.js"
-    },
-    "win": {
-      "target": [
-        "portable"
-      ],
-      "sign": null,
-      "signingHashAlgorithms": []
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "public/icon.icns"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Utility"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
+    "vite-plugin-vuetify": "^2.1.2"
   }
 }

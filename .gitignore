@@ -10,23 +10,11 @@ pnpm-debug.log*
 
 # Build outputs
 dist/
-dist-electron/
-dist-build/
 build/
 out/
 *.zip
 *.tar
 *.gz
-
-# Electron specific
-release/
-*.exe
-*.msi
-*.dmg
-*.AppImage
-*.asar
-electron/build/
-electron/dist/
 
 # Environment variables
 .env

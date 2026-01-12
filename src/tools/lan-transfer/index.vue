@@ -11,7 +11,7 @@
         </v-avatar>
         <div>
           <v-toolbar-title class="text-subtitle-1 font-weight-bold toolbar-title">
-            {{ currentUser.name || '我的设备' }}
+            {{ currentUser.name || '我的设备' }}(测试数据)
           </v-toolbar-title>
           <div class="text-caption text-medium-emphasis" style="font-size: 10px;">
             IP: {{ currentUser.ip || 'Scanning...' }} | {{ currentUser.status }}
@@ -21,7 +21,7 @@
 
       <v-spacer></v-spacer>
 
-      <v-btn icon="mdi-refresh" variant="text" @click="refreshUsers" :loading="isScanning"></v-btn>
+      <v-btn :loading="isScanning" icon="mdi-refresh" variant="text" @click="refreshUsers"></v-btn>
     </v-toolbar>
 
     <v-divider class="divider-opacity"></v-divider>
@@ -34,7 +34,7 @@
           <div v-if="appState === 'discovery'" key="discovery">
             <div class="mb-4 d-flex justify-space-between align-center">
               <h3 class="text-h6 font-weight-bold">局域网在线用户</h3>
-              <v-chip size="x-small" color="teal" variant="outlined">
+              <v-chip color="teal" size="x-small" variant="outlined">
                 {{ usersList.length }} 台设备在线
               </v-chip>
             </div>
@@ -46,13 +46,13 @@
             </div>
 
             <!-- 用户网格 -->
-            <v-row dense v-else>
+            <v-row v-else dense>
               <v-col
                   v-for="user in usersList"
                   :key="user.id"
                   cols="12"
-                  sm="6"
                   md="4"
+                  sm="6"
               >
                 <v-card
                     class="user-card transition-card"
@@ -76,8 +76,8 @@
 
                     <!-- 传输按钮 -->
                     <v-btn
-                        icon="mdi-file-send-outline"
                         color="teal-darken-1"
+                        icon="mdi-file-send-outline"
                         variant="text"
                     ></v-btn>
                   </div>
@@ -101,10 +101,10 @@
 
             <v-btn
                 block
-                size="large"
                 color="teal"
-                variant="flat"
                 prepend-icon="mdi-paperclip"
+                size="large"
+                variant="flat"
                 @click="triggerFileSelect"
             >
               选择文件发送
@@ -113,8 +113,8 @@
 
             <v-btn
                 class="mt-4"
-                variant="text"
                 color="grey"
+                variant="text"
                 @click="disconnect"
             >
               断开连接
