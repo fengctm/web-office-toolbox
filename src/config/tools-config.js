@@ -121,6 +121,16 @@ export const toolsConfig = [
         category: 'AI工具',
         tags: ['AI', '提示词', '生成'],
         component: () => import('../tools/ai-prompt-generator/index.vue')
+    },
+    {
+        code: 'color-generator',
+        name: '色彩生成器',
+        icon: 'mdi-palette',
+        description: '输入主色调，自动生成辅助色、活动色、禁用色、对立色、背景色等完整配色方案，支持RGB/Hex/HSL多种格式一键复制',
+        enabled: true,
+        category: '开发工具',
+        tags: ['颜色', '配色', '设计', '色彩', '生成器'],
+        component: () => import('../tools/color-generator/index.vue')
     }
 ]
 
