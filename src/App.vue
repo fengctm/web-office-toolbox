@@ -28,7 +28,7 @@
 
       <!-- GitHub 链接 -->
       <v-btn
-          href="https://github.com"
+          href="https://github.com/fengctm/web-office-toolbox"
           icon
           target="_blank"
           variant="text"

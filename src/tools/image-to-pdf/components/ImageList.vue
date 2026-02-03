@@ -55,7 +55,7 @@
                   variant="elevated"
                   color="error"
                   @click.stop="remove(index)"
-              />
+               />
             </div>
           </div>
         </div>

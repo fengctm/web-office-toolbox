@@ -82,16 +82,16 @@ export const toolsConfig = [
         tags: ['SVG', '图片', '转换'],
         component: () => import('../tools/svg-to-image/index.vue')
     },
-    {
-        code: 'lan-transfer',
-        name: '局域网互传',
-        icon: 'mdi-network',
-        description: '局域网内文件传输',
-        enabled: true,
-        category: '文件传输',
-        tags: ['局域网', '传输', '文件'],
-        component: () => import('../tools/lan-transfer/index.vue')
-    },
+    // {
+    //     code: 'lan-transfer',
+    //     name: '局域网互传',
+    //     icon: 'mdi-network',
+    //     description: '局域网内文件传输',
+    //     enabled: true,
+    //     category: '文件传输',
+    //     tags: ['局域网', '传输', '文件'],
+    //     component: () => import('../tools/lan-transfer/index.vue')
+    // },
     {
         code: 'image-split',
         name: '图片分割',
@@ -102,26 +102,26 @@ export const toolsConfig = [
         tags: ['图片', '分割', '切割'],
         component: () => import('../tools/image-split/index.vue')
     },
-    {
-        code: 'score-calculator',
-        name: '分数计算',
-        icon: 'mdi-calculator',
-        description: '支持分数运算、转换和化简',
-        enabled: true,
-        category: '数学计算',
-        tags: ['分数', '计算', '数学'],
-        component: () => import('../tools/score-calculator/index.vue')
-    },
-    {
-        code: 'ai-prompt-generator',
-        name: 'AI提示词生成器',
-        icon: 'mdi-robot',
-        description: '帮助生成高质量的AI提示词',
-        enabled: true,
-        category: 'AI工具',
-        tags: ['AI', '提示词', '生成'],
-        component: () => import('../tools/ai-prompt-generator/index.vue')
-    },
+    // {
+    //     code: 'score-calculator',
+    //     name: '分数计算',
+    //     icon: 'mdi-calculator',
+    //     description: '支持分数运算、转换和化简',
+    //     enabled: true,
+    //     category: '数学计算',
+    //     tags: ['分数', '计算', '数学'],
+    //     component: () => import('../tools/score-calculator/index.vue')
+    // },
+    // {
+    //     code: 'ai-prompt-generator',
+    //     name: 'AI提示词生成器',
+    //     icon: 'mdi-robot',
+    //     description: '帮助生成高质量的AI提示词',
+    //     enabled: true,
+    //     category: 'AI工具',
+    //     tags: ['AI', '提示词', '生成'],
+    //     component: () => import('../tools/ai-prompt-generator/index.vue')
+    // },
     {
         code: 'color-generator',
         name: '色彩生成器',
