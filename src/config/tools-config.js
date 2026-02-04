@@ -131,6 +131,16 @@ export const toolsConfig = [
         category: '开发工具',
         tags: ['颜色', '配色', '设计', '色彩', '生成器'],
         component: () => import('../tools/color-generator/index.vue')
+    },
+    {
+        code: 'base64-converter',
+        name: 'Base64转换器',
+        icon: 'mdi-code-braces',
+        description: '支持图片(JPEG/WebP/PNG)和文本转换为Base64格式，提供一键复制功能',
+        enabled: true,
+        category: '开发工具',
+        tags: ['Base64', '编码', '转换', '图片'],
+        component: () => import('../tools/base64-converter/index.vue')
     }
 ]
 
