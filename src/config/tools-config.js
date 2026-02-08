@@ -141,6 +141,16 @@ export const toolsConfig = [
         category: '开发工具',
         tags: ['Base64', '编码', '转换', '图片'],
         component: () => import('../tools/base64-converter/index.vue')
+    },
+    {
+        code: 'image-to-icon',
+        name: '图片转图标',
+        icon: 'mdi-image-size-select-large',
+        description: '将图片裁切为正方形并生成各种尺寸的图标，支持PNG、WebP、ICO、SVG格式，适用于网站favicon、iOS和Android应用图标',
+        enabled: true,
+        category: '图片处理',
+        tags: ['图标', '转换', '裁切', '多格式', 'favicon', 'iOS', 'Android'],
+        component: () => import('../tools/image-to-icon/index.vue')
     }
 ]
 

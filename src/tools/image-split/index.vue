@@ -21,10 +21,17 @@
       <div class="tool-layout">
         <!-- 控制区 -->
         <aside class="settings-panel">
-          <div v-if="!imageSrc" class="upload-trigger apple-transition" @click="triggerUpload">
-            <v-icon class="mb-4" color="teal-lighten-2" size="64">mdi-tray-arrow-up</v-icon>
-            <div class="text-h6">开始处理图片</div>
-            <div class="text-caption">点击或拖拽至此处</div>
+          <div v-if="!imageSrc" class="upload-trigger-wrapper">
+            <ImageUploader
+                :multiple="false"
+                :allow-animated="false"
+                :drag-enabled="false"
+                upload-text="开始处理图片"
+                upload-subtext="点击选择图片"
+                button-text="选择图片"
+                @files-selected="handleFileSelected"
+                @file-error="handleError"
+            />
           </div>
 
           <div v-else class="controls-content apple-fade-in">
@@ -131,6 +138,7 @@
 import {reactive, ref} from 'vue';
 import JSZip from 'jszip';
 import {saveAs} from 'file-saver';
+import ImageUploader from '@/components/ImageUploader.vue';
 
 const fileRef = ref(null);
 const imageSrc = ref(null);
@@ -142,6 +150,22 @@ const cols = ref(3);
 const imgDimensions = reactive({width: 0, height: 0});
 
 const triggerUpload = () => fileRef.value.click();
+
+const handleFileSelected = (files) => {
+  const file = files[0];
+  if (!file) return;
+  fileName.value = file.name.split('.')[0];
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    imageSrc.value = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+const handleError = (error) => {
+  console.error('文件上传错误:', error.message);
+  alert(error.message);
+};
 
 const onFileChange = (e) => {
   const file = e.target.files[0];
@@ -224,21 +248,11 @@ $apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 10;
 }
 
-.upload-trigger {
+.upload-trigger-wrapper {
   height: 100%;
-  border: 2px dashed rgba(var(--v-theme-teal), 0.3);
-  border-radius: 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  cursor: pointer;
-
-  &:hover {
-    background: rgba(0, 150, 136, 0.05);
-    border-color: #009688;
-    transform: scale(0.98);
-  }
 }
 
 // 预览舞台

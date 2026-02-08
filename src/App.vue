@@ -93,8 +93,11 @@ const notification = ref({
 // 主题切换
 const toggleTheme = () => {
   isDark.value = !isDark.value
-  theme.global.name.value = isDark.value ? 'dark' : 'light'
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  const newTheme = isDark.value ? 'dark' : 'light'
+
+  // 使用 Vuetify 3 推荐的 API
+  theme.global.name.value = newTheme
+  localStorage.setItem('theme', newTheme)
 
   // 更新HTML的data-theme属性，使CSS深色模式生效
   if (isDark.value) {
@@ -118,15 +121,20 @@ const showNotification = (message, color = 'info') => {
 // 初始化主题
 const initTheme = () => {
   const savedTheme = localStorage.getItem('theme')
+  let targetTheme
+
   if (savedTheme) {
     isDark.value = savedTheme === 'dark'
-    theme.global.name.value = savedTheme
+    targetTheme = savedTheme
   } else {
     // 自动检测系统主题
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     isDark.value = prefersDark
-    theme.global.name.value = prefersDark ? 'dark' : 'light'
+    targetTheme = prefersDark ? 'dark' : 'light'
   }
+
+  // 使用 Vuetify 3 推荐的 API
+  theme.global.name.value = targetTheme
 
   // 初始化时也设置data-theme属性
   if (isDark.value) {

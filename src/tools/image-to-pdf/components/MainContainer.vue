@@ -13,11 +13,17 @@
 
     <v-card-text>
       <!-- 文件上传区域 -->
-      <FileUpload
+      <ImageUploader
           ref="fileUploadRef"
-          :image-list="imageList"
-          @images-added="handleImagesAdded"
-          @error="handleError"
+          :multiple="true"
+          :max-files="100"
+          :allow-animated="false"
+          :drag-enabled="true"
+          :current-file-count="imageList.length"
+          upload-text="点击或拖拽图片到此处"
+          upload-subtext="支持 JPG, PNG, WEBP (可多选)"
+          @files-selected="handleFilesSelected"
+          @file-error="handleError"
       />
 
       <!-- 图片列表和排序区域 -->
@@ -69,7 +75,7 @@
 import {onUnmounted, reactive, ref} from 'vue'
 
 // 导入子组件
-import FileUpload from './FileUpload.vue'
+import ImageUploader from '@/components/ImageUploader.vue'
 import ImageList from './ImageList.vue'
 import PreviewExport from './PreviewExport.vue'
 import ExportProgressModal from './ExportProgressModal.vue'
@@ -110,7 +116,7 @@ const snackbar = ref({
 })
 
 // 处理图片添加
-const handleImagesAdded = (files) => {
+const handleFilesSelected = (files) => {
   files.forEach(file => {
     const reader = new FileReader()
     reader.onload = (e) => {
