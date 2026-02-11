@@ -24,36 +24,54 @@
         </v-btn>
       </div>
 
-      <v-row>
+      <TransitionGroup 
+        name="staggered-list" 
+        tag="div" 
+        class="v-row"
+      >
         <v-col
-          v-for="icon in group"
+          v-for="(icon, index) in group"
           :key="icon.fileName"
           cols="6"
           sm="4"
           md="3"
+          :style="{ transitionDelay: `${index * 50}ms` }"
         >
-          <v-card variant="outlined" class="icon-card">
-            <div class="icon-image-wrapper checkerboard-bg">
-              <v-img
-                :src="icon.dataUrl"
-                aspect-ratio="1"
-                cover
-              />
-            </div>
-            <v-card-text class="text-center pa-2">
-              <div class="text-caption font-weight-bold text-truncate">{{ icon.fileName }}</div>
-              <div class="text-caption text-grey-darken-1">{{ icon.size }}x{{ icon.size }}</div>
-            </v-card-text>
-            <v-btn
+          <v-hover v-slot="{ isHovering, props }">
+            <v-card 
+              v-bind="props"
+              :elevation="isHovering ? 8 : 2"
+              variant="elevated" 
+              class="icon-card rounded-lg"
               @click="downloadIcon(icon)"
-              icon="mdi-download"
-              size="small"
-              variant="text"
-              class="download-btn"
-            />
-          </v-card>
+            >
+              <div class="icon-image-wrapper checkerboard-bg pa-4 d-flex justify-center align-center">
+                <v-img
+                  :src="icon.dataUrl"
+                  :width="icon.size"
+                  :height="icon.size"
+                  max-width="100%"
+                  aspect-ratio="1"
+                  contain
+                  class="icon-img"
+                />
+              </div>
+              <v-divider></v-divider>
+              <v-card-text class="text-center pa-3">
+                <div class="text-body-2 font-weight-bold text-truncate mb-1">{{ icon.fileName }}</div>
+                <div class="text-caption text-medium-emphasis">{{ icon.size }}x{{ icon.size }} px</div>
+              </v-card-text>
+              <v-btn
+                icon="mdi-download"
+                size="small"
+                variant="flat"
+                class="download-btn"
+                :class="{ 'd-none': !isHovering }"
+              />
+            </v-card>
+          </v-hover>
         </v-col>
-      </v-row>
+      </TransitionGroup>
     </div>
 
     <!-- Empty State -->
@@ -103,12 +121,22 @@ function downloadFormat(format) {
 </script>
 
 <style scoped>
+
 .icon-card {
   position: relative;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+}
+
+.icon-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 25px 0 rgba(0, 0, 0, 0.1);
 }
 
 .icon-image-wrapper {
   position: relative;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
 }
 
 .checkerboard-bg {
@@ -136,7 +164,9 @@ function downloadFormat(format) {
   top: 8px;
   right: 8px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease-in-out;
+  background-color: rgba(var(--v-theme-surface), 0.8) !important;
+  backdrop-filter: blur(4px);
 }
 
 .icon-card:hover .download-btn {
@@ -145,5 +175,22 @@ function downloadFormat(format) {
 
 .empty-state {
   min-height: 300px;
+}
+
+/* Staggered List Transitions */
+.staggered-list-move,
+.staggered-list-enter-active,
+.staggered-list-leave-active {
+  transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+.staggered-list-enter-from,
+.staggered-list-leave-to {
+  opacity: 0;
+  transform: scale(0.9) translateY(30px);
+}
+
+.staggered-list-leave-active {
+  position: absolute;
 }
 </style>
