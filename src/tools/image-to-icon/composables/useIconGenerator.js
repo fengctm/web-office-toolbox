@@ -32,28 +32,17 @@ export function useIconGenerator() {
     if (radiusPercent <= 0) return canvas
 
     const radius = (radiusPercent / 100) * (canvas.width / 2)
-    const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = canvas.width
-    tempCanvas.height = canvas.height
-    const ctx = tempCanvas.getContext('2d')
-
-    // 绘制圆角路径
-    drawRoundedRect(ctx, 0, 0, tempCanvas.width, tempCanvas.height, radius)
-
-    // 使用 destination-in 混合模式裁剪
-    ctx.globalCompositeOperation = 'destination-in'
-    ctx.fillStyle = 'black'
-    ctx.fill()
-
-    // 合并原图和圆角蒙版
     const resultCanvas = document.createElement('canvas')
     resultCanvas.width = canvas.width
     resultCanvas.height = canvas.height
-    const resultCtx = resultCanvas.getContext('2d')
+    const ctx = resultCanvas.getContext('2d')
 
-    resultCtx.drawImage(canvas, 0, 0)
-    resultCtx.globalCompositeOperation = 'destination-in'
-    resultCtx.drawImage(tempCanvas, 0, 0)
+    // 绘制圆角路径并裁剪
+    drawRoundedRect(ctx, 0, 0, resultCanvas.width, resultCanvas.height, radius)
+    ctx.clip()
+
+    // 绘制原始图像
+    ctx.drawImage(canvas, 0, 0)
 
     return resultCanvas
   }
@@ -318,7 +307,7 @@ export function useIconGenerator() {
           // ICO 特殊处理，包含多个尺寸
           const icon = await generateSingleIcon(sourceCanvas, 0, format, {
             ...options,
-            icoSizes: sizes.slice(0, 6) // ICO 包含前 6 个尺寸
+            icoSizes: sizes // ICO 包含所有选中的尺寸
           })
           icons.push(icon)
           current++

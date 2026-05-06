@@ -43,23 +43,24 @@
               :elevation="isHovering ? 8 : 2"
               variant="elevated" 
               class="icon-card rounded-lg"
-              @click="downloadIcon(icon)"
             >
-              <div class="icon-image-wrapper checkerboard-bg pa-4 d-flex justify-center align-center">
+              <v-chip v-if="icon.format === 'ico'" size="x-small" color="primary" class="ico-badge">
+                多尺寸
+              </v-chip>
+
+              <div class="icon-image-wrapper checkerboard-bg">
                 <v-img
                   :src="icon.dataUrl"
-                  :width="icon.size"
-                  :height="icon.size"
-                  max-width="100%"
                   aspect-ratio="1"
-                  contain
-                  class="icon-img"
+                  cover
                 />
               </div>
-              <v-divider></v-divider>
-              <v-card-text class="text-center pa-3">
-                <div class="text-body-2 font-weight-bold text-truncate mb-1">{{ icon.fileName }}</div>
-                <div class="text-caption text-medium-emphasis">{{ icon.size }}x{{ icon.size }} px</div>
+              <v-card-text class="text-center pa-2">
+                <div class="text-caption font-weight-bold text-truncate">{{ icon.fileName }}</div>
+                <div v-if="icon.format === 'ico' && icon.sizes" class="text-caption text-grey-darken-1">
+                  {{ icon.sizes.length }} 个尺寸: {{ icon.sizes.sort((a,b) => a-b).join(', ') }}
+                </div>
+                <div v-else class="text-caption text-grey-darken-1">{{ icon.size }}x{{ icon.size }}</div>
               </v-card-text>
               <v-btn
                 icon="mdi-download"
@@ -67,6 +68,7 @@
                 variant="flat"
                 class="download-btn"
                 :class="{ 'd-none': !isHovering }"
+                @click="downloadIcon(icon)"
               />
             </v-card>
           </v-hover>
@@ -131,6 +133,13 @@ function downloadFormat(format) {
 .icon-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 25px 0 rgba(0, 0, 0, 0.1);
+}
+
+.ico-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
 }
 
 .icon-image-wrapper {
