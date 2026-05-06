@@ -82,6 +82,16 @@ export const toolsConfig = [
         tags: ['SVG', '图片', '转换'],
         component: () => import('../tools/svg-to-image/index.vue')
     },
+    {
+        code: 'image-compressor',
+        name: '图片压缩',
+        icon: 'mdi-image-minus',
+        description: '压缩图片文件大小，支持多种格式，本地处理保护隐私',
+        enabled: true,
+        category: '图片处理',
+        tags: ['图片', '压缩', '优化', '本地处理'],
+        component: () => import('../tools/image-compressor/index.vue')
+    },
     // {
     //     code: 'lan-transfer',
     //     name: '局域网互传',
