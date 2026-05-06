@@ -170,7 +170,7 @@ export const toolsConfig = [
         enabled: true,
         category: '图片处理',
         tags: ['图片', '压缩', '批量', '优化'],
-        component: () => import('../tools/image-compress/index.vue')
+        component: () => import('../tools/image-compressor/index.vue')
     }
 ]
 
