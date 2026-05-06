@@ -16,12 +16,12 @@
     />
 
     <!-- 状态 2: 加载中 -->
-    <div v-else-if="state === STATE.LOADING" class="loading-container">
+    <div v-if="state === STATE.LOADING" class="loading-container">
       <v-progress-circular indeterminate color="primary" size="64" />
       <div class="text-h6 mt-4">正在加载图片...</div>
     </div>
 
-    <!-- 状态 3: 裁切就绪 -->
+    <!-- 状态 3: 裁切就绪 (v-show 保持 DOM 给 CropperJS) -->
     <div v-show="state === STATE.READY" class="cropper-layout">
       <div class="cropper-wrapper elevation-2 bg-grey-lighten-4">
         <img
@@ -56,7 +56,7 @@
     </div>
 
     <!-- 状态 4: 错误 -->
-    <div v-else class="error-container">
+    <div v-if="state === STATE.ERROR" class="error-container">
       <v-icon size="64" color="error">mdi-alert-circle</v-icon>
       <div class="text-h6 mt-4">{{ errorMessage }}</div>
       <v-btn color="primary" class="mt-4" @click="resetToIdle">重新上传</v-btn>
