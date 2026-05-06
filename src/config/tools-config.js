@@ -161,16 +161,6 @@ export const toolsConfig = [
         category: '图片处理',
         tags: ['图标', '转换', '裁切', '多格式', 'favicon', 'iOS', 'Android'],
         component: () => import('../tools/image-to-icon/index.vue')
-    },
-    {
-        code: 'image-compress',
-        name: '图片压缩',
-        icon: 'mdi-file-image',
-        description: '智能压缩图片到指定大小，支持JPEG、PNG、WEBP格式，提供预设选项和百分比模式，支持批量处理',
-        enabled: true,
-        category: '图片处理',
-        tags: ['图片', '压缩', '批量', '优化'],
-        component: () => import('../tools/image-compressor/index.vue')
     }
 ]
 
