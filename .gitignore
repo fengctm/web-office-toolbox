@@ -123,6 +123,9 @@ Desktop.ini
 .LSOverride
 ._*
 
+# Local config
+.omc/
+
 # Linux
 *~
 .fuse_hidden*
