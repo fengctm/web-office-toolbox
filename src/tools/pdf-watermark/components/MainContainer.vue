@@ -1,6 +1,6 @@
 <template>
   <div class="main-container">
-    <!-- Loading 遮罩 (Apple 风格) -->
+    <!-- Loading 遮罩 -->
     <transition name="apple-loader">
       <div v-if="loading" class="pdf-loading-overlay">
         <div class="loader-content">
@@ -19,9 +19,9 @@
         </v-toolbar-title>
         <v-spacer></v-spacer>
 
-        <!-- 导出按钮直接放在工具栏 -->
+        <!-- 导出按钮 -->
         <v-btn
-            v-if="pdfState.file"
+            v-if="originalPdfBytes"
             :disabled="loading"
             :loading="loading"
             class="mr-2"
@@ -43,16 +43,14 @@
           location="left"
       >
         <div class="pa-4">
-          <SettingsPanel
-              v-model:config="config"
-          />
+          <SettingsPanel v-model:config="config"/>
         </div>
       </v-navigation-drawer>
 
       <!-- 主体内容 -->
       <v-main class="main-bg">
         <!-- 文件上传区域 -->
-        <div v-if="!pdfState.file" class="fill-height d-flex flex-column align-center justify-center">
+        <div v-if="!originalPdfBytes" class="fill-height d-flex flex-column align-center justify-center">
           <FileUpload
               label="选择或拖拽 PDF 文件"
               @reset="reset"
@@ -63,10 +61,10 @@
         <!-- PDF 预览区域 -->
         <div v-else class="preview-wrapper fill-height">
           <PreviewArea
-              :preview-files="pdfState.pages"
-              :watermark-config="config"
+              :preview-pages="previewPages"
+              :is-generating="isPreviewGenerating"
+              :total-pages="totalPages"
           />
-          <!-- 当需要密码时，PDFSecureUpload 会自动显示密码输入界面 -->
         </div>
       </v-main>
     </v-layout>
@@ -81,155 +79,127 @@
 </template>
 
 <script setup>
-import {onMounted, reactive, ref, useTemplateRef} from 'vue'
+import {onMounted, reactive, ref} from 'vue'
 import {PDFHelper} from '@/utils-scripts/PdfHelper'
-import {formatErrorMessage, showNotification} from '../utils/helpers'
-import FileUpload from "@/tools/pdf-watermark/components/FileUpload.vue";
-import SettingsPanel from "@/tools/pdf-watermark/components/SettingsPanel.vue";
-import PreviewArea from "@/tools/pdf-watermark/components/PreviewArea.vue";
-import NotificationSnackbar from "../../../components/NotificationSnackbar.vue";
-import {exportWatermarkedPDF} from "../../pdf-watermark/utils/pdf-processor.js";
+import {formatErrorMessage, showNotification} from '../utils/helpers.js'
+import {useWatermarkPreview} from '../utils/preview-renderer.js'
+import {exportWatermarkedPDF} from '../utils/pdf-processor.js'
+import FileUpload from './FileUpload.vue'
+import SettingsPanel from './SettingsPanel.vue'
+import PreviewArea from './PreviewArea.vue'
+import NotificationSnackbar from '../../../components/NotificationSnackbar.vue'
 
 // --- 状态变量 ---
 const loading = ref(false)
 const loadingText = ref('')
 const showSettings = ref(true)
 const isMobile = ref(window.innerWidth < 600)
-const fileUploadRef = useTemplateRef('fileUploadRef')
 
-// 核心 PDF 数据状态
-const pdfState = reactive({
-  file: null,
-  password: '',
-  pages: [],
-  isEncrypted: false
-})
-
+// 核心 PDF 数据
+const originalPdfBytes = ref(null) // 缓存原始 PDF 的 ArrayBuffer
+const pdfFileRef = ref(null) // 保留 file 引用，用于导出文件名
+const totalPages = ref(0)
 const notification = reactive({show: false, message: '', color: 'info'})
 
+// 水印配置
 const config = reactive({
   text: '内部文档 请勿外传',
-  font: 'Standard', fontSize: 30, color: '#ff0000',
-  opacity: 0.3, rotation: -45, gap: 150, offsetX: 0, offsetY: 0
+  fontSize: 30,
+  color: '#ff0000',
+  opacity: 0.3,
+  rotation: -45,
+  gap: 150,
+  offsetX: 0,
+  offsetY: 0
 })
 
-/**
- * 核心逻辑：处理 PDF 解析
- * 修复：确保 file 对象在闭包中始终可用
- */
-const runPdfPipeline = async (file, password = '') => {
-  if (!file) return;
+// 预览引擎
+const {previewPages, isGenerating: isPreviewGenerating, refresh} =
+    useWatermarkPreview(originalPdfBytes, config)
+
+// --- 文件处理 ---
+
+const handleFileSelected = async (result) => {
+  const {file, password} = result
 
   loading.value = true
-  loadingText.value = password ? '正在解密文档...' : '正在解析 PDF...'
+  loadingText.value = password ? '正在解密文档...' : '正在加载 PDF...'
 
   try {
-    // 1. 调用 PdfHelper 进行实例获取
-    const result = await PDFHelper.getPdfjsInstance(file, password)
+    // 1. 验证 PDF（使用 PdfHelper 支持加密文档）
+    const pdfInstance = await PDFHelper.getPdfjsInstance(file, password || '')
 
-    // 2. 检查加密状态
-    if (result.isEncrypted) {
-      pdfState.isEncrypted = true
-      // 这里的逻辑修复：如果已经传了 password 还是返回 isEncrypted，说明密码真的错了
-      if (password !== '') {
+    if (pdfInstance.isEncrypted) {
+      if (password) {
         showNotification(notification, '密码错误，请重新输入', 'error')
       } else {
         showNotification(notification, '该文档受密码保护', 'warning')
       }
-
       loading.value = false
-      return // 只有在需要密码时才中断
+      return
     }
 
-    // 3. 解析成功：走到这里说明密码正确或文档无加密
-    loadingText.value = '正在生成高清预览...'
-    const pages = await PDFHelper.renderToImages(file, password, 1.5)
+    // 2. 获取页数
+    const pages = await PDFHelper.renderToImages(file, password || '', 1.5)
+    totalPages.value = pages.length
 
-    // 4. 统一更新状态 (只有在解析成功后才更新 pages)
-    pdfState.password = password
-    pdfState.pages = pages
-    pdfState.isEncrypted = false
+    // 3. 缓存原始 PDF bytes（如果是加密文档，使用解密后的 bytes）
+    if (password) {
+      const exportResult = await PDFHelper.exportPDF(file, password)
+      originalPdfBytes.value = await exportResult.blob.arrayBuffer()
+    } else {
+      originalPdfBytes.value = await file.arrayBuffer()
+    }
 
-    showNotification(notification, `解析成功，共 ${pages.length} 页`, 'success')
+    pdfFileRef.value = file
+    showNotification(notification, `解析成功，共 ${totalPages.value} 页`, 'success')
   } catch (error) {
-    console.error('Pipeline Error:', error)
+    console.error('File loading error:', error)
     showNotification(notification, '文件加载失败: ' + formatErrorMessage(error), 'error')
-    reset() // 只有真正的系统错误才重置
+    reset()
   } finally {
     loading.value = false
   }
 }
-// --- 事件处理 ---
 
-// PDFSecureUpload 成功回调：文件已验证（可能已解密）
-const handleFileSelected = (result) => {
-  const {file, password} = result
+// --- 导出 ---
 
-  // 1. 保存文件和密码
-  pdfState.file = file
-  pdfState.password = password || ''
-
-  // 2. 开始解析流程
-  runPdfPipeline(file, password || '')
-}
-
-// 导出 PDF
 const exportPDF = async () => {
-  if (!pdfState.file) return
+  if (!originalPdfBytes.value) return
+
   loading.value = true
-  loadingText.value = '正在处理高保真 PDF...'
+  loadingText.value = '正在生成高保真 PDF...'
 
   try {
-    // 1. 获取脱密后的 PDF Blob
-    const exportResult = await PDFHelper.exportPDF(
-        pdfState.file,
-        pdfState.password
-    )
+    const finalBlob = await exportWatermarkedPDF(originalPdfBytes.value, config)
 
-    // 2. 注入水印
-    const finalBlob = await exportWatermarkedPDF(exportResult.blob, config)
-
-    // 3. 下载
     const url = URL.createObjectURL(finalBlob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${pdfState.file.name.replace('.pdf', '')}_水印版.pdf`
+    const fileName = pdfFileRef.value?.name?.replace('.pdf', '') || 'document'
+    a.download = `${fileName}_水印版.pdf`
     a.click()
     URL.revokeObjectURL(url)
 
     showNotification(notification, '导出成功！', 'success')
   } catch (error) {
-    console.error('Export Error:', error)
+    console.error('Export error:', error)
     showNotification(notification, '导出失败: ' + formatErrorMessage(error), 'error')
   } finally {
     loading.value = false
   }
 }
 
-/**
- * 辅助函数：统一错误处理
- */
-const handleGeneralError = (error, prefix = '加载失败') => {
-  console.error(error)
-  const msg = error.name === 'PasswordException' || error.message?.includes('password')
-      ? '密码验证失败，请重试'
-      : `${prefix}: ${formatErrorMessage(error)}`
-
-  showNotification(notification, msg, 'error')
-
-  // 如果不是密码错误导致的彻底失败，则重置
-  if (!pdfState.isEncrypted) reset()
-}
-
+// --- 重置 ---
 
 const reset = () => {
-  pdfState.file = null
-  pdfState.password = ''
-  pdfState.pages = []
-  pdfState.isEncrypted = false
+  originalPdfBytes.value = null
+  pdfFileRef.value = null
+  totalPages.value = 0
 }
 
 // --- 生命周期 ---
+
 onMounted(() => {
   window.addEventListener('resize', () => {
     isMobile.value = window.innerWidth < 600
@@ -255,9 +225,10 @@ onMounted(() => {
 
 .preview-wrapper {
   overflow: hidden;
+  position: relative;
 }
 
-/* Apple Loader 样式 */
+/* Loading 遮罩 */
 .pdf-loading-overlay {
   position: fixed;
   inset: 0;
@@ -284,65 +255,34 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* 深色模式适配 */
+/* 深色模式 */
 :root[data-theme="dark"] .main-bg {
   background-color: #121212;
 }
 
-/* 深色模式 Loading 遮罩 */
 :root[data-theme="dark"] .pdf-loading-overlay {
   background: rgba(0, 0, 0, 0.85);
 }
 
-/* 深色模式 Loading 文字 */
 :root[data-theme="dark"] .loading-text {
   color: #4dd0e1;
 }
 
-/* 深色模式下的应用栏 */
 :root[data-theme="dark"] .v-app-bar {
   background-color: #1e1e1e !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 深色模式下的抽屉背景 */
 :root[data-theme="dark"] .settings-drawer {
   background-color: #1e1e1e !important;
   border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 深色模式下的按钮文本 */
 :root[data-theme="dark"] .v-btn {
   color: #e0e0e0 !important;
 }
 
-/* 深色模式下的工具栏标题 */
 :root[data-theme="dark"] .v-toolbar-title {
   color: #ffffff !important;
-}
-
-/* 密码覆盖层样式 */
-.password-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 500px;
-  z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-:root[data-theme="dark"] .password-overlay {
-  background: rgba(30, 30, 30, 0.95);
-}
-
-/* 预览区域容器需要相对定位以支持绝对定位的覆盖层 */
-.preview-wrapper {
-  position: relative;
-  overflow: visible !important;
 }
 </style>

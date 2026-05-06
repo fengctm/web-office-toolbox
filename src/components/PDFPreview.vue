@@ -114,7 +114,6 @@
 <script setup>
 import {computed, onMounted, onUnmounted, reactive, ref, watchEffect} from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
-import {generatePreviewStyle} from '@/tools/pdf-watermark/utils/watermark-generator.js'
 
 // 配置 PDFJS Worker (使用您提供的版本对应的 CDN)
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
@@ -283,15 +282,37 @@ const renderPdfPageToImg = async (pdf, pageNum) => {
   return canvas.toDataURL('image/jpeg', 0.9)
 }
 
-// 【核心逻辑】生成动态水印样式 - 使用统一的水印生成器
+// 【核心逻辑】生成动态水印样式
 const watermarkStyle = computed(() => {
   const conf = props.watermarkConfig;
-  if (!conf.text) return {};
+  if (!conf || !conf.text) return {};
 
-  // 使用统一的水印生成器
-  const style = generatePreviewStyle(conf);
+  // 内联 SVG 水印生成（保持 PDFPreview 的独立性）
+  const escapedText = conf.text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
-  // 移动端适配：缩小水印显示
+  const size = conf.gap || 150;
+  const half = size / 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+    `<text x="${half}" y="${half}" fill="${conf.color || '#ff0000'}" font-size="${conf.fontSize || 30}" ` +
+    `font-family="Arial, sans-serif" fill-opacity="${conf.opacity || 0.3}" ` +
+    `text-anchor="middle" dominant-baseline="middle" ` +
+    `transform="rotate(${conf.rotation || -45} ${half} ${half})">${escapedText}</text></svg>`;
+
+  const encoded = btoa(unescape(encodeURIComponent(svg)));
+  const svgUrl = `data:image/svg+xml;base64,${encoded}`;
+
+  const style = {
+    backgroundImage: `url("${svgUrl}")`,
+    backgroundRepeat: 'repeat',
+    backgroundPosition: `${conf.offsetX || 0}px ${conf.offsetY || 0}px`,
+    backgroundSize: 'auto'
+  };
+
+  // 移动端适配
   if (isMobile.value) {
     style.backgroundSize = `${conf.gap * 0.5}px`;
   }

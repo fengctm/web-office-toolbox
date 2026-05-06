@@ -12,26 +12,13 @@
           clearable
       ></v-text-field>
 
-      <v-row dense>
-        <v-col cols="6">
-          <v-select
-              v-model="config.font"
-              :items="['Standard', 'Serif', 'Monospace']"
-              label="字体"
-              variant="outlined"
-              density="comfortable"
-          ></v-select>
-        </v-col>
-        <v-col cols="6">
-          <v-text-field
-              v-model.number="config.color"
-              label="颜色"
-              type="color"
-              variant="outlined"
-              density="comfortable"
-          ></v-text-field>
-        </v-col>
-      </v-row>
+      <v-text-field
+          v-model="config.color"
+          label="颜色"
+          type="color"
+          variant="outlined"
+          density="comfortable"
+      ></v-text-field>
 
       <div class="text-overline mt-4 mb-2 text-teal">布局调节</div>
 
@@ -90,8 +77,6 @@
 </template>
 
 <script setup>
-import {computed} from "vue";
-
 const props = defineProps({
   config: {
     type: Object,
@@ -102,6 +87,7 @@ const props = defineProps({
 const emit = defineEmits(['update:config'])
 
 // 自动更新配置（使用 v-model）
+import {computed} from 'vue'
 const config = computed({
   get: () => props.config,
   set: (value) => emit('update:config', value)

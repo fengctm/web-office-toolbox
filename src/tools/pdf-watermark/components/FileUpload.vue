@@ -11,7 +11,7 @@
 import {defineEmits, defineProps} from 'vue'
 import PDFSecureUpload from '@/components/PDFSecureUpload.vue'
 
-const emit = defineEmits(['file-loaded', 'password-submitted', 'error', 'reset'])
+const emit = defineEmits(['success', 'file-loaded', 'password-submitted', 'error', 'reset'])
 
 const props = defineProps({
   label: {
@@ -22,6 +22,8 @@ const props = defineProps({
 
 // PDFSecureUpload 的 success 事件返回 { file, password }
 const handleSuccess = (result) => {
+  // 转发完整结果，供 MainContainer 使用
+  emit('success', result)
   emit('file-loaded', result.file)
   if (result.password) {
     emit('password-submitted', result.password)
