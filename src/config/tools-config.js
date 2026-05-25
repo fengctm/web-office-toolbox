@@ -161,6 +161,16 @@ export const toolsConfig = [
         category: '图片处理',
         tags: ['图标', '转换', '裁切', '多格式', 'favicon', 'iOS', 'Android'],
         component: () => import('../tools/image-to-icon/index.vue')
+    },
+    {
+        code: 'image-converter',
+        name: '图片格式转换',
+        icon: 'mdi-image-sync',
+        description: '基于 Rust + WebAssembly 实现真正的像素级编解码转换，支持几乎所有常见图片格式转为 JPEG/PNG/WebP，支持批量转换',
+        enabled: true,
+        category: '图片处理',
+        tags: ['图片', '格式', '转换', 'WebAssembly', 'Rust', 'JPEG', 'PNG', 'WebP', '批量'],
+        component: () => import('../tools/image-converter/index.vue')
     }
 ]
 

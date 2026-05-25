@@ -36,5 +36,6 @@ export default defineConfig({
         alias: {
             '@': '/src'
         }
-    }
+    },
+    assetsInclude: ['**/*.wasm']
 })
