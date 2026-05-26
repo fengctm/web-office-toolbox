@@ -92,6 +92,13 @@ export function useWasmConverter() {
     loading.value = true
     error.value = null
     try {
+      // WebP: 使用 Canvas API 实现有损编码
+      // image crate 0.25 的 WebP 编码器仅支持无损模式，quality 参数无法生效
+      if (format === 'webp') {
+        return await convertWebP(file, quality)
+      }
+
+      // JPEG / PNG: 使用 WASM 编码
       const buffer = await file.arrayBuffer()
       const inputBytes = new Uint8Array(buffer)
       const bgColorArray = new Uint8Array(bgColor)
@@ -114,6 +121,56 @@ export function useWasmConverter() {
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * WebP 有损编码（通过 Canvas API）
+   *
+   * image crate 0.25 的 WebP 编码器仅支持无损模式，quality 参数完全无效。
+   * 使用浏览器 Canvas API 的 toBlob 实现有损 WebP 编码，支持质量参数控制。
+   * 对于不支持 Canvas WebP 编码的浏览器（如 Safari）或不支持的输入格式，
+   * 回退到 WASM 无损编码。
+   */
+  async function convertWebP(file, quality) {
+    try {
+      return await convertWebPCanvas(file, quality)
+    } catch {
+      // 回退到 WASM 无损编码
+      const buffer = await file.arrayBuffer()
+      const inputBytes = new Uint8Array(buffer)
+      const bgColorArray = new Uint8Array([255, 255, 255])
+      const outputBytes = wasmModule.convert_image(inputBytes, 'webp', quality, bgColorArray)
+
+      const raw = wasmModule.decode_image(inputBytes)
+      const width = raw.width()
+      const height = raw.height()
+      raw.free()
+
+      return { blob: new Blob([outputBytes], { type: 'image/webp' }), width, height }
+    }
+  }
+
+  /**
+   * 使用 Canvas API 进行 WebP 有损编码
+   */
+  async function convertWebPCanvas(file, quality) {
+    const bitmap = await createImageBitmap(file)
+    const canvas = document.createElement('canvas')
+    canvas.width = bitmap.width
+    canvas.height = bitmap.height
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(bitmap, 0, 0)
+    bitmap.close()
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => b ? resolve(b) : reject(new Error('WebP 编码失败: 浏览器可能不支持 WebP 编码')),
+        'image/webp',
+        quality / 100
+      )
+    })
+
+    return { blob, width: canvas.width, height: canvas.height }
   }
 
   /**
