@@ -126,6 +126,13 @@ Desktop.ini
 # Local config
 .omc/
 
+# Editor tooling
+.trae/
+
+# Rust / WASM build outputs
+target/
+wasm/image-converter-wasm/pkg/
+
 # Linux
 *~
 .fuse_hidden*
