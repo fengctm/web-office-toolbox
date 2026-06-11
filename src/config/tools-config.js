@@ -161,6 +161,16 @@ export const toolsConfig = [
         category: '图片处理',
         tags: ['图标', '转换', '裁切', '多格式', 'favicon', 'iOS', 'Android'],
         component: () => import('../tools/image-to-icon/index.vue')
+    },
+    {
+        code: 'code-analyzer',
+        name: '代码项目分析',
+        icon: 'mdi-file-tree-outline',
+        description: '分析代码项目结构，统计各类型文件行数与占比，支持文件树、图表可视化、导出报告。纯前端处理，代码不会上传到服务器',
+        enabled: true,
+        category: '开发工具',
+        tags: ['代码', '分析', '统计', '行数', '文件树', '项目'],
+        component: () => import('../tools/code-analyzer/index.vue')
     }
 ]
 
