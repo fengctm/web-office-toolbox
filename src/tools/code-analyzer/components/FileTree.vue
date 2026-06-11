@@ -17,8 +17,10 @@
           :info="entry.info"
           :depth="0"
           :expanded-ids="expandedIds"
+          :exclusions="exclusions"
           @toggle="handleToggle"
           @copy="(text) => $emit('copy', text)"
+          @toggle-exclude="(name) => $emit('toggle-exclude', name)"
         />
       </template>
       <div v-else class="text-center text-medium-emphasis py-4">暂无文件数据</div>
@@ -32,9 +34,10 @@ import TreeNode from './TreeNode.vue'
 
 const props = defineProps({
   treeData: { type: Object, default: () => ({}) },
+  exclusions: { type: Array, default: () => [] },
 })
 
-defineEmits(['copy'])
+defineEmits(['copy', 'toggle-exclude'])
 
 const expandedIds = ref(new Set())
 const nodeIdCounter = ref(0)

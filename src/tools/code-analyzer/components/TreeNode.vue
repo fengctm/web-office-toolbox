@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{ 'excluded-node': isExcluded }">
     <div
       class="tree-node d-flex align-center"
       :style="{ paddingLeft: (depth * 20 + 8) + 'px' }"
@@ -11,10 +11,32 @@
       <v-icon v-else size="small" class="mr-1" :color="fileIconColor">
         {{ fileIcon }}
       </v-icon>
-      <span class="tree-name text-body-2">{{ name }}</span>
+      <span class="tree-name text-body-2" :class="{ 'text-decoration-line-through': isExcluded }">
+        {{ name }}
+      </span>
+      <v-icon
+        v-if="isExcluded"
+        size="x-small"
+        color="error"
+        class="mr-1"
+        :title="'已排除: ' + name"
+      >
+        mdi-eye-off
+      </v-icon>
       <span class="tree-lines text-caption text-medium-emphasis ml-auto">
         {{ (info._lines || 0).toLocaleString('zh-CN') }}
       </span>
+      <v-btn
+        icon
+        size="x-small"
+        variant="text"
+        class="ml-1 exclude-btn"
+        :color="isExcluded ? 'error' : 'grey'"
+        @click.stop="$emit('toggle-exclude', name)"
+        :title="isExcluded ? '取消排除 ' + name : '排除 ' + name"
+      >
+        <v-icon size="small">{{ isExcluded ? 'mdi-eye' : 'mdi-eye-off' }}</v-icon>
+      </v-btn>
     </div>
     <div v-if="isDir && isExpanded">
       <TreeNode
@@ -24,8 +46,10 @@
         :info="child"
         :depth="depth + 1"
         :expanded-ids="expandedIds"
+        :exclusions="exclusions"
         @toggle="(id) => $emit('toggle', id)"
         @copy="(text) => $emit('copy', text)"
+        @toggle-exclude="(n) => $emit('toggle-exclude', n)"
       />
     </div>
   </div>
@@ -39,15 +63,18 @@ const props = defineProps({
   info: { type: Object, required: true },
   depth: { type: Number, default: 0 },
   expandedIds: { type: Object, required: true },
+  exclusions: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['toggle', 'copy'])
+const emit = defineEmits(['toggle', 'copy', 'toggle-exclude'])
 
 const nodeId = ref('')
 
 const isDir = computed(() => !props.info._file)
 
 const isExpanded = computed(() => props.expandedIds.has(nodeId.value))
+
+const isExcluded = computed(() => props.exclusions.includes(props.name))
 
 const sortedChildren = computed(() => {
     if (!isDir.value) return {}
@@ -134,5 +161,22 @@ onMounted(() => {
 }
 .expand-icon.expanded {
     transform: rotate(90deg);
+}
+
+/* 排除状态样式 */
+.excluded-node > .tree-node {
+    opacity: 0.45;
+}
+.excluded-node > .tree-node:hover {
+    opacity: 0.7;
+}
+
+/* 排除按钮始终可见 */
+.exclude-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.tree-node:hover .exclude-btn {
+    opacity: 1;
 }
 </style>

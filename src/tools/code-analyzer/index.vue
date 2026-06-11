@@ -91,7 +91,9 @@
         <v-col cols="12" md="6">
           <FileTree
             :tree-data="fileTree"
+            :exclusions="analyzer.exclusions.value"
             @copy="copyToClipboard"
+            @toggle-exclude="handleToggleExclude"
           />
         </v-col>
         <v-col cols="12" md="6">
@@ -207,6 +209,17 @@ function handleAddExclusion(val) {
 function handleRemoveExclusion(index) {
     const removed = analyzer.removeExclusion(index)
     if (removed) showMsg(`已移除排除规则: ${removed}`)
+}
+
+function handleToggleExclude(name) {
+    const idx = analyzer.exclusions.value.indexOf(name)
+    if (idx >= 0) {
+        analyzer.removeExclusion(idx)
+        showMsg(`已取消排除: ${name}`)
+    } else {
+        analyzer.addExclusion(name)
+        showMsg(`已添加排除: ${name}`)
+    }
 }
 
 function handleExport() {

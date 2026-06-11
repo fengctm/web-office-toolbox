@@ -74,8 +74,7 @@ const workerCode = `
 self.onmessage = async function(e) {
     const { type, data } = e.data;
     if (type === 'scan') {
-        const { dirHandle, exclusions, supportedExts } = data;
-        const exclusionSet = new Set(exclusions);
+        const { dirHandle, supportedExts } = data;
         const extSet = new Set(supportedExts);
         const results = [];
         let fileCount = 0;
@@ -98,8 +97,6 @@ self.onmessage = async function(e) {
                         self.postMessage({ type: 'progress', data: { fileCount, scanned: results.length } });
                     }
                 } else if (child.kind === 'directory') {
-                    if (exclusionSet.has(name) || exclusionSet.has(name.toLowerCase())) continue;
-                    if (name.startsWith('.') && name !== '.env' && exclusionSet.has(name)) continue;
                     await walk(child, path ? path + '/' + name : name);
                 }
             }
@@ -129,8 +126,13 @@ export function useCodeAnalyzer() {
     const matchedFileCount = ref(0)
 
     const results = ref(null)       // { results, totalFiles, totalLines, elapsed, byExt }
-    const allFiles = ref([])
+    const allFiles = ref([])         // 当前过滤后的文件列表
     const exclusions = ref([...DEFAULT_EXCLUSIONS])
+
+    // 原始扫描数据（未过滤），用于排除规则变更时即时重算
+    let rawFiles = []
+    let scanTotalFiles = 0
+    let scanElapsed = 0
 
     let worker = null
 
@@ -142,6 +144,34 @@ export function useCodeAnalyzer() {
         }
     }
 
+    // 根据排除规则过滤文件并重算统计
+    function recompute() {
+        if (!rawFiles.length) return
+
+        const exclusionSet = new Set(exclusions.value)
+        const filtered = rawFiles.filter(f => {
+            const parts = f.path.split('/')
+            // 检查路径中任意一段目录名是否命中排除规则
+            for (const part of parts) {
+                if (exclusionSet.has(part) || exclusionSet.has(part.toLowerCase())) return false
+            }
+            return true
+        })
+
+        const sorted = filtered.sort((a, b) => b.lines - a.lines)
+        const totalLines = filtered.reduce((s, f) => s + f.lines, 0)
+
+        const byExt = {}
+        for (const f of filtered) {
+            if (!byExt[f.ext]) byExt[f.ext] = { count: 0, lines: 0 }
+            byExt[f.ext].count++
+            byExt[f.ext].lines += f.lines
+        }
+
+        allFiles.value = sorted
+        results.value = { results: sorted, totalFiles: scanTotalFiles, totalLines, elapsed: scanElapsed, byExt }
+    }
+
     // 排除规则操作
     function addExclusion(rule) {
         const val = rule.trim()
@@ -149,6 +179,7 @@ export function useCodeAnalyzer() {
         if (!exclusions.value.includes(val)) {
             exclusions.value.push(val)
             saveExclusionsToDB([...exclusions.value])
+            recompute()
             return true
         }
         return false
@@ -157,6 +188,7 @@ export function useCodeAnalyzer() {
     function removeExclusion(index) {
         const removed = exclusions.value.splice(index, 1)
         saveExclusionsToDB([...exclusions.value])
+        recompute()
         return removed[0]
     }
 
@@ -209,7 +241,6 @@ export function useCodeAnalyzer() {
                 type: 'scan',
                 data: {
                     dirHandle,
-                    exclusions: [...exclusions.value],
                     supportedExts: [...SUPPORTED_EXTENSIONS],
                 }
             })
@@ -218,21 +249,12 @@ export function useCodeAnalyzer() {
 
     // 处理结果
     function processResults(rawResults, totalFiles, elapsed) {
-        const sorted = rawResults.sort((a, b) => b.lines - a.lines)
-        const totalLines = rawResults.reduce((s, f) => s + f.lines, 0)
-
-        // 按扩展名分组
-        const byExt = {}
-        for (const f of rawResults) {
-            if (!byExt[f.ext]) byExt[f.ext] = { count: 0, lines: 0 }
-            byExt[f.ext].count++
-            byExt[f.ext].lines += f.lines
-        }
-
-        const data = { results: sorted, totalFiles, totalLines, elapsed, byExt }
-        allFiles.value = sorted
-        results.value = data
-        return data
+        // 保存原始数据，排除规则变更时用于即时重算
+        rawFiles = rawResults
+        scanTotalFiles = totalFiles
+        scanElapsed = elapsed
+        recompute()
+        return results.value
     }
 
     // 构建文件树
@@ -241,12 +263,15 @@ export function useCodeAnalyzer() {
         for (const f of files) {
             const parts = f.path.split('/')
             let node = tree
+            let pathSoFar = ''
             for (let i = 0; i < parts.length - 1; i++) {
-                if (!node[parts[i]]) node[parts[i]] = { _children: {}, _lines: 0 }
+                pathSoFar += (pathSoFar ? '/' : '') + parts[i]
+                if (!node[parts[i]]) node[parts[i]] = { _children: {}, _lines: 0, _fullPath: pathSoFar }
                 node[parts[i]]._lines += f.lines
                 node = node[parts[i]]._children
             }
-            node[parts[parts.length - 1]] = { _file: true, _lines: f.lines, _ext: f.ext }
+            const fileName = parts[parts.length - 1]
+            node[fileName] = { _file: true, _lines: f.lines, _ext: f.ext, _fullPath: f.path }
         }
         return tree
     }
@@ -297,6 +322,9 @@ export function useCodeAnalyzer() {
         cancelScan()
         results.value = null
         allFiles.value = []
+        rawFiles = []
+        scanTotalFiles = 0
+        scanElapsed = 0
         progressText.value = ''
         scannedFileCount.value = 0
         matchedFileCount.value = 0

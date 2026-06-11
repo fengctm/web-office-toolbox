@@ -3,7 +3,7 @@
     <v-card-title class="text-subtitle-1 font-weight-medium">排除规则</v-card-title>
     <v-divider />
     <v-card-text>
-      <p class="text-caption text-medium-emphasis mb-3">以下目录/文件将在扫描时被跳过：</p>
+      <p class="text-caption text-medium-emphasis mb-3">以下目录/文件将被排除在统计之外：</p>
 
       <div class="d-flex flex-wrap ga-2 mb-4">
         <v-chip
@@ -33,7 +33,7 @@
         </v-btn>
       </div>
 
-      <p class="text-caption text-medium-emphasis mt-2">更改排除规则后，需要重新扫描才能生效。</p>
+      <p class="text-caption text-medium-emphasis mt-2">更改排除规则后，统计结果会立即更新。</p>
     </v-card-text>
   </v-card>
 </template>
