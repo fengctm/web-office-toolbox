@@ -181,6 +181,16 @@ export const toolsConfig = [
         category: '开发工具',
         tags: ['代码', '分析', '统计', '行数', '文件树', '项目'],
         component: () => import('../tools/code-analyzer/index.vue')
+    },
+    {
+        code: 'character-random-generator',
+        name: '字符随机生成器',
+        icon: 'mdi-shuffle-variant',
+        description: '生成随机字符序列，支持数字、字母、大小写、简单/复杂符号组合，内置验证码和密码预设，可用于生成强密码和验证码',
+        enabled: true,
+        category: '开发工具',
+        tags: ['随机', '密码', '验证码', '生成器', '安全'],
+        component: () => import('../tools/character-random-generator/index.vue')
     }
 ]
 
