@@ -6,7 +6,7 @@
         字符随机生成器
       </v-card-title>
       <v-card-subtitle>
-        生成随机字符序列，支持数字、字母、大小写、符号组合，内置验证码和密码预设
+        生成随机字符序列，支持数字、大写字母、小写字母、简单/复杂符号组合，内置验证码和密码预设
       </v-card-subtitle>
     </v-card-item>
 
@@ -66,24 +66,15 @@
             type="number"
             variant="outlined"
             density="comfortable"
-            :min="1"
+            :min="minLength"
             :max="128"
-            hide-details
+            :hint="`当前至少需要 ${minLength} 位`"
+            persistent-hint
           />
         </v-col>
 
-        <!-- 字母大小写 -->
-        <v-col cols="12" sm="6" md="3">
-          <v-select
-            v-model="letterCase"
-            label="字母大小写"
-            variant="outlined"
-            density="comfortable"
-            :items="caseOptions"
-            :disabled="!letters"
-            hide-details
-          />
-        </v-col>
+        <!-- 占位列：保持布局节奏（原"字母大小写"位置已删除）-->
+        <v-col cols="12" sm="6" md="3" />
       </v-row>
 
       <!-- 字符类型开关 -->
@@ -99,8 +90,17 @@
         </v-col>
         <v-col cols="6" sm="4" md="3">
           <v-switch
-            v-model="letters"
-            label="混合字母"
+            v-model="upperLetters"
+            label="大写字母"
+            color="teal"
+            density="compact"
+            hide-details
+          />
+        </v-col>
+        <v-col cols="6" sm="4" md="3">
+          <v-switch
+            v-model="lowerLetters"
+            label="小写字母"
             color="teal"
             density="compact"
             hide-details
@@ -183,39 +183,40 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { generateRandomString, countSelectedCategories } from './utils/random-string.js'
 
 // --- 预设定义 ---
 const presets = {
   'simple-captcha': {
     length: 4,
     numbers: true,
-    letters: true,
-    letterCase: 'mixed',
+    upperLetters: true,
+    lowerLetters: true,
     simpleSymbols: false,
     complexSymbols: false
   },
   'complex-captcha': {
     length: 6,
     numbers: true,
-    letters: true,
-    letterCase: 'mixed',
+    upperLetters: true,
+    lowerLetters: true,
     simpleSymbols: true,
     complexSymbols: false
   },
   'simple-password': {
     length: 10,
     numbers: true,
-    letters: true,
-    letterCase: 'lower',
+    upperLetters: false,
+    lowerLetters: true,
     simpleSymbols: true,
     complexSymbols: false
   },
   'complex-password': {
     length: 16,
     numbers: true,
-    letters: true,
-    letterCase: 'mixed',
+    upperLetters: true,
+    lowerLetters: true,
     simpleSymbols: true,
     complexSymbols: false
   }
@@ -224,56 +225,33 @@ const presets = {
 // --- 响应式状态 ---
 const length = ref(8)
 const numbers = ref(true)
-const letters = ref(true)
-const letterCase = ref('mixed')
+const upperLetters = ref(true)
+const lowerLetters = ref(true)
 const simpleSymbols = ref(false)
 const complexSymbols = ref(false)
 const output = ref('')
 const message = ref('')
 const messageType = ref('info')
 
-const caseOptions = [
-  { title: '混合大小写', value: 'mixed' },
-  { title: '大写', value: 'upper' },
-  { title: '小写', value: 'lower' }
-]
+// --- 当前选项汇总（用于 utils） ---
+const buildOptions = () => ({
+  numbers: numbers.value,
+  upperLetters: upperLetters.value,
+  lowerLetters: lowerLetters.value,
+  simpleSymbols: simpleSymbols.value,
+  complexSymbols: complexSymbols.value
+})
 
-// --- 字符集定义 ---
-const CHAR_SETS = {
-  numbers: '0123456789',
-  upperLetters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  lowerLetters: 'abcdefghijklmnopqrstuvwxyz',
-  simpleSymbols: '!@#$%^&*()-_=+',
-  complexSymbols: '~`!@#$%^&*()_-+={}[]|:;"\'<>,.?/\\'
-}
+// --- 动态最小长度（已选类别数）---
+const minLength = computed(() => Math.max(1, countSelectedCategories(buildOptions())))
 
-// 简单符号中需要排除的字符（本身已在 simpleSymbols 中，complex 是 superset）
-const buildCharset = () => {
-  let charset = ''
-  if (numbers.value) charset += CHAR_SETS.numbers
-  if (letters.value) {
-    if (letterCase.value === 'upper') {
-      charset += CHAR_SETS.upperLetters
-    } else if (letterCase.value === 'lower') {
-      charset += CHAR_SETS.lowerLetters
-    } else {
-      charset += CHAR_SETS.upperLetters + CHAR_SETS.lowerLetters
-    }
-  }
-  if (complexSymbols.value) {
-    charset += CHAR_SETS.complexSymbols
-  } else if (simpleSymbols.value) {
-    charset += CHAR_SETS.simpleSymbols
-  }
-  return charset
-}
-
-// --- 随机生成 ---
-const generateRandom = (length, charset) => {
-  const arr = new Uint32Array(length)
-  crypto.getRandomValues(arr)
-  return Array.from(arr, n => charset[n % charset.length]).join('')
-}
+// --- 符号类别互斥（保留原行为：complex 优先于 simple）---
+watch(complexSymbols, (v) => {
+  if (v && simpleSymbols.value) simpleSymbols.value = false
+})
+watch(simpleSymbols, (v) => {
+  if (v && complexSymbols.value) complexSymbols.value = false
+})
 
 // --- 消息 ---
 const showMessage = (text, type = 'info') => {
@@ -286,20 +264,31 @@ const showMessage = (text, type = 'info') => {
 
 // --- 操作 ---
 const handleGenerate = () => {
-  const len = length.value
+  const len = Number(length.value)
+  const opts = buildOptions()
+  const selected = countSelectedCategories(opts)
+
+  if (selected === 0) {
+    showMessage('请至少选择一种字符类型', 'warning')
+    return
+  }
+
   if (!len || len < 1 || len > 128) {
     showMessage('请输入有效的字符长度 (1-128)', 'warning')
     return
   }
 
-  const charset = buildCharset()
-  if (!charset) {
-    showMessage('请至少选择一种字符类型', 'warning')
+  // R3：长度必须 >= 已选类别数（严格拒绝，不自动改 length）
+  if (len < selected) {
+    showMessage(
+      `已勾选 ${selected} 种字符类型，长度不能小于 ${selected}`,
+      'warning'
+    )
     return
   }
 
   try {
-    output.value = generateRandom(len, charset)
+    output.value = generateRandomString(len, opts)
     showMessage('生成成功', 'success')
   } catch (error) {
     showMessage('生成失败: ' + error.message, 'error')
@@ -312,8 +301,8 @@ const applyPreset = (key) => {
 
   length.value = preset.length
   numbers.value = preset.numbers
-  letters.value = preset.letters
-  letterCase.value = preset.letterCase
+  upperLetters.value = preset.upperLetters
+  lowerLetters.value = preset.lowerLetters
   simpleSymbols.value = preset.simpleSymbols
   complexSymbols.value = preset.complexSymbols
 
