@@ -129,6 +129,9 @@ Desktop.ini
 # Editor tooling
 .trae/
 
+# WorkBuddy workspace data
+.workbuddy/
+
 # Rust / WASM build outputs
 target/
 wasm/image-converter-wasm/pkg/

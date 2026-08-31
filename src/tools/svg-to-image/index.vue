@@ -1,83 +1,156 @@
 <template>
-  <v-card class="svg-to-image-app" elevation="0">
-    <!-- 顶部工具栏：Apple 风格的模糊背景 -->
-    <v-toolbar class="app-bar-blur" flat>
-      <v-icon class="ml-4 icon-bounce" color="teal">mdi-svg</v-icon>
-      <v-toolbar-title class="text-subtitle-1 font-weight-bold toolbar-title">
-        SVG 图像转换器
+  <v-card
+    class="svg-to-image-app"
+    :class="{ 'is-workbench-maximized': isWorkbenchMaximized }"
+    elevation="2"
+  >
+    <!-- 顶部主工具栏 -->
+    <v-toolbar class="app-bar-blur" density="compact" flat>
+      <v-icon class="ml-3 icon-bounce" color="teal">mdi-svg</v-icon>
+      <v-toolbar-title class="text-subtitle-2 font-weight-bold toolbar-title ml-2">
+        SVG 可视化工作台
       </v-toolbar-title>
+
       <v-spacer></v-spacer>
 
       <!-- 快速操作按钮组 -->
-      <v-btn
-          class="btn-micro-interaction"
-          icon="mdi-help-circle-outline"
-          variant="text"
-          @click="handleHelp"
-      ></v-btn>
+      <div class="d-flex align-center gap-1 mr-2">
+        <!-- 布局方向切换（左右 / 上下） -->
+        <v-tooltip
+          :text="layoutDirection === 'horizontal' ? '切换为上下分栏布局' : '切换为左右分栏布局'"
+          location="bottom"
+        >
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              size="small"
+              variant="text"
+              :icon="layoutDirection === 'horizontal' ? 'mdi-view-split-horizontal' : 'mdi-view-split-vertical'"
+              @click="toggleLayoutDirection"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+
+        <!-- 沉浸工作台铺满视口 / 退出 -->
+        <v-tooltip
+          :text="isWorkbenchMaximized ? '退出最大化工作台' : '工作台最大化（铺满视口）'"
+          location="bottom"
+        >
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              size="small"
+              variant="text"
+              :icon="isWorkbenchMaximized ? 'mdi-arrow-collapse-all' : 'mdi-arrow-expand-all'"
+              :color="isWorkbenchMaximized ? 'teal' : undefined"
+              @click="toggleWorkbenchMaximized"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+
+        <!-- 帮助说明 -->
+        <v-tooltip text="功能说明与使用帮助" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              size="small"
+              icon="mdi-help-circle-outline"
+              variant="text"
+              @click="handleHelp"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+      </div>
     </v-toolbar>
 
     <v-divider class="divider-opacity"></v-divider>
 
-    <v-row class="app-content" no-gutters>
-      <!-- 1. 输入区域 -->
-      <v-col class="section-animate-left input-col" cols="12" md="5">
-        <InputSection
-            v-model:exportFormat="exportFormat"
-            v-model:svgCode="svgCode"
-            @clear="handleClear"
-            @download-image="handleDownloadImage"
-            @download-svg="handleDownloadSvg"
-        />
-      </v-col>
+    <!-- 工作台核心内容区：可拖拽调整比例分栏 -->
+    <div class="workbench-body">
+      <ResizableSplitter
+        v-model="splitRatio"
+        :direction="layoutDirection"
+        :min="20"
+        :max="80"
+      >
+        <!-- 第一区域：CodeMirror 6 代码编辑 -->
+        <template #first>
+          <SvgCodeEditor
+            v-model="svgCode"
+            :validation-error="metadata?.error"
+            @notify="showSnackbar"
+          />
+        </template>
 
-      <!-- 2. 预览区域 -->
-      <v-col class="section-animate-right preview-col" cols="12" md="7">
-        <PreviewSection
-            :svgCode="svgCode"
-            @fullscreen="isFullscreen = true"
-        />
-      </v-col>
-    </v-row>
+        <!-- 第二区域：交互预览画布 + 底部导出面板 -->
+        <template #second>
+          <div class="preview-export-container">
+            <div class="preview-wrapper">
+              <SvgPreviewCanvas
+                :svg-code="svgCode"
+                :metadata="metadata"
+                @fullscreen="isFullscreen = true"
+              />
+            </div>
 
-    <!-- 3. Apple 风格的全屏预览 -->
+            <!-- 底部导出配置条 -->
+            <ExportPanel
+              :export-config="exportConfig"
+              :metadata="metadata"
+              :is-exporting="isExporting"
+              :has-valid-svg="Boolean(svgCode && metadata?.valid)"
+              @download-image="onDownloadImage"
+              @download-svg="onDownloadSvg"
+            />
+          </div>
+        </template>
+      </ResizableSplitter>
+    </div>
+
+    <!-- Apple 风格全屏遮罩大图预览 -->
     <FullscreenPreview
-        :svgCode="svgCode"
-        :visible="isFullscreen"
-        @close="isFullscreen = false"
+      :svg-code="svgCode"
+      :visible="isFullscreen"
+      @close="isFullscreen = false"
     />
 
-    <!-- 通用通知组件 -->
+    <!-- 通用通知系统 -->
     <NotificationSnackbar
-        v-model="snackbar.show"
-        :color="snackbar.color"
-        :message="snackbar.message"
-        :timeout="snackbar.timeout"
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :message="snackbar.message"
+      :timeout="snackbar.timeout"
     />
   </v-card>
 </template>
 
 <script setup>
-import {ref} from 'vue'
-import {useSvgConverter} from './composables/useSvgConverter.js'
-import InputSection from './components/InputSection.vue'
-import PreviewSection from './components/PreviewSection.vue'
+import { ref } from 'vue'
+import { useSvgConverter } from './composables/useSvgConverter.js'
+import ResizableSplitter from './components/ResizableSplitter.vue'
+import SvgCodeEditor from './components/SvgCodeEditor.vue'
+import SvgPreviewCanvas from './components/SvgPreviewCanvas.vue'
+import ExportPanel from './components/ExportPanel.vue'
 import FullscreenPreview from './components/FullscreenPreview.vue'
 import NotificationSnackbar from '@/components/NotificationSnackbar.vue'
 
-// 使用 composable 获取核心逻辑和状态
 const {
   svgCode,
-  exportFormat,
+  metadata,
+  exportConfig,
+  layoutDirection,
+  splitRatio,
+  isWorkbenchMaximized,
   isFullscreen,
-  handleSvgInput,
+  isExporting,
+  toggleLayoutDirection,
+  toggleWorkbenchMaximized,
   handleDownloadImage: baseHandleDownloadImage,
   handleDownloadSvg: baseHandleDownloadSvg,
-  handleClear: baseHandleClear,
   handleHelp
 } = useSvgConverter()
 
-// 通知系统状态
+// 全局通知系统
 const snackbar = ref({
   show: false,
   message: '',
@@ -85,140 +158,123 @@ const snackbar = ref({
   timeout: 3000
 })
 
-// 封装通知方法
 const showSnackbar = (message, type = 'info') => {
   snackbar.value = {
     show: true,
     message,
-    color: type === 'success' ? 'success' :
-        type === 'error' ? 'error' :
-            type === 'warning' ? 'warning' : 'info',
+    color:
+      type === 'success'
+        ? 'success'
+        : type === 'error'
+        ? 'error'
+        : type === 'warning'
+        ? 'warning'
+        : 'info',
     timeout: 3000
   }
 }
 
-// 绑定通知系统的处理函数
-const handleDownloadImage = async () => {
+const onDownloadImage = async () => {
   await baseHandleDownloadImage(showSnackbar)
 }
 
-const handleDownloadSvg = () => {
+const onDownloadSvg = () => {
   baseHandleDownloadSvg(showSnackbar)
-}
-
-const handleClear = () => {
-  baseHandleClear(showSnackbar)
 }
 </script>
 
 <style lang="scss" scoped>
-// Apple 风格的贝塞尔曲线
 $apple-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-$apple-ease-in: cubic-bezier(0.42, 0, 1, 1);
-$apple-ease-out: cubic-bezier(0, 0, 0.58, 1);
 
 .svg-to-image-app {
-  border-radius: 20px; // 圆角稍微大一点，更符合现代 Apple 风格
+  border-radius: 16px;
   overflow: hidden;
-  height: 100%;
+  height: 800px;
+  min-height: 650px;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
-  transition: background-color 0.3s $apple-ease;
+  background-color: #ffffff;
+  transition: all 0.3s $apple-ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+
+  // 沉浸工作台最大化视口模式
+  &.is-workbench-maximized {
+    position: fixed;
+    inset: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    z-index: 1200;
+    border-radius: 0;
+    border: none;
+  }
 }
 
-// 1. 深色模式与玻璃拟态工具栏
 .app-bar-blur {
-  // 默认浅色模式背景
-  background-color: rgba(255, 255, 255, 0.65);
+  background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s $apple-ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 
   .toolbar-title {
-    color: #1d1d1f; // Apple 几乎黑
+    color: #1e293b;
   }
 }
 
-// 适配 Vuetify 3 的深色模式类
-.v-theme--dark {
-  .svg-to-image-app {
-    background-color: #000000;
-  }
-
-  .app-bar-blur {
-    // 深色模式玻璃背景
-    background-color: rgba(30, 30, 30, 0.75);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-
-    .toolbar-title {
-      color: rgba(255, 255, 255, 0.9);
-    }
-  }
-
-  .divider-opacity {
-    border-color: rgba(255, 255, 255, 0.12) !important;
-  }
+.workbench-body {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
 }
 
-// 2. Apple 风格微交互动画
-.btn-micro-interaction {
-  transition: transform 0.2s $apple-ease, opacity 0.2s;
+.preview-export-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 
-  &:active {
-    transform: scale(0.92); // 按钮按下稍微缩小
-    opacity: 0.8;
+  .preview-wrapper {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
   }
 }
 
 .icon-bounce {
-  transition: transform 0.4s $apple-ease-out;
-
+  transition: transform 0.3s ease;
   &:hover {
-    transform: rotate(-10deg) scale(1.1);
+    transform: scale(1.15) rotate(-6deg);
   }
 }
 
-// 3. 内容入场动画
-.app-content {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
+.gap-1 {
+  gap: 4px;
 }
 
-.section-animate-left, .section-animate-right {
-  animation: slide-fade-up 0.8s $apple-ease-out backwards;
-}
-
-.section-animate-left {
-  animation-delay: 0.1s;
-}
-
-.section-animate-right {
-  animation-delay: 0.2s;
-}
-
-@keyframes slide-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// 响应式适配
-@media (max-width: 960px) {
-  .app-content {
-    overflow-y: auto;
+// 深色模式适配
+.v-theme--dark {
+  .svg-to-image-app {
+    background-color: #0d0e12;
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
-  .input-col,
-  .preview-col {
-    min-height: 400px; // 确保移动端有足够的高度
+  .app-bar-blur {
+    background-color: rgba(24, 24, 27, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    .toolbar-title {
+      color: #f1f5f9;
+    }
+  }
+
+  .divider-opacity {
+    border-color: rgba(255, 255, 255, 0.08) !important;
   }
 }
 </style>
